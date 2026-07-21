@@ -56,23 +56,86 @@
       border-top: 2px dashed rgba(255,255,255,.9);
     }
 
+    .haltestelle {
+      position: absolute;
+      z-index: 1;
+      left: 70%;
+      bottom: 19px;
+      width: 26px;
+      height: 57px;
+      pointer-events: none;
+    }
+
+    .haltestelle .pole {
+      position: absolute;
+      left: 12px;
+      bottom: 0;
+      width: 3px;
+      height: 43px;
+      background: #b7b7b7;
+      border: 1px solid #666;
+    }
+
+    .haltestelle .sign {
+      position: absolute;
+      top: 0;
+      left: 1px;
+      width: 24px;
+      height: 27px;
+      border: 1px solid #666;
+      border-radius: 3px;
+      background: #fff;
+      box-shadow: 1px 1px 2px rgba(0,0,0,.25);
+    }
+
+    .haltestelle .sign::before {
+      content: "H";
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      margin: 3px auto;
+      border: 2px solid #1b9c45;
+      border-radius: 50%;
+      color: #1b9c45;
+      background: #ffdf25;
+      font: bold 13px/1 Arial, sans-serif;
+    }
+
     .running-bus {
+      --bus-width: 330px;
       position: absolute;
       z-index: 2;
       bottom: 20px;
-      left: 0;
-      width: 330px;
+      left: calc(-1 * var(--bus-width));
+      width: var(--bus-width);
       max-width: 72vw;
       height: auto;
       mix-blend-mode: multiply;
       filter: drop-shadow(4px 5px 2px rgba(0,0,0,.35));
-      animation: drive-across 13s linear infinite;
-      will-change: transform;
+      animation: drive-across 16s linear infinite;
+      will-change: left, bottom;
     }
 
     @keyframes drive-across {
-      from { transform: translateX(-120%); }
-      to   { transform: translateX(calc(780px + 120%)); }
+      0%   { left: calc(-1 * var(--bus-width)); bottom: 20px; }
+      7%   { bottom: 19px; }
+      14%  { bottom: 21px; }
+      21%  { bottom: 19px; }
+      28%  { bottom: 21px; }
+      35%  { bottom: 20px; }
+
+      /* バスの前端が右寄りの停留所に着く */
+      55%  { left: calc(70% - var(--bus-width) + 12px); bottom: 20px; }
+
+      /* 同じ位置を維持するため、ここで約2秒間停止 */
+      68%  { left: calc(70% - var(--bus-width) + 12px); bottom: 20px; }
+
+      74%  { bottom: 19px; }
+      80%  { bottom: 21px; }
+      87%  { bottom: 19px; }
+      94%  { bottom: 21px; }
+      100% { left: 100%; bottom: 20px; }
     }
 
     .top-strip {
@@ -458,11 +521,8 @@
 
     @media (max-width: 650px) {
       .bus-runner { height: 90px; }
-      .running-bus { width: 250px; bottom: 16px; }
-      @keyframes drive-across {
-        from { transform: translateX(-120%); }
-        to   { transform: translateX(calc(100vw + 120%)); }
-      }
+      .running-bus { --bus-width: 250px; bottom: 16px; }
+      .haltestelle { left: 70%; bottom: 15px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -479,7 +539,11 @@
 </head>
 <body id="top">
   <div class="page">
-    <div class="bus-runner" aria-label="Mercedes-Benz O 405 が左から右へ走るアニメーション">
+    <div class="bus-runner" aria-label="Mercedes-Benz O 405 が停留所で一時停止しながら左から右へ走るアニメーション">
+      <div class="haltestelle" aria-hidden="true">
+        <div class="pole"></div>
+        <div class="sign"></div>
+      </div>
       <img class="running-bus" src="o405_side_bus.png" alt="青と白のMercedes-Benz O 405路線バスの側面イラスト">
     </div>
     <div class="top-strip">◆◆◆ Willkommen im Linienbusarchiv! ◆◆◆</div>
