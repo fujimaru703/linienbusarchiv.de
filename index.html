@@ -137,6 +137,170 @@
       100% { left: 100%; bottom: 20px; }
     }
 
+
+    .scenery {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .hill {
+      position: absolute;
+      bottom: 31px;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+      background: #6ea85a;
+      box-shadow: inset 0 8px 0 rgba(255,255,255,.08);
+    }
+
+    .hill.back {
+      left: -8%;
+      width: 58%;
+      height: 50px;
+      background: #79b766;
+    }
+
+    .hill.mid {
+      left: 23%;
+      width: 62%;
+      height: 62px;
+      background: #5f9d50;
+    }
+
+    .hill.front {
+      right: -12%;
+      width: 53%;
+      height: 42px;
+      background: #4f8d45;
+    }
+
+    .village {
+      position: absolute;
+      left: 43%;
+      bottom: 33px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .euro-house {
+      position: relative;
+      width: 42px;
+      height: 31px;
+      border: 2px solid #6f4c32;
+      background: #f4e6c4;
+      box-shadow: 2px 2px 0 rgba(0,0,0,.16);
+    }
+
+    .euro-house::before {
+      content: "";
+      position: absolute;
+      left: -5px;
+      top: -17px;
+      width: 48px;
+      height: 19px;
+      background: #9d4c3e;
+      clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      border-bottom: 2px solid #6f3b31;
+    }
+
+    .euro-house::after {
+      content: "";
+      position: absolute;
+      left: 16px;
+      bottom: 0;
+      width: 9px;
+      height: 14px;
+      border: 1px solid #5d3e2a;
+      background: #7a563a;
+    }
+
+    .euro-house.tall {
+      width: 47px;
+      height: 38px;
+    }
+
+    .euro-house.tall::before {
+      left: -6px;
+      top: -20px;
+      width: 55px;
+      height: 22px;
+    }
+
+    .euro-house.wide {
+      width: 52px;
+      height: 30px;
+      background: #f0d9b5;
+    }
+
+    .euro-house.wide::before {
+      width: 58px;
+      left: -5px;
+      background: #7c4b3d;
+    }
+
+    .timber {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg,
+          transparent 0 7px,
+          #7b5135 7px 9px,
+          transparent 9px 20px,
+          #7b5135 20px 22px,
+          transparent 22px 33px,
+          #7b5135 33px 35px,
+          transparent 35px),
+        linear-gradient(0deg,
+          transparent 0 11px,
+          #7b5135 11px 13px,
+          transparent 13px 22px,
+          #7b5135 22px 24px,
+          transparent 24px);
+      opacity: .85;
+    }
+
+    .euro-house.wide .timber {
+      background:
+        linear-gradient(90deg,
+          transparent 0 9px,
+          #6f4a32 9px 11px,
+          transparent 11px 24px,
+          #6f4a32 24px 26px,
+          transparent 26px 39px,
+          #6f4a32 39px 41px,
+          transparent 41px),
+        linear-gradient(0deg,
+          transparent 0 10px,
+          #6f4a32 10px 12px,
+          transparent 12px 21px,
+          #6f4a32 21px 23px,
+          transparent 23px);
+    }
+
+    .window {
+      position: absolute;
+      top: 6px;
+      width: 7px;
+      height: 8px;
+      border: 1px solid #5d4b3d;
+      background: #a9d6ee;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.55);
+      z-index: 2;
+    }
+
+    .window.left { left: 6px; }
+    .window.right { right: 6px; }
+
+    .bus-runner .running-bus {
+      z-index: 2;
+    }
+
+    .bus-runner .haltestelle {
+      z-index: 3;
+    }
+
     .top-strip {
       padding: 3px 8px;
       color: #fff;
@@ -520,6 +684,30 @@
 
     @media (max-width: 650px) {
       .bus-runner { height: 90px; }
+
+      .hill.back {
+        width: 64%;
+        height: 38px;
+      }
+
+      .hill.mid {
+        left: 18%;
+        width: 70%;
+        height: 48px;
+      }
+
+      .hill.front {
+        width: 58%;
+        height: 34px;
+      }
+
+      .village {
+        left: 38%;
+        bottom: 29px;
+        gap: 6px;
+        transform: scale(.82);
+        transform-origin: left bottom;
+      }
       .running-bus { --bus-width: 250px; bottom: 16px; }
       .haltestelle { left: 70%; bottom: 15px; }
     }
@@ -539,6 +727,30 @@
 <body id="top">
   <div class="page">
     <div class="bus-runner" aria-label="Mercedes-Benz O 405 が停留所で一時停止しながら左から右へ走るアニメーション">
+      <div class="scenery" aria-hidden="true">
+        <div class="hill back"></div>
+        <div class="hill mid"></div>
+        <div class="hill front"></div>
+
+        <div class="village">
+          <div class="euro-house">
+            <span class="timber"></span>
+            <span class="window left"></span>
+            <span class="window right"></span>
+          </div>
+          <div class="euro-house tall">
+            <span class="timber"></span>
+            <span class="window left"></span>
+            <span class="window right"></span>
+          </div>
+          <div class="euro-house wide">
+            <span class="timber"></span>
+            <span class="window left"></span>
+            <span class="window right"></span>
+          </div>
+        </div>
+      </div>
+
       <div class="haltestelle" aria-hidden="true">
         <div class="pole"></div>
         <div class="sign"></div>
@@ -549,7 +761,7 @@
 
     <header class="header">
       <h1>Linienbusarchiv<span class="de">.de</span></h1>
-      <p class="subtitle">～ ドイツ路線バス資料館・個人運営 ～</p>
+      <p class="subtitle">～ ドイツ製路線バス資料館 ～</p>
     </header>
 
     <div class="marquee-box" aria-label="お知らせ">
