@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Linienbusarchiv.de - ドイツの路線バスを形式・メーカー・年代別に紹介する個人資料館です。">
+  <title>★ Linienbusarchiv.de ★ ドイツ路線バス資料館</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: #000;
+      background-color: #d8d8d8;
+      background-image:
+        linear-gradient(45deg, #c8c8c8 25%, transparent 25%),
+        linear-gradient(-45deg, #c8c8c8 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #c8c8c8 75%),
+        linear-gradient(-45deg, transparent 75%, #c8c8c8 75%);
+      background-size: 8px 8px;
+      background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+      font-family: "MS PGothic", "ＭＳ Ｐゴシック", Osaka, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    a:link { color: #0000ee; text-decoration: underline; }
+    a:visited { color: #551a8b; }
+    a:hover { color: #ff0000; background: #ffff66; }
+
+    .page {
+      width: min(780px, calc(100% - 10px));
+      margin: 8px auto 24px;
+      border: 3px ridge #fff;
+      background: #fff;
+      box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.35);
+    }
+
+    .bus-runner {
+      position: relative;
+      height: 118px;
+      overflow: hidden;
+      border-bottom: 2px solid #000080;
+      background:
+        linear-gradient(#bfe5ff 0 66%, #8db86b 66% 72%, #777 72% 100%);
+    }
+
+    .bus-runner::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 18px;
+      left: 0;
+      border-top: 2px dashed rgba(255,255,255,.9);
+    }
+
+    .running-bus {
+      position: absolute;
+      z-index: 2;
+      bottom: 20px;
+      left: 0;
+      width: 330px;
+      max-width: 72vw;
+      height: auto;
+      mix-blend-mode: multiply;
+      filter: drop-shadow(4px 5px 2px rgba(0,0,0,.35));
+      animation: drive-across 13s linear infinite;
+      will-change: transform;
+    }
+
+    @keyframes drive-across {
+      from { transform: translateX(-120%); }
+      to   { transform: translateX(calc(780px + 120%)); }
+    }
+
+    .top-strip {
+      padding: 3px 8px;
+      color: #fff;
+      background: #000080;
+      font-size: 12px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .header {
+      padding: 12px 10px 8px;
+      text-align: center;
+      background:
+        repeating-linear-gradient(0deg, #ffffcc, #ffffcc 2px, #ffff99 2px, #ffff99 4px);
+      border-bottom: 3px double #000080;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #003399;
+      font-family: "Arial Black", Impact, sans-serif;
+      font-size: clamp(30px, 7vw, 52px);
+      line-height: 1;
+      letter-spacing: -2px;
+      text-shadow: 2px 2px 0 #fff, 4px 4px 0 #999;
+    }
+
+    .header h1 .de {
+      color: #cc0000;
+      font-size: 0.48em;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 2px;
+      color: #000080;
+      font-weight: bold;
+    }
+
+    .bus-window {
+      display: inline-block;
+      width: min(560px, 96%);
+      margin-top: 8px;
+      padding: 3px;
+      border: 2px outset #ccc;
+      background: #999;
+    }
+
+    .pixel-bus {
+      position: relative;
+      height: 74px;
+      overflow: hidden;
+      border: 1px solid #000;
+      background: linear-gradient(#7ec8ff 0 62%, #6a9b54 62% 69%, #777 69% 100%);
+    }
+
+    .pixel-bus .road {
+      position: absolute;
+      right: 0;
+      bottom: 13px;
+      left: 0;
+      border-top: 2px dashed #fff;
+    }
+
+    .pixel-bus .vehicle {
+      position: absolute;
+      left: 12%;
+      bottom: 13px;
+      width: 72%;
+      height: 42px;
+      border: 2px solid #111;
+      border-radius: 3px 7px 2px 2px;
+      background: #f2e3a2;
+      box-shadow: inset 0 -10px 0 #cc2020;
+    }
+
+    .pixel-bus .vehicle::before {
+      content: "LINIENBUS";
+      position: absolute;
+      top: 5px;
+      left: 8px;
+      width: 76%;
+      height: 15px;
+      color: #fff;
+      background: repeating-linear-gradient(90deg, #222 0 20px, #77a6c7 20px 22px);
+      font: bold 8px/15px Arial, sans-serif;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    .pixel-bus .vehicle::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      right: 5px;
+      width: 38px;
+      height: 18px;
+      border: 1px solid #111;
+      background: #35546a;
+      transform: skewX(-9deg);
+    }
+
+    .wheel {
+      position: absolute;
+      bottom: -9px;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #111;
+      border-radius: 50%;
+      background: #aaa;
+    }
+
+    .wheel.one { left: 13%; }
+    .wheel.two { right: 11%; }
+
+    .marquee-box {
+      overflow: hidden;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      background: #000;
+      color: #00ff00;
+      white-space: nowrap;
+    }
+
+    .marquee-text {
+      display: inline-block;
+      min-width: 100%;
+      padding: 3px 0;
+      font-family: "Courier New", monospace;
+      font-weight: bold;
+      animation: marquee 15s linear infinite;
+    }
+
+    @keyframes marquee {
+      from { transform: translateX(100%); }
+      to { transform: translateX(-100%); }
+    }
+
+    .nav-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: #c0c0c0;
+    }
+
+    .nav-table td {
+      border: 2px outset #eee;
+      text-align: center;
+    }
+
+    .nav-table a {
+      display: block;
+      padding: 5px 2px;
+      color: #000080;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .nav-table a:hover {
+      color: #fff;
+      background: #000080;
+    }
+
+    .layout {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .sidebar {
+      width: 190px;
+      padding: 8px;
+      vertical-align: top;
+      background: #e8efff;
+      border-right: 1px solid #808080;
+    }
+
+    .main {
+      padding: 10px 12px 18px;
+      vertical-align: top;
+      background: #fff;
+    }
+
+    .box {
+      margin-bottom: 10px;
+      border: 2px groove #ccc;
+      background: #fff;
+    }
+
+    .box-title {
+      padding: 3px 5px;
+      color: #fff;
+      background: #000080;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .box-body { padding: 7px; }
+
+    .counter {
+      margin: 5px auto;
+      text-align: center;
+    }
+
+    .counter-digits {
+      display: inline-flex;
+      gap: 1px;
+      padding: 2px;
+      border: 2px inset #ccc;
+      background: #000;
+    }
+
+    .counter-digits span {
+      width: 17px;
+      height: 24px;
+      color: #ff3c3c;
+      background: #101010;
+      font: bold 20px/24px "Courier New", monospace;
+      text-align: center;
+      text-shadow: 0 0 4px #ff0000;
+    }
+
+    .tiny { font-size: 11px; }
+    .center { text-align: center; }
+    .red { color: #f00; }
+    .blue { color: #0000cc; }
+    .green { color: #008000; }
+
+    .menu-list,
+    .link-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .menu-list li,
+    .link-list li { margin: 3px 0; }
+
+    .new-badge,
+    .up-badge,
+    .construction-badge {
+      display: inline-block;
+      padding: 0 3px;
+      color: #fff;
+      font: bold 10px/14px Arial, sans-serif;
+      vertical-align: middle;
+    }
+
+    .new-badge {
+      background: #f00;
+      animation: flash 0.9s steps(1) infinite;
+    }
+
+    .up-badge { background: #008000; }
+    .construction-badge { color: #000; background: #ffcc00; }
+
+    @keyframes flash {
+      0%, 49% { visibility: visible; }
+      50%, 100% { visibility: hidden; }
+    }
+
+    .section-title {
+      margin: 12px 0 8px;
+      padding: 3px 7px;
+      border-left: 12px solid #cc0000;
+      border-bottom: 2px solid #000080;
+      color: #000080;
+      background: #ffffcc;
+      font-size: 18px;
+    }
+
+    .welcome {
+      padding: 8px;
+      border: 1px dashed #f00;
+      background: #fffce0;
+    }
+
+    .article-list {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+
+    .article-list th,
+    .article-list td {
+      padding: 5px;
+      border: 1px solid #808080;
+      vertical-align: top;
+    }
+
+    .article-list th {
+      color: #fff;
+      background: #336699;
+      text-align: left;
+    }
+
+    .article-list tr:nth-child(even) td { background: #eef4ff; }
+
+    .category-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .category-table td {
+      padding: 7px;
+      border: 1px solid #999;
+      vertical-align: top;
+      background: #f7f7f7;
+    }
+
+    .category-table b { color: #800000; }
+
+    .update-log {
+      max-height: 130px;
+      overflow: auto;
+      border: 2px inset #ccc;
+      background: #fff;
+      font-family: "MS Gothic", monospace;
+      font-size: 12px;
+    }
+
+    .update-log div {
+      padding: 3px 5px;
+      border-bottom: 1px dotted #aaa;
+    }
+
+    .button88 {
+      display: inline-grid;
+      width: 88px;
+      height: 31px;
+      margin: 2px;
+      place-items: center;
+      border: 2px outset #ddd;
+      color: #fff !important;
+      background: linear-gradient(#154681, #031d4b);
+      font: bold 10px/1 Arial, sans-serif;
+      text-align: center;
+      text-decoration: none !important;
+    }
+
+    .button88.red-button { background: linear-gradient(#d93a2e, #7b0000); }
+    .button88.green-button { background: linear-gradient(#399447, #0d4f17); }
+
+    .mail-box {
+      padding: 8px;
+      border: 2px dashed #000080;
+      background: #e9ffff;
+      text-align: center;
+    }
+
+    .footer {
+      padding: 8px;
+      border-top: 3px double #000080;
+      background: #ffffcc;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .footer .rule {
+      margin: 4px 0;
+      color: #808080;
+      letter-spacing: 2px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 650px) {
+      body { font-size: 13px; }
+      .layout,
+      .layout tbody,
+      .layout tr,
+      .layout td { display: block; width: 100%; }
+      .sidebar { border-right: 0; border-bottom: 1px solid #808080; }
+      .nav-table { font-size: 11px; }
+      .header h1 { letter-spacing: -1px; }
+      .category-table,
+      .category-table tbody,
+      .category-table tr,
+      .category-table td { display: block; width: 100%; }
+      .article-list { font-size: 12px; }
+    }
+
+    @media (max-width: 650px) {
+      .bus-runner { height: 90px; }
+      .running-bus { width: 250px; bottom: 16px; }
+      @keyframes drive-across {
+        from { transform: translateX(-120%); }
+        to   { transform: translateX(calc(100vw + 120%)); }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .marquee-text,
+      .new-badge,
+      .running-bus { animation: none; }
+
+      .running-bus {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    }
+  </style>
+</head>
+<body id="top">
+  <div class="page">
+    <div class="bus-runner" aria-label="Mercedes-Benz O 405 が左から右へ走るアニメーション">
+      <img class="running-bus" src="o405_side_bus.png" alt="青と白のMercedes-Benz O 405路線バスの側面イラスト">
+    </div>
+    <div class="top-strip">◆◆◆ Willkommen im Linienbusarchiv! ◆◆◆</div>
+
+    <header class="header">
+      <h1>Linienbusarchiv<span class="de">.de</span></h1>
+      <p class="subtitle">～ ドイツ路線バス資料館・個人運営 ～</p>
+
+      <div class="bus-window" aria-label="ドイツの路線バスを模したイラスト">
+        <div class="pixel-bus">
+          <div class="road"></div>
+          <div class="vehicle">
+            <span class="wheel one"></span>
+            <span class="wheel two"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="marquee-box" aria-label="お知らせ">
+      <div class="marquee-text">★ 2026年7月21日　ホームページを開設しました！　Mercedes-Benz O 305・MAN SL 200・O 405 N²の記事を準備中です ★</div>
+    </div>
+
+    <nav aria-label="メインメニュー">
+      <table class="nav-table">
+        <tr>
+          <td><a href="#top">HOME</a></td>
+          <td><a href="#new">新着記事</a></td>
+          <td><a href="#catalog">車両資料</a></td>
+          <td><a href="#about">このサイト</a></td>
+          <td><a href="#links">リンク</a></td>
+          <td><a href="#mail">メール</a></td>
+        </tr>
+      </table>
+    </nav>
+
+    <table class="layout">
+      <tr>
+        <td class="sidebar">
+          <section class="box">
+            <div class="box-title">★ VISITOR ★</div>
+            <div class="box-body center">
+              あなたは
+              <div class="counter" aria-label="仮のアクセスカウンター 000001">
+                <div class="counter-digits">
+                  <span>0</span><span>0</span><span>0</span><span>0</span><span>0</span><span>1</span>
+                </div>
+              </div>
+              番目のお客様です<br>
+              <span class="tiny">※現在は仮表示です</span>
+            </div>
+          </section>
+
+          <section class="box">
+            <div class="box-title">CONTENTS</div>
+            <div class="box-body">
+              <ul class="menu-list">
+                <li><a href="#new">新着記事</a> <span class="new-badge">NEW</span></li>
+                <li><a href="#standard">Standard-Bus</a></li>
+                <li><a href="#catalog">メーカー別</a></li>
+                <li><a href="#catalog">年代別</a></li>
+                <li><a href="#catalog">低床バス</a></li>
+                <li><a href="#operators">事業者別</a></li>
+                <li><a href="#about">管理人室</a></li>
+                <li><a href="#mail">掲示板</a> <span class="construction-badge">工事中</span></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="box">
+            <div class="box-title">SITE DATA</div>
+            <div class="box-body tiny">
+              <b>開設：</b>2026.07.21<br>
+              <b>管理：</b>Linienbusarchiv<br>
+              <b>言語：</b>日本語 / Deutsch<br>
+              <b>推奨：</b>1024×768以上<br>
+              <b>文字：</b>中サイズ推奨
+            </div>
+          </section>
+
+          <section class="box">
+            <div class="box-title">BANNER</div>
+            <div class="box-body center tiny">
+              リンクはご自由にどうぞ。<br>
+              <a class="button88" href="#top">LINIENBUS<br>ARCHIV.DE</a><br>
+              バナーは保存してご利用ください。
+            </div>
+          </section>
+
+          <section class="box">
+            <div class="box-title">WEB RING</div>
+            <div class="box-body center tiny">
+              [ <a href="#">← 前へ</a> ]<br>
+              ドイツバス愛好会<br>
+              [ <a href="#">一覧</a> ] [ <a href="#">次へ →</a> ]
+            </div>
+          </section>
+        </td>
+
+        <td class="main">
+          <div class="welcome">
+            <b class="blue">ようこそ Linienbusarchiv.de へ！</b><br>
+            このページでは、ドイツの路線バスをメーカー・形式・年代・事業者別に紹介しています。古いStandard-Busからノンステップバスまで、写真・仕様・特徴を少しずつ記録していく個人サイトです。
+          </div>
+
+          <h2 class="section-title" id="new">★ 新着記事 ★</h2>
+          <table class="article-list">
+            <tr>
+              <th style="width:90px">更新日</th>
+              <th>記事</th>
+            </tr>
+            <tr>
+              <td>2026.07.21</td>
+              <td><span class="new-badge">NEW</span> <a href="#standard"><b>Mercedes-Benz O 305</b> — ドイツ標準バスの原点</a><br><span class="tiny">VÖV標準仕様によって生まれた代表的な都市型バスを紹介します。</span></td>
+            </tr>
+            <tr>
+              <td>2026.07.21</td>
+              <td><span class="new-badge">NEW</span> <a href="#standard"><b>MAN SL 200</b> — 西ドイツを代表するStandard-Linienbus</a><br><span class="tiny">直線的な車体と各地の事業者で見られた仕様差を整理します。</span></td>
+            </tr>
+            <tr>
+              <td>2026.07.21</td>
+              <td><span class="up-badge">UP</span> <a href="#catalog"><b>Mercedes-Benz O 405 N²</b> — 第二世代ノンステップ車</a><br><span class="tiny">窓配置、3扉仕様、車体差についてまとめる予定です。</span></td>
+            </tr>
+          </table>
+          <p class="right tiny" style="text-align:right">→ <a href="#">過去の記事一覧</a></p>
+
+          <h2 class="section-title" id="standard">★ Standard-Bus 特集 ★</h2>
+          <p>
+            1960年代末からドイツ各地に広がったStandard-Busを中心に、
+            <b>SL I、StÜLB、SL II、Ü 80</b>などの系列を紹介します。
+          </p>
+          <table class="category-table">
+            <tr>
+              <td><b>第1世代</b><br>Mercedes-Benz O 305<br>MAN SL 200<br>Magirus-Deutz SH 110</td>
+              <td><b>郊外型</b><br>Mercedes-Benz O 307<br>MAN SÜ 240<br>Magirus-Deutz L 117</td>
+            </tr>
+            <tr>
+              <td><b>第2世代</b><br>Mercedes-Benz O 405<br>MAN SL 202<br>Neoplan N 416</td>
+              <td><b>低床化</b><br>Mercedes-Benz O 405 N<br>MAN NL 202<br>Neoplan N 4016</td>
+            </tr>
+          </table>
+
+          <h2 class="section-title" id="catalog">★ 車両資料室 ★</h2>
+          <table class="category-table">
+            <tr>
+              <td>
+                <b>メーカーから探す</b><br>
+                <a href="#">Mercedes-Benz</a> / <a href="#">MAN</a><br>
+                <a href="#">Magirus-Deutz</a> / <a href="#">Neoplan</a><br>
+                <a href="#">Setra</a> / <a href="#">Büssing</a>
+              </td>
+              <td>
+                <b>年代から探す</b><br>
+                <a href="#">1960年代以前</a> / <a href="#">1970年代</a><br>
+                <a href="#">1980年代</a> / <a href="#">1990年代</a><br>
+                <a href="#">2000年代以降</a>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <b>構造から探す</b><br>
+                <a href="#">標準床</a> / <a href="#">低床</a> / <a href="#">ノンステップ</a><br>
+                <a href="#">連節バス</a> / <a href="#">二階建て</a>
+              </td>
+              <td id="operators">
+                <b>事業者から探す</b><br>
+                <a href="#">BVG</a> / <a href="#">Hamburger Hochbahn</a><br>
+                <a href="#">MVG München</a> / <a href="#">KVB Köln</a><br>
+                <a href="#">その他の事業者</a>
+              </td>
+            </tr>
+          </table>
+
+          <h2 class="section-title">★ 更新履歴 ★</h2>
+          <div class="update-log">
+            <div>2026.07.21　レトロ版トップページを公開しました。</div>
+            <div>2026.07.21　Linienbusarchiv.de を開設しました。</div>
+            <div>2026.07.21　車両資料室の分類を作成しました。</div>
+            <div>2026.07.21　アクセスカウンターは現在仮表示です。</div>
+          </div>
+
+          <h2 class="section-title" id="about">★ このサイトについて ★</h2>
+          <p>
+            当サイトは、ドイツの路線バスに関する情報を日本語で記録する非公式の個人サイトです。
+            掲載内容は管理人が収集・整理した資料に基づきます。メーカーや交通事業者とは関係ありません。
+          </p>
+          <p class="center">
+            <a class="button88" href="#standard">STANDARD<br>BUS</a>
+            <a class="button88 red-button" href="#new">NEW<br>ARTICLE</a>
+            <a class="button88 green-button" href="#catalog">BUS<br>DATABASE</a>
+          </p>
+
+          <h2 class="section-title" id="links">★ おすすめリンク ★</h2>
+          <ul class="link-list">
+            <li><a href="https://de.wikipedia.org/wiki/Standard-Bus">Wikipedia: Standard-Bus</a>（ドイツ語）</li>
+            <li><a href="#">ドイツの交通事業者リンク集</a> <span class="construction-badge">準備中</span></li>
+            <li><a href="#">保存車・博物館リンク集</a> <span class="construction-badge">準備中</span></li>
+          </ul>
+
+          <h2 class="section-title" id="mail">★ ご意見・情報提供 ★</h2>
+          <div class="mail-box">
+            誤記のご指摘、車両情報、写真提供についてはメールでお願いいたします。<br>
+            <b><a href="mailto:info@linienbusarchiv.de">info@linienbusarchiv.de</a></b><br>
+            <span class="tiny">※迷惑メール対策のため、件名に「Linienbusarchiv」とご記入ください。</span>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <footer class="footer">
+      <div class="rule">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■</div>
+      <a href="#top">▲ ページの一番上へ</a><br>
+      Last Update: 2026.07.21<br>
+      Copyright &copy; 2026 Linienbusarchiv.de All Rights Reserved.<br>
+      <span class="tiny">This site is best viewed with a CSS-compatible browser.</span>
+    </footer>
+  </div>
+</body>
+</html>
