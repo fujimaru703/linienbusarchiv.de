@@ -60,7 +60,7 @@
       position: absolute;
       z-index: 1;
       left: 70%;
-      bottom: 19px;
+      bottom: 4px;
       width: 26px;
       height: 57px;
       pointer-events: none;
@@ -106,7 +106,7 @@
       --bus-width: 330px;
       position: absolute;
       z-index: 2;
-      bottom: 20px;
+      bottom: 5px;
       left: calc(-1 * var(--bus-width));
       width: var(--bus-width);
       max-width: 72vw;
@@ -117,24 +117,24 @@
     }
 
     @keyframes drive-across {
-      0%   { left: calc(-1 * var(--bus-width)); bottom: 20px; }
-      7%   { bottom: 19px; }
-      14%  { bottom: 21px; }
-      21%  { bottom: 19px; }
-      28%  { bottom: 21px; }
-      35%  { bottom: 20px; }
+      0%   { left: calc(-1 * var(--bus-width)); bottom: 5px; }
+      7%   { bottom: 4px; }
+      14%  { bottom: 6px; }
+      21%  { bottom: 4px; }
+      28%  { bottom: 6px; }
+      35%  { bottom: 5px; }
 
       /* バスの前端が右寄りの停留所に着く */
-      55%  { left: calc(70% - var(--bus-width) + 12px); bottom: 20px; }
+      55%  { left: calc(70% - var(--bus-width) + 12px); bottom: 5px; }
 
       /* 同じ位置を維持するため、ここで約2秒間停止 */
-      68%  { left: calc(70% - var(--bus-width) + 12px); bottom: 20px; }
+      68%  { left: calc(70% - var(--bus-width) + 12px); bottom: 5px; }
 
-      74%  { bottom: 19px; }
-      80%  { bottom: 21px; }
-      87%  { bottom: 19px; }
-      94%  { bottom: 21px; }
-      100% { left: 100%; bottom: 20px; }
+      74%  { bottom: 4px; }
+      80%  { bottom: 6px; }
+      87%  { bottom: 4px; }
+      94%  { bottom: 6px; }
+      100% { left: 100%; bottom: 5px; }
     }
 
 
@@ -360,7 +360,7 @@
     .pixel-bus .road {
       position: absolute;
       right: 0;
-      bottom: 13px;
+      bottom: 5px;
       left: 0;
       border-top: 2px dashed #fff;
     }
@@ -368,7 +368,7 @@
     .pixel-bus .vehicle {
       position: absolute;
       left: 12%;
-      bottom: 13px;
+      bottom: 5px;
       width: 72%;
       height: 42px;
       border: 2px solid #111;
@@ -708,7 +708,7 @@
         transform: scale(.82);
         transform-origin: left bottom;
       }
-      .running-bus { --bus-width: 250px; bottom: 16px; }
+      .running-bus { --bus-width: 250px; bottom: 4px; }
       .haltestelle { left: 70%; bottom: 15px; }
     }
 
@@ -761,7 +761,7 @@
 
     <header class="header">
       <h1>Linienbusarchiv<span class="de">.de</span></h1>
-      <p class="subtitle">～ ドイツ製路線バス資料館 ～</p>
+      <p class="subtitle">～ ドイツ路線バス資料館・個人運営 ～</p>
     </header>
 
     <div class="marquee-box" aria-label="お知らせ">
