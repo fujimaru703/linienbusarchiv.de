@@ -285,14 +285,13 @@ main {
 
 /* 写真マーカー */
 
-.leaflet-div-icon {
+.photo-div-icon,
+.area-div-icon {
   border: none;
   background: transparent;
 }
 
 .photo-marker {
-  width: 64px;
-  aspect-ratio: 16 / 9;
   overflow: hidden;
   border: 2px solid #ffffff;
   outline: 2px solid #000080;
@@ -304,6 +303,13 @@ main {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+
+.photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
 }
 
