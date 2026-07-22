@@ -209,20 +209,20 @@ function renderAreaMarkers(items) {
 function renderPhotoMarkers(items) {
   items.forEach(photo => {
     const icon = L.divIcon({
-      className: "",
-      html: `
-        <div class="photo-marker">
+  className: "photo-div-icon",
 
-          <img
-            src="${escapeAttribute(photo.thumbnail)}"
-            alt=""
-          >
+  html: `
+    <div class="photo-marker">
+      <img
+        src="${escapeAttribute(photo.thumbnail)}"
+        alt=""
+      >
+    </div>
+  `,
 
-        </div>
-      `,
-      iconSize: [68, 54],
-      iconAnchor: [34, 27]
-    });
+  iconSize: [68, 40],
+  iconAnchor: [34, 20]
+});
 
     const popup = `
       <div class="popup-card">
