@@ -259,10 +259,10 @@ function renderPhotoMarkers(items) {
         </p>
 
         <p>
-          <b>撮影年：</b>
+          <b>撮影日：</b>
           ${escapeHtml(
             String(
-              photo.photo_year ||
+              photo.photo_date ||
               "不明"
             )
           )}
