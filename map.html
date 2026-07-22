@@ -45,33 +45,112 @@
 
     </header>
 
-    <!-- 共通メニュー -->
-    <nav class="main-menu">
-      <a href="index.html">HOME</a>
-      <a href="manufacturers.html">メーカー別</a>
-      <a href="years.html">年代別</a>
-      <a href="map.html" class="current">地図から探す</a>
+    <nav class="main-menu" aria-label="メインメニュー">
+
+      <a href="index.html">
+        HOME
+      </a>
+
+      <a href="manufacturers.html">
+        メーカー別
+      </a>
+
+      <a href="years.html">
+        年代別
+      </a>
+
+      <a
+        href="map.html"
+        class="current"
+      >
+        地図から探す
+      </a>
+
     </nav>
 
     <nav
       class="breadcrumb"
       aria-label="パンくずリスト"
     >
-      <a href="index.html">HOME</a>
+
+      <a href="index.html">
+        HOME
+      </a>
+
       &gt;
+
       地図から探す
+
     </nav>
 
     <main>
 
       <section class="intro">
 
-        <h2>地図から写真を探す</h2>
+        <h2>
+          地図から写真を探す
+        </h2>
 
         <p>
           地図を拡大すると、撮影位置に写真マーカーが表示されます。
-          写真をクリックすると、車種・撮影地・撮影年などを確認できます。
+          写真をクリックすると、車種・撮影国・撮影地・撮影年などを確認できます。
         </p>
+
+      </section>
+
+      <section
+        class="map-toolbar"
+        aria-label="地図の絞り込み"
+      >
+
+        <div>
+
+          <label for="countryFilter">
+            撮影国
+          </label>
+
+          <select id="countryFilter">
+            <option value="">
+              すべて
+            </option>
+          </select>
+
+        </div>
+
+        <div>
+
+          <label for="manufacturerFilter">
+            メーカー
+          </label>
+
+          <select id="manufacturerFilter">
+            <option value="">
+              すべて
+            </option>
+          </select>
+
+        </div>
+
+        <div>
+
+          <label for="modelFilter">
+            車種
+          </label>
+
+          <select id="modelFilter">
+            <option value="">
+              すべて
+            </option>
+          </select>
+
+        </div>
+
+        <button
+          type="button"
+          id="resetButton"
+        >
+          条件を解除
+        </button>
 
       </section>
 
@@ -93,11 +172,22 @@
 
       <section class="result-box">
 
-        <h2>現在の地図範囲にある写真</h2>
+        <h2>
+          表示中の写真
+        </h2>
 
         <p>
-          <b id="resultCount">0</b>
+
+          <b id="resultCount">
+            0
+          </b>
+
           枚
+
+          <span class="small">
+            （現在の地図範囲と絞り込み条件に一致）
+          </span>
+
         </p>
 
         <div
