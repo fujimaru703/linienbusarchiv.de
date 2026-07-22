@@ -59,25 +59,20 @@ a:hover {
 }
 
 .nav-table td {
-  border: 2px outset #eeeeee;
+  border: 2px outset #eee;
   text-align: center;
 }
 
 .nav-table a {
   display: block;
-  padding: 14px 2px;
+  padding: 5px 2px;
   color: #000080;
-  font-size: 18px;
   font-weight: bold;
   text-decoration: none;
 }
 
-.nav-table a:visited {
-  color: #000080;
-}
-
 .nav-table a:hover {
-  color: #ffffff;
+  color: #fff;
   background: #000080;
 }
 
