@@ -308,7 +308,7 @@ function getPhotoMarkerSize() {
 
   if (isMobile) {
     return {
-      imageWidth: 48,
+      imageWidth: 44,
       imageHeight: 27,
       iconWidth: 48,
       iconHeight: 27
