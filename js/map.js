@@ -76,13 +76,17 @@ fetch("/data/photos.json")
   .catch(error => {
     console.error(error);
 
-    resultCount.textContent = "0";
+    if (resultCount) {
+      resultCount.textContent = "0";
+    }
 
-    photoList.innerHTML = `
-      <p class="empty-message">
-        ${escapeHtml(error.message)}
-      </p>
-    `;
+    if (photoList) {
+      photoList.innerHTML = `
+        <p class="empty-message">
+          ${escapeHtml(error.message)}
+        </p>
+      `;
+    }
   });
 
 /* ========================================
@@ -494,10 +498,7 @@ function renderPhotoList(items) {
         photo.detail_page || "#";
 
       return `
-        <a
-          class="photo-card"
-          href="${escapeAttribute(detailPage)}"
-        >
+        <div class="photo-card">
 
           <img
             src="${escapeAttribute(thumbnail)}"
@@ -506,7 +507,9 @@ function renderPhotoList(items) {
           >
 
           <strong>
-            ${escapeHtml(title)}
+            <a href="${escapeAttribute(detailPage)}">
+              ${escapeHtml(title)}
+            </a>
           </strong>
 
           <span>
@@ -516,7 +519,6 @@ function renderPhotoList(items) {
           </span>
 
           <span>
-            撮影日：
             ${escapeHtml(
               formatValue(
                 photo.photo_date
@@ -524,7 +526,7 @@ function renderPhotoList(items) {
             )}
           </span>
 
-        </a>
+        </div>
       `;
     }).join("");
 }
@@ -544,14 +546,18 @@ function makePhotoTitle(photo) {
     "車両写真";
 }
 
+/*
+  撮影場所の表示順：
+  場所, 都市, 国
+*/
 function createLocationText(photo) {
   return [
-    photo.country,
+    photo.location,
     photo.city,
-    photo.location
+    photo.country
   ]
     .filter(Boolean)
-    .join("・") ||
+    .join(", ") ||
     "不明";
 }
 
