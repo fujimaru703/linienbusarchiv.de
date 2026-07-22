@@ -38,7 +38,7 @@ const photoList =
 
 let photos = [];
 
-fetch("data/photos.json")
+fetch("/data/photos.json")
   .then(response => {
     if (!response.ok) {
       throw new Error(
