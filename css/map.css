@@ -75,7 +75,7 @@ a:hover {
 }
 
 .nav-table td {
-  border: 2px outset #eee;
+  border: 2px outset #eeeeee;
   text-align: center;
 }
 
@@ -88,7 +88,7 @@ a:hover {
 }
 
 .nav-table a:hover {
-  color: #fff;
+  color: #ffffff;
   background: #000080;
 }
 
@@ -316,6 +316,11 @@ main {
 
 /* 広域表示の枚数マーカー */
 
+.area-div-icon {
+  border: none !important;
+  background: transparent !important;
+}
+
 .area-marker {
   display: grid;
   place-items: center;
@@ -407,13 +412,9 @@ main {
   display: block;
   padding: 5px;
   border: 2px outset #dddddd;
+  color: #111111;
   background: #eef4ff;
   text-decoration: none;
-}
-
-.photo-card:hover {
-  color: #ffffff;
-  background: #000080;
 }
 
 .photo-card img {
@@ -427,11 +428,34 @@ main {
 
 .photo-card strong {
   display: block;
+  line-height: 1.4;
+}
+
+.photo-card strong a {
+  color: #0000ee;
+  text-decoration: underline;
+}
+
+.photo-card strong a:visited {
+  color: #551a8b;
+}
+
+.photo-card strong a:hover {
+  color: #ff0000;
+  background: #ffff88;
 }
 
 .photo-card span {
   display: block;
+  color: #111111;
   font-size: 11px;
+  text-decoration: none;
+}
+
+/* 住所と撮影日には下線を付けない */
+.photo-card span:first-of-type,
+.photo-card span:last-of-type {
+  text-decoration: none;
 }
 
 .empty-message {
