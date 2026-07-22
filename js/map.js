@@ -303,21 +303,7 @@ function renderAreaMarkers(items) {
 ======================================== */
 
 function getPhotoMarkerSize() {
-  const isMobile =
-    window.innerWidth <= 600;
-
-  if (isMobile) {
-    return {
-      imageWidth: 44,
-      imageHeight: 27,
-      iconWidth: 48,
-      iconHeight: 27
-    };
-  }
-
   return {
-    imageWidth: 60,
-    imageHeight: 36,
     iconWidth: 64,
     iconHeight: 36
   };
@@ -341,13 +327,7 @@ function renderPhotoMarkers(items) {
       className: "photo-div-icon",
 
       html: `
-        <div
-          class="photo-marker"
-          style="
-            width: ${markerSize.imageWidth}px;
-            height: ${markerSize.imageHeight}px;
-          "
-        >
+        <div class="photo-marker">
           <img
             src="${escapeAttribute(thumbnail)}"
             alt="${escapeAttribute(
