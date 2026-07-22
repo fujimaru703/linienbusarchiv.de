@@ -289,10 +289,10 @@ main {
   width: 64px;
   height: 36px;
   overflow: hidden;
-  border: 3px solid #ffffff;
+  border: 2px solid #ffffff;
   outline: 2px solid #000080;
   background: #dddddd;
-  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.45);
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .photo-marker img {
