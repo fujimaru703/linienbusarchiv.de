@@ -1,5 +1,21 @@
 [
   {
+    "id": "kz-almaty-o405-001",
+    "country": "Kasachstan",
+    "city": "Almaty",
+    "location": "中心部",
+    "latitude": 43.2389,
+    "longitude": 76.8897,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O 405",
+    "production_year": 1990,
+    "photo_year": 2015,
+    "operator": "不明",
+    "thumbnail": "assets/sample-almaty.svg",
+    "image": "assets/sample-almaty.svg",
+    "detail_page": "vehicles/mb/o405-kz-001.html"
+  },
+  {
     "id": "de-berlin-o405n2-001",
     "country": "Deutschland",
     "city": "Berlin",
@@ -46,21 +62,5 @@
     "thumbnail": "assets/sample-muenchen.svg",
     "image": "assets/sample-muenchen.svg",
     "detail_page": "vehicles/mb/o405.html"
-  },
-  {
-    "id": "kz-almaty-o405-001",
-    "country": "Kasachstan",
-    "city": "Almaty",
-    "location": "中心部",
-    "latitude": 43.2389,
-    "longitude": 76.8897,
-    "manufacturer": "Mercedes-Benz",
-    "model": "O 405",
-    "production_year": 1990,
-    "photo_year": 2015,
-    "operator": "不明",
-    "thumbnail": "assets/sample-almaty.svg",
-    "image": "assets/sample-almaty.svg",
-    "detail_page": "vehicles/mb/o405-kz-001.html"
   }
 ]
