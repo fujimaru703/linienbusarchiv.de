@@ -8,30 +8,63 @@ html {
 
 body {
   margin: 0;
-  color: #111;
+  color: #111111;
   background-color: #d8d8d8;
   background-image:
-    linear-gradient(45deg, #c8c8c8 25%, transparent 25%),
-    linear-gradient(-45deg, #c8c8c8 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #c8c8c8 75%),
-    linear-gradient(-45deg, transparent 75%, #c8c8c8 75%);
+    linear-gradient(
+      45deg,
+      #c8c8c8 25%,
+      transparent 25%
+    ),
+    linear-gradient(
+      -45deg,
+      #c8c8c8 25%,
+      transparent 25%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 75%,
+      #c8c8c8 75%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 75%,
+      #c8c8c8 75%
+    );
   background-size: 8px 8px;
-  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
-  font-family: "MS PGothic", "ＭＳ Ｐゴシック", Arial, sans-serif;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+  font-family:
+    "MS PGothic",
+    "ＭＳ Ｐゴシック",
+    Arial,
+    sans-serif;
   font-size: 14px;
   line-height: 1.6;
 }
 
-a:link { color: #0000ee; }
-a:visited { color: #551a8b; }
-a:hover { color: #ff0000; background: #ffff88; }
+a:link {
+  color: #0000ee;
+}
+
+a:visited {
+  color: #551a8b;
+}
+
+a:hover {
+  color: #ff0000;
+  background: #ffff88;
+}
 
 .page {
   width: min(1060px, calc(100% - 10px));
   margin: 8px auto 24px;
   border: 3px ridge #ffffff;
   background: #ffffff;
-  box-shadow: 5px 5px 0 rgba(0,0,0,.35);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.35);
 }
 
 .top-strip {
@@ -59,9 +92,15 @@ a:hover { color: #ff0000; background: #ffff88; }
 
 .header h1 {
   margin: 0;
-  font: 900 clamp(30px, 7vw, 52px)/1 "Arial Black", Impact, sans-serif;
+  font:
+    900 clamp(30px, 7vw, 52px) / 1
+    "Arial Black",
+    Impact,
+    sans-serif;
   letter-spacing: -2px;
-  text-shadow: 2px 2px 0 #ffffff, 4px 4px 0 #999999;
+  text-shadow:
+    2px 2px 0 #ffffff,
+    4px 4px 0 #999999;
 }
 
 .header h1 a {
@@ -71,13 +110,55 @@ a:hover { color: #ff0000; background: #ffff88; }
 
 .header h1 span {
   color: #cc0000;
-  font-size: .48em;
+  font-size: 0.48em;
 }
 
 .subtitle {
   margin: 8px 0 0;
   color: #000080;
   font-weight: bold;
+}
+
+/* 共通メニュー */
+
+.main-menu {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0;
+  border-bottom: 3px double #000080;
+  background: #eeeeee;
+}
+
+.main-menu a {
+  display: block;
+  min-width: 130px;
+  padding: 7px 14px;
+  border-right: 1px solid #999999;
+  color: #000080;
+  background: #eeeeee;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+}
+
+.main-menu a:first-child {
+  border-left: 1px solid #999999;
+}
+
+.main-menu a:visited {
+  color: #000080;
+}
+
+.main-menu a:hover {
+  color: #ffffff;
+  background: #000080;
+}
+
+.main-menu a.current,
+.main-menu a.current:visited {
+  color: #ffffff;
+  background: #000080;
 }
 
 .breadcrumb {
@@ -106,9 +187,13 @@ main {
   margin: 0;
 }
 
+/* 絞り込み欄 */
+
 .map-toolbar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr))
+    auto;
   gap: 8px;
   margin: 12px 0 8px;
   padding: 8px;
@@ -142,6 +227,8 @@ main {
   cursor: pointer;
 }
 
+/* 地図 */
+
 .map-box {
   position: relative;
   border: 3px groove #cccccc;
@@ -161,8 +248,8 @@ main {
   transform: translateX(-50%);
   padding: 5px 9px;
   border: 1px solid #555555;
-  background: rgba(255,255,204,.95);
-  box-shadow: 2px 2px 0 rgba(0,0,0,.25);
+  background: rgba(255, 255, 204, 0.95);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
   font-weight: bold;
   pointer-events: none;
 }
@@ -171,6 +258,8 @@ main {
   display: none;
 }
 
+/* 写真マーカー */
+
 .photo-marker {
   width: 62px;
   height: 48px;
@@ -178,7 +267,7 @@ main {
   border: 3px solid #ffffff;
   outline: 2px solid #000080;
   background: #dddddd;
-  box-shadow: 3px 3px 3px rgba(0,0,0,.45);
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.45);
 }
 
 .photo-marker img {
@@ -187,6 +276,8 @@ main {
   height: 100%;
   object-fit: cover;
 }
+
+/* 広域表示の枚数マーカー */
 
 .area-marker {
   display: grid;
@@ -197,9 +288,14 @@ main {
   border-radius: 50%;
   color: #ffffff;
   background: #000080;
-  box-shadow: 2px 2px 3px rgba(0,0,0,.4);
-  font: bold 13px Arial, sans-serif;
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.4);
+  font:
+    bold 13px
+    Arial,
+    sans-serif;
 }
+
+/* ポップアップ */
 
 .popup-card {
   min-width: 220px;
@@ -235,6 +331,8 @@ main {
   text-decoration: none;
 }
 
+/* 写真一覧 */
+
 .result-box {
   margin-top: 10px;
   border: 2px groove #cccccc;
@@ -262,7 +360,8 @@ main {
 
 .photo-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
   gap: 7px;
   padding: 8px;
 }
@@ -283,7 +382,7 @@ main {
 .photo-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   margin-bottom: 4px;
   border: 1px solid #777777;
@@ -324,7 +423,24 @@ footer {
   font-size: 12px;
 }
 
+/* タブレット */
+
 @media (max-width: 760px) {
+  .main-menu {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .main-menu a {
+    min-width: 0;
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+  }
+
+  .main-menu a:first-child {
+    border-left: 0;
+  }
+
   .map-toolbar {
     grid-template-columns: 1fr 1fr;
   }
@@ -334,9 +450,12 @@ footer {
   }
 
   .photo-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 }
+
+/* スマートフォン */
 
 @media (max-width: 440px) {
   .map-toolbar {
