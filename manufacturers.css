@@ -51,6 +51,55 @@ a:hover {
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.35);
 }
 
+/* ========================================
+   共通グローバルメニュー
+======================================== */
+
+.global-menu {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  margin: 4px 4px 24px;
+  padding: 0;
+  border-top: 3px double #000080;
+  border-bottom: 1px solid #808080;
+  background: #cccccc;
+}
+
+.global-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 8px 4px;
+  border-top: 3px ridge #eeeeee;
+  border-right: 3px ridge #eeeeee;
+  border-bottom: 3px ridge #999999;
+  border-left: 3px ridge #eeeeee;
+  color: #000080;
+  background: #cccccc;
+  font-size: clamp(18px, 2.6vw, 32px);
+  font-weight: bold;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.global-menu a:visited {
+  color: #000080;
+}
+
+.global-menu a:hover {
+  color: #ffffff;
+  background: #000080;
+}
+
+/* 現在開いているページ */
+.global-menu a.current,
+.global-menu a.current:visited {
+  color: #ffffff;
+  background: #000080;
+}
+
 .top-strip {
   padding: 4px 8px;
   color: #ffffff;
