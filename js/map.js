@@ -310,20 +310,16 @@ function getPhotoMarkerSize() {
     return {
       imageWidth: 48,
       imageHeight: 27,
-
-      /* border 2px × 左右上下 */
-      iconWidth: 52,
-      iconHeight: 31
+      iconWidth: 48,
+      iconHeight: 27
     };
   }
 
   return {
     imageWidth: 64,
     imageHeight: 36,
-
-    /* border 2px × 左右上下 */
-    iconWidth: 68,
-    iconHeight: 40
+    iconWidth: 64,
+    iconHeight: 36
   };
 }
 
