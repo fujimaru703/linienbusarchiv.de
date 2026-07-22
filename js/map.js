@@ -328,10 +328,10 @@ function renderPhotoList(items) {
         </span>
 
         <span>
-          撮影年：
+          撮影日：
           ${escapeHtml(
             String(
-              photo.photo_year ||
+              photo.photo_date ||
               "不明"
             )
           )}
