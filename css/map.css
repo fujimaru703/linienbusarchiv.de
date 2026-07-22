@@ -297,8 +297,8 @@ main {
 
 .photo-marker img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 64px;
+  height: 36px;
   object-fit: cover;
 }
 
