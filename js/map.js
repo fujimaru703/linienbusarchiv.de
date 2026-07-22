@@ -316,7 +316,7 @@ function getPhotoMarkerSize() {
   }
 
   return {
-    imageWidth: 64,
+    imageWidth: 60,
     imageHeight: 36,
     iconWidth: 64,
     iconHeight: 36
