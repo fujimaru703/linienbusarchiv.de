@@ -27,8 +27,8 @@
     "production_year": 1997,
     "photo_date": 1999,
     "operator": "BVG",
-    "thumbnail": "assets/sample-berlin.svg",
-    "image": "assets/sample-berlin.svg",
+    "thumbnail": "/assets/hn-vb6027.JPG",
+    "image": "/assets/hn-vb6027.JPG",
     "detail_page": "vehicles/mb/o405n2.html"
   },
   {
@@ -43,8 +43,8 @@
     "production_year": 1993,
     "photo_date": 2002,
     "operator": "Hamburger Hochbahn",
-    "thumbnail": "assets/sample-hamburg.svg",
-    "image": "assets/sample-hamburg.svg",
+    "thumbnail": "/assets/hn-vb6027.JPG",
+    "image": "/assets/hn-vb6027.JPG",
     "detail_page": "vehicles/man/nl202.html"
   },
   {
@@ -59,8 +59,8 @@
     "production_year": 1988,
     "photo_date": 1996,
     "operator": "MVG",
-    "thumbnail": "assets/sample-muenchen.svg",
-    "image": "assets/sample-muenchen.svg",
+    "thumbnail": "/assets/hn-vb6027.JPG",
+    "image": "/assets/hn-vb6027.JPG",
     "detail_page": "vehicles/mb/o405.html"
   }
 ]
