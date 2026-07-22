@@ -452,6 +452,13 @@ main {
   text-decoration: none;
 }
 
+.photo-card .registration-number {
+  color: #333333;
+  font-size: 12px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
 /* 住所と撮影日には下線を付けない */
 .photo-card span:first-of-type,
 .photo-card span:last-of-type {
