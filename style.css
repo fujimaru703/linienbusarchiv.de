@@ -664,7 +664,14 @@
       .layout tbody,
       .layout tr,
       .layout td { display: block; width: 100%; }
-      .sidebar { border-right: 0; border-bottom: 1px solid #808080; }
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        display: block;
+        width: 100%;
+      }
       .nav-table { font-size: 11px; }
       .header h1 { letter-spacing: -1px; }
       .category-table,
