@@ -245,6 +245,10 @@ footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .header h1 {
+    letter-spacing: -1px;
+  }
+
   .nav-table {
     font-size: 11px;
   }
