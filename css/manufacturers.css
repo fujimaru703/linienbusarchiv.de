@@ -250,6 +250,10 @@ footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .nav-table {
+    font-size: 11px;
+  }
+
   .page-nav {
     flex-direction: column;
     text-align: center;
