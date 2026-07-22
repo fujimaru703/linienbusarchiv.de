@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Linienbusarchiv.de 地図から写真を探すページ"
+  >
+
+  <title>地図から探す | Linienbusarchiv.de</title>
+
+  <!-- Leafletの地図用CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
+
+  <!-- このページ専用のCSS -->
+  <link rel="stylesheet" href="css/map.css">
+</head>
+
+<body id="top">
+
+  <div class="page">
+
+    <div class="top-strip">
+      ◆◆◆ Linienbusarchiv.de Fotokarte ◆◆◆
+    </div>
+
+    <header class="header">
+
+      <h1>
+        <a href="index.html">
+          Linienbusarchiv<span>.de</span>
+        </a>
+      </h1>
+
+      <p class="subtitle">
+        ～ ドイツ路線バス資料館・個人運営 ～
+      </p>
+
+    </header>
+
+    <nav
+      class="breadcrumb"
+      aria-label="パンくずリスト"
+    >
+      <a href="index.html">HOME</a>
+      &gt;
+      地図から探す
+    </nav>
+
+    <main>
+
+      <section class="intro">
+
+        <h2>地図から写真を探す</h2>
+
+        <p>
+          地図を拡大すると、撮影位置に写真マーカーが表示されます。
+          写真をクリックすると、車種・撮影国・撮影地・撮影年などを確認できます。
+        </p>
+
+      </section>
+
+      <section
+        class="map-toolbar"
+        aria-label="地図の絞り込み"
+      >
+
+        <div>
+          <label for="countryFilter">
+            撮影国
+          </label>
+
+          <select id="countryFilter">
+            <option value="">
+              すべて
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="manufacturerFilter">
+            メーカー
+          </label>
+
+          <select id="manufacturerFilter">
+            <option value="">
+              すべて
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="modelFilter">
+            車種
+          </label>
+
+          <select id="modelFilter">
+            <option value="">
+              すべて
+            </option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          id="resetButton"
+        >
+          条件を解除
+        </button>
+
+      </section>
+
+      <section class="map-box">
+
+        <div
+          id="map"
+          aria-label="バス写真の撮影位置を表示する地図"
+        ></div>
+
+        <div
+          class="zoom-message"
+          id="zoomMessage"
+        >
+          地図を拡大すると写真が表示されます
+        </div>
+
+      </section>
+
+      <section class="result-box">
+
+        <h2>表示中の写真</h2>
+
+        <p>
+          <b id="resultCount">0</b>
+          枚
+
+          <span class="small">
+            （現在の地図範囲と絞り込み条件に一致）
+          </span>
+        </p>
+
+        <div
+          id="photoList"
+          class="photo-list"
+        ></div>
+
+      </section>
+
+      <div class="page-nav">
+
+        <a href="index.html">
+          ← トップページへ戻る
+        </a>
+
+        <a href="#top">
+          ▲ ページ上部へ
+        </a>
+
+      </div>
+
+    </main>
+
+    <footer>
+
+      地図データ © OpenStreetMap contributors
+
+      <br>
+
+      Copyright &copy; 2026 Linienbusarchiv.de
+
+    </footer>
+
+  </div>
+
+  <!-- Leafletの地図用JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- このページ専用のJavaScript -->
+  <script src="js/map.js"></script>
+
+</body>
+</html>
