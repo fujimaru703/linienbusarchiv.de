@@ -513,10 +513,10 @@ function renderPhotoList(items) {
           </strong>
           
           <span class="registration-number">
-  ${escapeHtml(
-    photo.id || "登録番号不明"
-  )}
-</span>
+            ${escapeHtml(
+            photo.id || "登録番号不明"
+            )}
+          </span>
 
           <span>
             ${escapeHtml(
