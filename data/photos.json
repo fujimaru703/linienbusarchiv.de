@@ -13,7 +13,7 @@
     "operator": "Stadtwerke Heilbronn GmbH",
     "thumbnail": "/assets/hn-vb6027.JPG",
     "image": "/assets/hn-vb6027.JPG",
-    "detail_page": "vehicles/mb/hn-vb6027.html"
+    "detail_page": "/vehicles/mb/hn-vb6027.html"
   },
   {
     "id": "LJ LPP-417",
@@ -29,7 +29,7 @@
     "operator": "Ljubljanski potniški promet d.o.o.",
     "thumbnail": "/assets/ljlpp-417.JPG",
     "image": "/assets/ljlpp-417.JPG",
-    "detail_page": "vehicles/man/ljlpp-417.html"
+    "detail_page": "/vehicles/man/ljlpp-417.html"
   },
   {
     "id": "de-hamburg-nl202-001",
