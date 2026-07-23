@@ -32,20 +32,20 @@
     "detail_page": "/vehicles/man/ljlpp-417.html"
   },
   {
-    "id": "de-hamburg-nl202-001",
-    "country": "Deutschland",
+    "id": "HH-WV 502H",
+    "country": "Germany",
     "city": "Hamburg",
-    "location": "Hauptbahnhof",
-    "latitude": 53.5527,
-    "longitude": 10.0067,
-    "manufacturer": "MAN",
-    "model": "NL 202",
-    "production_year": 1993,
-    "photo_date": 2002,
-    "operator": "Hamburger Hochbahn",
-    "thumbnail": "/assets/hn-vb6027.JPG",
-    "image": "/assets/hn-vb6027.JPG",
-    "detail_page": "vehicles/man/nl202.html"
+    "location": "Prielstraße",
+    "latitude": 53.5296,
+    "longitude": 10.0224,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405N",
+    "production_year": 1994,
+    "photo_date": "2026.03.29,
+    "operator": "Hamburger Omnibus Verein e.V.",
+    "thumbnail": "/assets/hh-wv502h.JPG",
+    "image": "/assets/hh-wv502h.JPG",
+    "detail_page": "vehicles/mb/hh-wv502h.html"
   },
   {
     "id": "de-muenchen-o405-001",
