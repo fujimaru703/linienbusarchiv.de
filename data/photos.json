@@ -49,8 +49,8 @@
   },
   {
     "id": "STD-P 2217",
-    "country": "Germany",
-    "city": "Beverstedt",
+    "country": "Kazakhstan",
+    "city": "Kostanay",
     "location": "Schulstraße",
     "latitude": 53.4353,
     "longitude": 8.8177,
@@ -63,4 +63,24 @@
     "image": "/assets/std-p2217.JPG",
     "detail_page": "vehicles/mb/std-p2217.html"
   }
+  {
+    "id": "161 BA 10",
+    "id": "
+    "operator": "Stadtwerke Heilbronn GmbH",
+    "thumbnail": "/assets/hn-vb6027.JPG",
+    "image": "/assets/hn-vb6027.",
+    "country": "Germany",
+    "city": "Heilbronn",
+    "location": "Am Wollhaus",
+    "latitude": 49.1396,
+    "longitude": 9.2210,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405",
+    "production_year": 1997,
+    "photo_date": "2026.01.24",
+    "operator": "Stadtwerke Heilbronn GmbH",
+    "thumbnail": "/assets/hn-vb6027.JPG",
+    "image": "/assets/hn-vb6027.JPG",
+    "detail_page": "/vehicles/mb/hn-vb6027.html"
+  },
 ]
