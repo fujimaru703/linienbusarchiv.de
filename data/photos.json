@@ -62,7 +62,7 @@
     "thumbnail": "/assets/std-p2217.JPG",
     "image": "/assets/std-p2217.JPG",
     "detail_page": "vehicles/mb/std-p2217.html"
-  }
+  },
   {
     "id": "161 BA 10",
     "country": "Kazakhstan",
@@ -78,5 +78,5 @@
     "thumbnail": "/assets/161ba10.jpg",
     "image": "/assets/161ba10.jpg",
     "detail_page": "/vehicles/man/161ba10.html"
-  },
+  }
 ]
