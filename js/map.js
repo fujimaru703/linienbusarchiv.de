@@ -2,8 +2,8 @@
    Linienbusarchiv.de 地図ページ
 ======================================== */
 
-const AREA_ZOOM = 6;
-const PHOTO_ZOOM = 10;
+const AREA_ZOOM = 4;
+const PHOTO_ZOOM = 8;
 
 /* 地図を作成 */
 const map = L.map("map", {
