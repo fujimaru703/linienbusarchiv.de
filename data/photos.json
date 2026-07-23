@@ -78,5 +78,21 @@
     "thumbnail": "/assets/161ba10.jpg",
     "image": "/assets/161ba10.jpg",
     "detail_page": "/vehicles/man/161ba10.html"
+  },
+  {
+    "id": "С 253 СА 190",
+    "country": "Russia",
+    "city": "Moscow",
+    "location": "Улица Островная",
+    "latitude": 55.7516,
+    "longitude": 37.4389,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405G",
+    "production_year": 1994,
+    "photo_date": "2026.04.03",
+    "operator": "ООО «Автобат»",
+    "thumbnail": "/assets/с253са190.jpg",
+    "image": "/assets/с253са190.jpg",
+    "detail_page": "/vehicles/mb/с253са190.html"
   }
 ]
