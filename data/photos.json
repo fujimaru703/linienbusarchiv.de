@@ -94,5 +94,22 @@
     "thumbnail": "/assets/с253са190.jpg",
     "image": "/assets/с253са190.jpg",
     "detail_page": "/vehicles/mb/с253са190.html"
+  },
+  {
+    "id": "Н 713 КХ 48",
+    "country": "Russia",
+    "city": "Lipetsk",
+    "location": "Площадь Мира",
+    "latitude": 52.5908,
+    "longitude": 39.6152,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O407",
+    "production_year": 1995,
+    "photo_date": "2026.06.29",
+    "operator": "ООО «ТрансСфера»",
+    "thumbnail": "/assets/н713кх48.jpg",
+    "image": "/assets/н713кх48.jpg",
+    "detail_page": "/vehicles/mb/н713кх48.html"
   }
+  
 ]
