@@ -2,6 +2,7 @@
    Linienbusarchiv.de 地図ページ
 ======================================== */
 
+const AREA_ZOOM = 6;
 const PHOTO_ZOOM = 10;
 
 /* 地図を作成 */
@@ -179,6 +180,9 @@ function filteredPhotos() {
   });
 }
 
+/*
+ * 現在表示されている地図範囲内の写真だけ取得
+ */
 function visiblePhotos() {
   const bounds = map.getBounds();
 
@@ -195,6 +199,9 @@ function visiblePhotos() {
 ======================================== */
 
 function render() {
+  /*
+   * 前回作成したマーカーを削除
+   */
   markerLayer.clearLayers();
 
   const currentPhotos =
@@ -203,8 +210,37 @@ function render() {
   const zoom =
     map.getZoom();
 
+  /*
+   * ズーム6未満
+   * 負荷防止のため何も表示しない
+   */
+  if (zoom < AREA_ZOOM) {
+    if (zoomMessage) {
+      zoomMessage.textContent =
+        "地図を拡大すると登録写真が表示されます。";
+
+      zoomMessage.classList.remove(
+        "hidden"
+      );
+    }
+
+    renderPhotoList(
+      [],
+      "地図を拡大すると写真一覧が表示されます。"
+    );
+
+    return;
+  }
+
+  /*
+   * ズーム6～9
+   * 地域ごとの枚数マーカーだけ表示する
+   */
   if (zoom < PHOTO_ZOOM) {
     if (zoomMessage) {
+      zoomMessage.textContent =
+        "さらに拡大すると写真が表示されます。";
+
       zoomMessage.classList.remove(
         "hidden"
       );
@@ -213,20 +249,42 @@ function render() {
     renderAreaMarkers(
       currentPhotos
     );
-  } else {
-    if (zoomMessage) {
-      zoomMessage.classList.add(
-        "hidden"
-      );
-    }
 
-    renderPhotoMarkers(
-      currentPhotos
+    renderPhotoList(
+      [],
+      "さらに地図を拡大すると写真一覧が表示されます。"
+    );
+
+    return;
+  }
+
+  /*
+   * ズーム10以上
+   */
+  if (zoomMessage) {
+    zoomMessage.classList.add(
+      "hidden"
     );
   }
 
+  /*
+   * 表示中の地図範囲にある写真だけ取得
+   */
+  const currentVisiblePhotos =
+    visiblePhotos();
+
+  /*
+   * 地図範囲内の写真だけマーカー化
+   */
+  renderPhotoMarkers(
+    currentVisiblePhotos
+  );
+
+  /*
+   * 地図範囲内の写真だけ一覧表示
+   */
   renderPhotoList(
-    visiblePhotos()
+    currentVisiblePhotos
   );
 }
 
@@ -290,7 +348,9 @@ function renderAreaMarkers(items) {
       { icon }
     )
       .bindTooltip(
-        `${escapeHtml(first.city || "不明")}：${group.length}枚`
+        `${escapeHtml(
+          first.city || "不明"
+        )}：${group.length}枚`
       )
       .on("click", () => {
         map.setView(
@@ -337,6 +397,8 @@ function renderPhotoMarkers(items) {
             alt="${escapeAttribute(
               makePhotoTitle(photo)
             )}"
+            loading="lazy"
+            decoding="async"
           >
         </div>
       `,
@@ -400,6 +462,8 @@ function createPopupHtml(photo) {
       <img
         src="${escapeAttribute(image)}"
         alt="${escapeAttribute(title)}"
+        loading="lazy"
+        decoding="async"
       >
 
       <h3>
@@ -464,7 +528,11 @@ function createPopupHtml(photo) {
    地図下部の写真一覧
 ======================================== */
 
-function renderPhotoList(items) {
+function renderPhotoList(
+  items,
+  emptyMessage =
+    "現在の地図範囲には該当する写真がありません。"
+) {
   if (resultCount) {
     resultCount.textContent =
       String(items.length);
@@ -477,7 +545,7 @@ function renderPhotoList(items) {
   if (!items.length) {
     photoList.innerHTML = `
       <p class="empty-message">
-        現在の地図範囲には該当する写真がありません。
+        ${escapeHtml(emptyMessage)}
       </p>
     `;
 
@@ -504,6 +572,7 @@ function renderPhotoList(items) {
             src="${escapeAttribute(thumbnail)}"
             alt="${escapeAttribute(title)}"
             loading="lazy"
+            decoding="async"
           >
 
           <strong>
@@ -511,10 +580,10 @@ function renderPhotoList(items) {
               ${escapeHtml(title)}
             </a>
           </strong>
-          
+
           <span class="registration-number">
             ${escapeHtml(
-            photo.id || "登録番号不明"
+              photo.id || "登録番号不明"
             )}
           </span>
 
@@ -553,9 +622,9 @@ function makePhotoTitle(photo) {
 }
 
 /*
-  撮影場所の表示順：
-  場所, 都市, 国
-*/
+ * 撮影場所の表示順：
+ * 場所, 都市, 国
+ */
 function createLocationText(photo) {
   return [
     photo.location,
