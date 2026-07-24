@@ -110,6 +110,22 @@
     "thumbnail": "/assets/н713кх48.JPG",
     "image": "/assets/н713кх48.JPG",
     "detail_page": "/vehicles/mb/н713кх48.html"
+  },
+  {
+    "id": "329 AX 10",
+    "country": "Kazakhstan",
+    "city": "Kostanay",
+    "location": "Площадь Мира",
+    "latitude": 52.5908,
+    "longitude": 39.6152,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405",
+    "production_year": 1994,
+    "photo_date": "2025.09.06",
+    "operator": "	ТОО «Компания STA»",
+    "thumbnail": "/assets/329аx10.JPG",
+    "image": "/assets/329аx10.JPG",
+    "detail_page": "/vehicles/mb/329аx10.html"
   }
   
 ]
