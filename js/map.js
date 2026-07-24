@@ -9,7 +9,7 @@ const PHOTO_ZOOM = 7;
 const map = L.map("map", {
   minZoom: 3,
   maxZoom: 18
-}).setView([51.0, 10.0], 5);
+}).setView([51.0, 40.0], 2);
 
 /* OpenStreetMapを表示 */
 L.tileLayer(
