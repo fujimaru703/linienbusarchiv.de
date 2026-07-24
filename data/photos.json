@@ -126,6 +126,22 @@
     "thumbnail": "/assets/329аx10.JPG",
     "image": "/assets/329аx10.JPG",
     "detail_page": "/vehicles/mb/329аx10.html"
+  },
+  {
+    "id": "К 473 ВА 122"
+    "country": "Russia",
+    "city": "Barnaul",
+    "location": "Улится Ползунова",
+    "latitude": 53.3305,
+    "longitude": 83.7894,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405N2",
+    "production_year": 1998,
+    "photo_date": "2025.09.11",
+    "operator": "ООО «Вега-Транс»",
+    "thumbnail": "/assets/к473ва122.JPG",
+    "image": "/assets/к473ва122.JPG",
+    "detail_page": "/vehicles/mb/к473ва122.html"
   }
   
 ]
