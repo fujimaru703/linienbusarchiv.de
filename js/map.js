@@ -52,7 +52,7 @@ let photos = [];
    JSON読み込み
 ======================================== */
 
-fetch("/data/photos.json")
+fetch("/js/photos.json")
   .then(response => {
     if (!response.ok) {
       throw new Error(
@@ -568,17 +568,21 @@ function renderPhotoList(
       return `
         <div class="photo-card">
 
-          <img
-            src="${escapeAttribute(thumbnail)}"
-            alt="${escapeAttribute(title)}"
-            loading="lazy"
-            decoding="async"
+          <a
+            class="photo-image-link"
+            href="${escapeAttribute(detailPage)}"
+            aria-label="${escapeAttribute(title)}の車両ページを開く"
           >
+            <img
+              src="${escapeAttribute(thumbnail)}"
+              alt="${escapeAttribute(title)}"
+              loading="lazy"
+              decoding="async"
+            >
+          </a>
 
-          <strong>
-            <a href="${escapeAttribute(detailPage)}">
-              ${escapeHtml(title)}
-            </a>
+          <strong class="photo-title">
+            ${escapeHtml(title)}
           </strong>
 
           <span class="registration-number">
