@@ -431,19 +431,8 @@ main {
   line-height: 1.4;
 }
 
-.photo-card strong a {
-  color: #0000ee;
-  text-decoration: underline;
-}
 
-.photo-card strong a:visited {
-  color: #551a8b;
-}
 
-.photo-card strong a:hover {
-  color: #ff0000;
-  background: #ffff88;
-}
 
 .photo-card span {
   display: block;
@@ -550,4 +539,39 @@ footer {
     flex-direction: column;
     text-align: center;
   }
+}
+
+/* ========================================
+   写真一覧：写真だけをリンクにする
+======================================== */
+
+.photo-image-link {
+  display: block;
+  margin: 0 0 4px;
+  padding: 0;
+  background: transparent;
+  text-decoration: none;
+}
+
+.photo-image-link:hover {
+  background: transparent;
+}
+
+.photo-image-link img {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+.photo-title {
+  display: block;
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: default;
+}
+
+/* カード全体はリンクではないため、ホバー反転をさせない */
+.photo-card:hover {
+  color: #111111;
+  background: #eef4ff;
 }
