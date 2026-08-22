@@ -13,10 +13,11 @@ const map = L.map("map", {
 
 /* OpenStreetMapを表示 */
 L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
   {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors"
+    maxZoom: 20,
+    attribution:
+      '&copy; OpenStreetMap contributors &copy; CARTO'
   }
 ).addTo(map);
 
