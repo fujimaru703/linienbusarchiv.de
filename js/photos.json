@@ -142,5 +142,21 @@
     "thumbnail": "/assets/к473ва122.JPG",
     "image": "/assets/к473ва122.JPG",
     "detail_page": "/vehicles/mercedes-benz/o405n2/к473ва122/"
+  },
+  {
+    "id": "01-786-IM",
+    "country": "コソボ",
+    "city": "Pristina",
+    "location": "Rr Eqrem Çabej",
+    "latitude": 42.6550,
+    "longitude": 21.1630,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405NKF",
+    "production_year": 1998,
+    "photo_date": "2026.09.03",
+    "operator": "Qendra Sh.p.k",
+    "thumbnail": "/assets/01-786-im.JPG",
+    "image": "/assets/01-786-im.JPG",
+    "detail_page": "/vehicles/mercedes-benz/o405/01786im/"
   }
 ]
