@@ -144,6 +144,22 @@
     "detail_page": "/vehicles/mercedes-benz/o405n2/к473ва122/"
   },
   {
+    "id": "Р 011 РУ 33",
+    "country": "ロシア",
+    "city": "Vladimir",
+    "location": "улица Чайковского",
+    "latitude": 56.1321,
+    "longitude": 40.3587,
+    "manufacturer": "Mercedes-Benz",
+    "model": "O405N2",
+    "production_year": 1998,
+    "photo_date": "2025.09.11",
+    "operator": "ООО «РТС»",
+    "thumbnail": "/assets/р011ру23.JPG",
+    "image": "/assets/р011ру23.JPG",
+    "detail_page": "/vehicles/mercedes-benz/o405n2/р011ру23/"
+  },
+  {
     "id": "01-786-IM",
     "country": "コソボ",
     "city": "Pristina",
