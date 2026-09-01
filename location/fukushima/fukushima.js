@@ -12,6 +12,10 @@
     const VEHICLE_POSITION_URL =
       "https://morning-sun-eb88.fujimaru703.workers.dev/";
 
+    // 非営業・回送車両用 GAS Web API
+    const GAS_FALLBACK_URL =
+      "https://script.google.com/macros/s/AKfycbyOyXgfURN7CXy4kmBp1iVjagqqmMB8rB7JCFp_h9a-6E2iijgaxfaVaEpW-IC14Z-U/exec";
+
     const UPDATE_INTERVAL = 15000;
 
     // バスロケ表示時間:
@@ -102,6 +106,7 @@
 
     let tripDelays = Object.create(null);
     let latestVehicles = [];
+    let fallbackVehicles = [];
     let staticGtfsLoaded = false;
     let updateRunning = false;
     let selectedTripId = null;
@@ -695,8 +700,32 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return window.nowSec >= window.startSec && window.nowSec <= window.endSec;
     }
 
+    // fallbackは
+    // ・通常のバスロケ運行時間中
+    // ・その日の最終便終了後～24:00
+    // ・00:00～03:59
+    // に動かす。
+    //
+    // 04:00～その日の運行開始前はGASも呼ばない。
+    function isFallbackLocationOperating() {
+      const nowParts = japanNowParts();
+      const hour = Math.floor(nowParts.seconds / 3600);
+
+      if (hour < 4) return true;
+
+      const window = getTodayServiceWindow();
+      if (!window) return true;
+
+      if (window.nowSec >= window.startSec && window.nowSec <= window.endSec) {
+        return true;
+      }
+
+      return window.nowSec > window.endSec;
+    }
+
     function clearRealtimeDisplayForOffHours() {
       latestVehicles = [];
+      fallbackVehicles = [];
       tripDelays = Object.create(null);
       selectedTripId = null;
 
@@ -815,14 +844,86 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           tripId: cleanId(v?.trip?.tripId),
           routeId: cleanId(v?.trip?.routeId),
           seq: Number(v?.currentStopSequence),
+
+          // Cloudflareのlabel = Bus-Vision側vehicleCd
           label: cleanId(v?.vehicle?.label) || "?",
+
           lat,
           lon,
-          bearing: Number(p.bearing)
+          bearing: Number(p.bearing),
+          isFallback: false
         });
       }
 
       latestVehicles = vehicles;
+    }
+
+
+    // =========================================================
+    // GAS fallback
+    // =========================================================
+    async function loadFallbackVehicles() {
+
+      if (!isFallbackLocationOperating()) {
+        fallbackVehicles = [];
+        return;
+      }
+
+      // Cloudflareに現在出ている車両はGAS側で除外する。
+      const activeVehicleCds = latestVehicles
+        .map(v => cleanId(v.label))
+        .filter(Boolean);
+
+      const url =
+        GAS_FALLBACK_URL +
+        "?active=" +
+        encodeURIComponent(activeVehicleCds.join(","));
+
+      const data = await fetchJson(url);
+
+      if (!data?.success) {
+        throw new Error(data?.error || "GAS fallback API error");
+      }
+
+      const vehicles = [];
+
+      for (const v of data.vehicles || []) {
+        const lat = Number(v?.latitude);
+        const lon = Number(v?.longitude);
+        const vehicleCd = cleanId(v?.vehicleCd);
+
+        if (!vehicleCd) continue;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+        vehicles.push({
+          tripId: "",
+          routeId: "",
+          seq: NaN,
+
+          // vehicleCdをそのまま車番表示に使用
+          label: vehicleCd,
+
+          lat,
+          lon,
+          bearing: 0,
+
+          isFallback: true,
+          fallbackRoute: cleanId(v?.route) || "路線名不明",
+          fallbackDestination: cleanId(v?.destination) || "行先不明",
+          fallbackTerminalTime: cleanId(v?.terminalTime),
+          positionAge: Number(v?.positionAge)
+        });
+      }
+
+      fallbackVehicles = vehicles;
+    }
+
+
+    function displayedVehicles() {
+      return [
+        ...latestVehicles,
+        ...fallbackVehicles
+      ];
     }
 
     // =========================================================
@@ -851,10 +952,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     function vehicleGeoJson() {
       vehicleFeaturesByTrip.clear();
 
-      const features = latestVehicles.map((v, idx) => {
-        const delay = getDelayForVehicle(v);
-        const routeName = routeNames[v.routeId] || "路線名不明";
-        const headsign = tripHeadsigns[v.tripId] || "行先不明";
+      const features = displayedVehicles().map((v, idx) => {
+        const delay = v.isFallback ? 0 : getDelayForVehicle(v);
+        const routeName = v.isFallback
+          ? (v.fallbackRoute || "路線名不明")
+          : (routeNames[v.routeId] || "路線名不明");
+        const headsign = v.isFallback
+          ? (v.fallbackDestination || "行先不明")
+          : (tripHeadsigns[v.tripId] || "行先不明");
 
         const f = {
           type: "Feature",
@@ -870,13 +975,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             headsign,
             label: v.label,
             delay,
-            delayText: formatDelay(delay),
+            delayText: v.isFallback ? "非営業" : formatDelay(delay),
             iconKey: v.label,
-            bearing: Number.isFinite(v.bearing) ? v.bearing : 0
+            bearing: Number.isFinite(v.bearing) ? v.bearing : 0,
+            isFallback: v.isFallback ? 1 : 0,
+            terminalTime: v.fallbackTerminalTime || "",
+            positionAge: Number.isFinite(v.positionAge) ? v.positionAge : -1
           }
         };
 
-        if (v.tripId) vehicleFeaturesByTrip.set(v.tripId, f);
+        if (!v.isFallback && v.tripId) {
+          vehicleFeaturesByTrip.set(v.tripId, f);
+        }
         return f;
       });
 
@@ -1135,6 +1245,35 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
 
       panel.replaceChildren(head, route, destination);
+
+      if (Number(vehicleProperties.isFallback) === 1) {
+        const nextBox = document.createElement("div");
+        nextBox.className = "vip-next";
+
+        const label = document.createElement("div");
+        label.className = "vip-next-label";
+        label.textContent = "直前の運行";
+
+        const name = document.createElement("div");
+        name.className = "vip-next-name";
+
+        const terminalTime = vehicleProperties.terminalTime || "";
+        name.textContent = terminalTime
+          ? `終着 ${terminalTime}`
+          : "終着時刻不明";
+
+        const status = document.createElement("div");
+        status.className = "vip-time";
+
+        const age = Number(vehicleProperties.positionAge);
+        status.textContent =
+          Number.isFinite(age) && age >= 0
+            ? `非営業・位置 ${age}秒前`
+            : "非営業";
+
+        nextBox.append(label, name, status);
+        panel.appendChild(nextBox);
+      }
 
       if (next) {
         const nextBox = document.createElement("div");
@@ -1484,12 +1623,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         e.originalEvent.cancelBubble = true;
 
         const p = f.properties || {};
-        selectedTripId = p.tripId || null;
 
         map.getSource("selected-vehicle").setData({
           type: "FeatureCollection",
           features: [JSON.parse(JSON.stringify(f))]
         });
+
+        // fallback車両には現在のGTFS trip_idが無いので、
+        // 直前便の情報だけパネル表示してルート・停留所は出さない。
+        if (Number(p.isFallback) === 1) {
+          selectedTripId = null;
+          clearSelectedStopNameMarkers();
+          map.getSource("selected-route").setData(emptyFeatureCollection());
+          map.getSource("selected-stops").setData(emptyFeatureCollection());
+          showVehicleInfoPanel(p, NaN);
+          return;
+        }
+
+        selectedTripId = p.tripId || null;
 
         const current = latestVehicles.find(v => v.tripId === selectedTripId);
         const seq = Number(current?.seq);
@@ -1601,9 +1752,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     async function updateRealtime() {
       if (updateRunning) return;
 
-      // 運行時間外はWorkerを一切呼ばない。
-      // 判定自体はブラウザ内のGTFSデータだけで行う。
-      if (!isBusLocationOperating()) {
+      const normalOperating = isBusLocationOperating();
+      const fallbackOperating = isFallbackLocationOperating();
+
+      // 04:00～始発前など、通常位置もfallbackも不要な時間帯。
+      if (!normalOperating && !fallbackOperating) {
         showOutOfService();
         return;
       }
@@ -1614,16 +1767,42 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       setLoading(true, 68);
 
       try {
-        await Promise.all([
-          loadDelays(),
-          loadVehicles()
-        ]);
 
-        await ensureVehicleIcons(latestVehicles);
+        if (normalOperating) {
+          // 通常運行時間中:
+          // CloudflareのGTFS-RTを先に取得する。
+          await Promise.all([
+            loadDelays(),
+            loadVehicles()
+          ]);
+        } else {
+          // 最終便終了後～04:00:
+          // Cloudflare Workerは呼ばない。
+          latestVehicles = [];
+          tripDelays = Object.create(null);
+        }
+
+        // active車両一覧をGASへ渡し、
+        // Cloudflareにいない車両だけfallback位置を取得する。
+        if (fallbackOperating) {
+          try {
+            await loadFallbackVehicles();
+          } catch (fallbackError) {
+            // GASだけ失敗しても通常の営業車表示は維持する。
+            console.error("fallback取得失敗:", fallbackError);
+            fallbackVehicles = [];
+          }
+        } else {
+          fallbackVehicles = [];
+        }
+
+        const allVehicles = displayedVehicles();
+
+        await ensureVehicleIcons(allVehicles);
         map.getSource("vehicles").setData(vehicleGeoJson());
-        updateVehicleNumberMarkers(latestVehicles);
+        updateVehicleNumberMarkers(allVehicles);
 
-        // 選択中の便だけルート/停留所を更新
+        // 選択中の通常便だけルート/停留所を更新
         if (selectedTripId) {
           const current = latestVehicles.find(v => v.tripId === selectedTripId);
 
@@ -1661,7 +1840,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         document.getElementById("readableTimestamp").textContent =
           new Date().toLocaleString("ja-JP");
 
-        status.textContent = `LIVE  ${latestVehicles.length}台運行中`;
+        if (normalOperating) {
+          status.textContent =
+            `LIVE  ${latestVehicles.length}台運行中` +
+            (fallbackVehicles.length
+              ? ` / 非営業 ${fallbackVehicles.length}台`
+              : "");
+        } else {
+          status.textContent =
+            fallbackVehicles.length
+              ? `非営業車両 ${fallbackVehicles.length}台`
+              : "現在は営業運行終了後です";
+        }
+
       } catch (e) {
         console.error(e);
         status.textContent = "リアルタイムデータ取得失敗";
