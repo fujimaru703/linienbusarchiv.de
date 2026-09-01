@@ -112,15 +112,27 @@
         font-size: 10px;
       }
 
+      /* スマホでは親tableのoverflowに影響されないよう画面基準で表示 */
       .busloc-menu {
-        left: 50%;
-        transform: translateX(-50%);
-        min-width: min(92vw, 330px);
+        position: fixed !important;
+        top: var(--busloc-top, 60px) !important;
+        left: 8px !important;
+        right: 8px !important;
+        transform: none !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        max-height: calc(100dvh - var(--busloc-top, 60px) - 12px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        z-index: 99999 !important;
+        border-radius: 8px;
       }
 
       .nav-table .busloc-menu a {
-        padding: 11px 12px !important;
+        padding: 12px 12px !important;
         font-size: 12px !important;
+        white-space: normal !important;
       }
     }
 
@@ -334,7 +346,16 @@
 
     toggle.addEventListener('click', (event) => {
       event.stopPropagation();
-      setOpen(!dropdown.classList.contains('open'));
+
+      const willOpen = !dropdown.classList.contains('open');
+
+      if (willOpen && window.matchMedia('(max-width: 700px)').matches) {
+        const rect = toggle.getBoundingClientRect();
+        const top = Math.min(rect.bottom + 4, window.innerHeight - 80);
+        dropdown.style.setProperty('--busloc-top', `${top}px`);
+      }
+
+      setOpen(willOpen);
     });
 
     document.addEventListener('click', (event) => {
