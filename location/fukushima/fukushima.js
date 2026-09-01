@@ -67,15 +67,13 @@
     let activeVehiclePopup = null;
     let realtimeTimer = null;
     let vehicleFeaturesByTrip = new Map();
+    let selectedStopNameMarkers = [];
 
     const labelIconMap = new Map();
-const labelergaev = ['7704','7705','7706'];
-labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+    label290.forEach(label => labelIconMap.set(label, 'icon/290.png'));
 
-const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
-label290.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
-
-const label557 = ['0557','2411','2412','2408'];
+	const label557 = ['0557','2411','2412','2408'];
 label557.forEach(label => labelIconMap.set(label, 'icon/557&2411.png'));
 
 const label600 = ['8181'];
@@ -599,6 +597,67 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
     }
 
+    function clearSelectedStopNameMarkers() {
+      for (const marker of selectedStopNameMarkers) {
+        marker.remove();
+      }
+      selectedStopNameMarkers = [];
+    }
+
+    function renderSelectedStopNameMarkers(tripId, currentSeq) {
+      clearSelectedStopNameMarkers();
+
+      const stops = getFutureStopsInfo(tripId, currentSeq);
+
+      for (const stop of stops) {
+        const detail = stopDetails[stop.stopId];
+        if (!detail) continue;
+
+        const el = document.createElement("div");
+        el.style.pointerEvents = "none";
+        el.style.whiteSpace = "nowrap";
+        el.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', sans-serif";
+        el.style.lineHeight = "1.12";
+
+        const name = document.createElement("div");
+        name.textContent = stop.name;
+        name.style.fontSize = "11px";
+        name.style.fontWeight = "800";
+        name.style.color = "#17232b";
+        name.style.textShadow =
+          "-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 3px #fff";
+
+        const meta = document.createElement("div");
+        meta.style.marginTop = "2px";
+        meta.style.fontSize = "9px";
+        meta.style.fontWeight = "700";
+        meta.style.textShadow =
+          "-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 3px #fff";
+
+        const time = document.createElement("span");
+        time.textContent = stop.scheduledText;
+        time.style.color = "#56636c";
+
+        const status = document.createElement("span");
+        status.textContent = ` ${stop.delayText}`;
+        status.style.color = stop.delay < 60 ? "#16834b" : "#d93025";
+        status.style.fontWeight = "900";
+
+        meta.append(time, status);
+        el.append(name, meta);
+
+        const marker = new maplibregl.Marker({
+          element: el,
+          anchor: "left",
+          offset: [9, 0]
+        })
+          .setLngLat([detail.lon, detail.lat])
+          .addTo(map);
+
+        selectedStopNameMarkers.push(marker);
+      }
+    }
+
     function emptyFeatureCollection() {
       return {
         type: "FeatureCollection",
@@ -770,32 +829,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       });
 
       map.addLayer({
-        id: "selected-stops-label",
-        type: "symbol",
-        source: "selected-stops",
-        minzoom: 9,
-        layout: {
-          "text-field": ["get", "name"],
-          "text-size": [
-            "interpolate", ["linear"], ["zoom"],
-            9, 10,
-            13, 11,
-            17, 12
-          ],
-          "text-anchor": "left",
-          "text-offset": [0.8, -0.2],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-          "text-optional": false
-        },
-        paint: {
-          "text-color": "#111111",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2
-        }
-      });
-
-      map.addLayer({
         id: "selected-vehicle-halo",
         type: "circle",
         source: "selected-vehicle",
@@ -810,69 +843,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "circle-stroke-color": "rgba(23,105,170,0.82)",
           "circle-stroke-width": 3,
           "circle-blur": 0.15
-        }
-      });
-
-      map.addLayer({
-        id: "selected-stops-scheduled",
-        type: "symbol",
-        source: "selected-stops",
-        minzoom: 10,
-        layout: {
-          "text-field": ["get", "scheduledText"],
-          "text-size": 10,
-          "text-anchor": "left",
-          "text-offset": [0.8, 1.0],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-          "text-optional": false
-        },
-        paint: {
-          "text-color": "#5f6b73",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2
-        }
-      });
-
-      map.addLayer({
-        id: "selected-stops-delay",
-        type: "symbol",
-        source: "selected-stops",
-        minzoom: 10,
-        layout: {
-          "text-field": ["get", "delayLateText"],
-          "text-size": 11,
-          "text-anchor": "left",
-          "text-offset": [3.0, 1.0],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-          "text-optional": false
-        },
-        paint: {
-          "text-color": "#d93025",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2
-        }
-      });
-
-      map.addLayer({
-        id: "selected-stops-ontime",
-        type: "symbol",
-        source: "selected-stops",
-        minzoom: 10,
-        layout: {
-          "text-field": ["get", "delayOnTimeText"],
-          "text-size": 11,
-          "text-anchor": "left",
-          "text-offset": [3.0, 1.0],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-          "text-optional": false
-        },
-        paint: {
-          "text-color": "#16834b",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2
         }
       });
 
@@ -926,6 +896,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         map.getSource("selected-stops")
           .setData(futureStopsGeoJson(selectedTripId, seq));
 
+        renderSelectedStopNameMarkers(selectedTripId, seq);
+
         if (activeVehiclePopup) {
           activeVehiclePopup.remove();
           activeVehiclePopup = null;
@@ -964,6 +936,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
 
         selectedTripId = null;
+        clearSelectedStopNameMarkers();
         map.getSource("selected-vehicle").setData(emptyFeatureCollection());
         map.getSource("selected-route").setData(emptyFeatureCollection());
         map.getSource("selected-stops").setData(emptyFeatureCollection());
@@ -1254,6 +1227,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             map.getSource("selected-stops")
               .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
 
+            renderSelectedStopNameMarkers(selectedTripId, Number(current.seq));
+
             // Popupはドラッグ量を維持したまま車両位置へ追従。
             if (activeVehiclePopup) {
               activeVehiclePopup.setLngLat([current.lon, current.lat]);
@@ -1265,6 +1240,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             }
 
             selectedTripId = null;
+            clearSelectedStopNameMarkers();
             map.getSource("selected-vehicle").setData(emptyFeatureCollection());
             map.getSource("selected-route").setData(emptyFeatureCollection());
             map.getSource("selected-stops").setData(emptyFeatureCollection());
