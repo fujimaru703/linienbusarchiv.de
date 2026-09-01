@@ -32,6 +32,10 @@ labelCaetano.forEach(label =>
   labelIconMap.set(label, "icon/Caetano.png")
 );
 
+const labelo405n2 = ["311","312","313","314","315","316","317","318","319","320","321","322","323","324","325","326","327","328","329","330","331","332","333","334","335","336","337","338","339","340","341","342","417","418","419","420","421","422"];
+labelo405n2.forEach(label =>
+  labelIconMap.set(label, "icon/o405n2.png")
+);
 
 
 function getVehicleIconUrl(busId) {
