@@ -12,7 +12,7 @@ const GTFS_BASE = "./";
 // const BRAGA_WORKER_URL = "https://braga-vehicles.example.workers.dev/";
 const BRAGA_WORKER_URL = "https://misty-frost-9f0e.fujimaru703.workers.dev/";
 
-const UPDATE_INTERVAL = 15000;
+const UPDATE_INTERVAL = 300000;
 const CAMERA_STORAGE_KEY = "braga-map-camera-v3";
 const DEFAULT_ICON_URL = "icon/bus-pictogram-50.png";
 
