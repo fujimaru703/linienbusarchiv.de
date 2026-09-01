@@ -1188,71 +1188,105 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // リアルタイム更新
     // =========================================================
     async function updateRealtime() {
-      if (updateRunning) return;
-      updateRunning = true;
+  if (updateRunning) return;
+  updateRunning = true;
 
-      const status = document.getElementById("statusDisplay");
-      setLoading(true, 68);
+  const status = document.getElementById("statusDisplay");
+  setLoading(true, 68);
 
-      try {
-        await Promise.all([
-          loadDelays(),
-          loadVehicles()
-        ]);
+  try {
+    // リアルタイムデータだけ取得
+    await Promise.all([
+      loadDelays(),
+      loadVehicles()
+    ]);
 
-        await ensureVehicleIcons(latestVehicles);
-        map.getSource("vehicles").setData(vehicleGeoJson());
+    // 必要な車両アイコンだけ読み込む
+    await ensureVehicleIcons(latestVehicles);
 
-        // 選択中の便だけルート/停留所を更新
-        if (selectedTripId) {
-          const current = latestVehicles.find(v => v.tripId === selectedTripId);
+    // ★ 車両データだけ更新
+    map.getSource("vehicles").setData(vehicleGeoJson());
 
-          if (current) {
-            const selectedFeature = vehicleFeaturesByTrip.get(selectedTripId);
-            map.getSource("selected-vehicle").setData(
-              selectedFeature
-                ? { type: "FeatureCollection", features: [selectedFeature] }
-                : emptyFeatureCollection()
-            );
+    // 選択中のバスがある場合
+    if (selectedTripId) {
+      const current = latestVehicles.find(
+        v => v.tripId === selectedTripId
+      );
 
-            map.getSource("selected-route")
-              .setData(selectedRouteGeoJson(selectedTripId));
+      if (current) {
+        const selectedFeature =
+          vehicleFeaturesByTrip.get(selectedTripId);
 
-            map.getSource("selected-stops")
-              .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
+        map.getSource("selected-vehicle").setData(
+          selectedFeature
+            ? {
+                type: "FeatureCollection",
+                features: [selectedFeature]
+              }
+            : emptyFeatureCollection()
+        );
 
-            renderSelectedStopNameMarkers(selectedTripId, Number(current.seq));
+        // 路線
+        map.getSource("selected-route")
+          .setData(selectedRouteGeoJson(selectedTripId));
 
-            // Popupはドラッグ量を維持したまま車両位置へ追従。
-            if (activeVehiclePopup) {
-              activeVehiclePopup.setLngLat([current.lon, current.lat]);
-            }
-          } else {
-            if (activeVehiclePopup) {
-              activeVehiclePopup.remove();
-              activeVehiclePopup = null;
-            }
+        // この先の停留所
+        map.getSource("selected-stops")
+          .setData(
+            futureStopsGeoJson(
+              selectedTripId,
+              Number(current.seq)
+            )
+          );
 
-            selectedTripId = null;
-            clearSelectedStopNameMarkers();
-            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
-            map.getSource("selected-route").setData(emptyFeatureCollection());
-            map.getSource("selected-stops").setData(emptyFeatureCollection());
-          }
+        renderSelectedStopNameMarkers(
+          selectedTripId,
+          Number(current.seq)
+        );
+
+        // Popupだけバスの新しい位置へ追従
+        if (activeVehiclePopup) {
+          activeVehiclePopup.setLngLat([
+            current.lon,
+            current.lat
+          ]);
         }
 
-        document.getElementById("readableTimestamp").textContent =
-          new Date().toLocaleString("ja-JP");
+      } else {
+        if (activeVehiclePopup) {
+          activeVehiclePopup.remove();
+          activeVehiclePopup = null;
+        }
 
-        status.textContent = `LIVE  ${latestVehicles.length}台運行中`;
-      } catch (e) {
-        console.error(e);
-        status.textContent = "リアルタイムデータ取得失敗";
-      } finally {
-        updateRunning = false;
-        setLoading(false);
+        selectedTripId = null;
+        clearSelectedStopNameMarkers();
+
+        map.getSource("selected-vehicle")
+          .setData(emptyFeatureCollection());
+
+        map.getSource("selected-route")
+          .setData(emptyFeatureCollection());
+
+        map.getSource("selected-stops")
+          .setData(emptyFeatureCollection());
       }
     }
+
+    document.getElementById("readableTimestamp").textContent =
+      new Date().toLocaleString("ja-JP");
+
+    status.textContent =
+      `${latestVehicles.length}台運行中`;
+
+  } catch (e) {
+    console.error(e);
+    status.textContent = "リアルタイムデータ取得失敗";
+
+  } finally {
+    updateRunning = false;
+    setLoading(false);
+  }
+}
 
     function startRealtimeTimer() {
       if (realtimeTimer !== null) return;
