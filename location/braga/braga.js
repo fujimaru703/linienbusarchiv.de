@@ -13,8 +13,8 @@ const GTFS_BASE = "./";
 const BRAGA_WORKER_URL = "https://misty-frost-9f0e.fujimaru703.workers.dev/";
 
 const UPDATE_INTERVAL = 15000;
-const CAMERA_STORAGE_KEY = "braga-map-camera-v1";
-const DEFAULT_ICON_URL = "icon/default-bus.png";
+const CAMERA_STORAGE_KEY = "braga-map-camera-v3";
+const DEFAULT_ICON_URL = "icon/bus-pictogram-50.png";
 
 // GTFSにないAPI用line IDが今後必要になった場合だけ追加。
 // 例: ["2T", "22F"]
@@ -59,13 +59,14 @@ const map = new maplibregl.Map({
   container: "map",
 
   // 初回だけBraga中心。以後は最後に見ていた位置を復元。
-  center: savedCamera?.center || [-8.4200, 41.5510],
-  zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13,
+  center: savedCamera?.center || [-8.4200, 41.5505],
+  zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13.5,
   bearing: Number.isFinite(savedCamera?.bearing) ? savedCamera.bearing : 0,
-  pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 0,
+  pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 60,
 
   minZoom: 6,
   maxZoom: 19,
+  maxPitch: 85,
   attributionControl: true,
 
   // 福島版と同じ背景
@@ -825,33 +826,34 @@ async function loadImageToMap(url) {
 // 車番チップ
 // =========================================================
 function vehicleIconScaleAtZoom(zoom) {
-  if (zoom <= 8) return 0.35;
+  // 50px画像を基準に、地図を邪魔しないサイズに抑える
+  if (zoom <= 8) return 0.26;
   if (zoom <= 13) {
     return (
-      0.35 +
+      0.26 +
       (zoom - 8) *
-        (0.65 - 0.35) /
+        (0.46 - 0.26) /
         5
     );
   }
   if (zoom <= 16) {
     return (
-      0.65 +
+      0.46 +
       (zoom - 13) *
-        (0.90 - 0.65) /
+        (0.62 - 0.46) /
         3
     );
   }
   if (zoom <= 19) {
     return (
-      0.90 +
+      0.62 +
       (zoom - 16) *
-        (1.15 - 0.90) /
+        (0.82 - 0.62) /
         3
     );
   }
 
-  return 1.15;
+  return 0.82;
 }
 
 function vehicleNumberMarkerOffset() {
@@ -1034,29 +1036,6 @@ function renderSelectedStopNameMarkers(vehicle) {
 // =========================================================
 // 左下情報パネル
 // =========================================================
-function formatApiTime(unixSeconds) {
-  if (!Number.isFinite(unixSeconds)) {
-    return "--:--:--";
-  }
-
-  try {
-    return new Intl.DateTimeFormat(
-      "pt-PT",
-      {
-        timeZone: "Europe/Lisbon",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
-      }
-    ).format(
-      new Date(unixSeconds * 1000)
-    );
-  } catch (_) {
-    return "--:--:--";
-  }
-}
-
 function hideVehicleInfoPanel() {
   vehicleInfoPanel.hidden = true;
   vehicleInfoPanel.replaceChildren();
@@ -1095,18 +1074,9 @@ function showVehicleInfoPanel(vehicle) {
   number.className = "vip-number";
   number.textContent =
     vehicle.busId || "?";
-
-  const live =
-    document.createElement("div");
-
-  live.className = "vip-live";
-  live.textContent =
-    `位置更新 ${formatApiTime(vehicle.time)}`;
-
-  head.append(
+head.append(
     img,
-    number,
-    live
+    number
   );
 
   const route =
@@ -1187,6 +1157,73 @@ function showVehicleInfoPanel(vehicle) {
 
   vehicleInfoPanel.appendChild(note);
   vehicleInfoPanel.hidden = false;
+}
+
+// =========================================================
+// 3D地形
+// =========================================================
+function installTerrain() {
+  // MapterhornはTerrarium形式・512pxのDEM。
+  // TileJSON任せにせず明示して、さらにhillshadeも重ねて
+  // 高低差が目で分かるようにする。
+  const demSpec = {
+    type: "raster-dem",
+    tiles: [
+      "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"
+    ],
+    encoding: "terrarium",
+    tileSize: 512,
+    maxzoom: 14,
+    attribution:
+      '<a href="https://mapterhorn.com/attribution">© Mapterhorn</a>'
+  };
+
+  if (!map.getSource("terrainSource")) {
+    map.addSource(
+      "terrainSource",
+      demSpec
+    );
+  }
+
+  if (!map.getSource("hillshadeSource")) {
+    map.addSource(
+      "hillshadeSource",
+      demSpec
+    );
+  }
+
+  // 1だとBraga中心部ではかなり控えめなので少し強調。
+  map.setTerrain({
+    source: "terrainSource",
+    exaggeration: 1.6
+  });
+
+  if (!map.getLayer("terrain-hillshade")) {
+    const layers =
+      map.getStyle()?.layers || [];
+
+    // 背景のすぐ上、道路・文字より下に入れる。
+    const beforeId =
+      layers.find(
+        layer =>
+          layer.type !== "background"
+      )?.id;
+
+    map.addLayer(
+      {
+        id: "terrain-hillshade",
+        type: "hillshade",
+        source: "hillshadeSource",
+        paint: {
+          "hillshade-exaggeration": 0.55,
+          "hillshade-shadow-color": "#5b5147",
+          "hillshade-highlight-color": "#ffffff",
+          "hillshade-accent-color": "#8f867c"
+        }
+      },
+      beforeId
+    );
+  }
 }
 
 // =========================================================
@@ -1289,10 +1326,10 @@ function installLayers() {
         "interpolate",
         ["linear"],
         ["zoom"],
-        8, 0.35,
-        13, 0.65,
-        16, 0.90,
-        19, 1.15
+        8, 0.26,
+        13, 0.46,
+        16, 0.62,
+        19, 0.82
       ],
 
       "icon-allow-overlap": true,
@@ -1626,6 +1663,9 @@ map.on(
       await loadImageToMap(
         DEFAULT_ICON_URL
       );
+
+      // OpenFreeMap Positronの上に実際の標高地形を追加
+      installTerrain();
 
       installLayers();
 
