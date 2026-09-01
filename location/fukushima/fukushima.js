@@ -1108,11 +1108,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const currentSeq = Number(current?.seq);
       const next = getNextStopInfo(p.tripId, currentSeq);
       const futureStops = getFutureStopsInfo(p.tripId, currentSeq);
+      // 「次の停留所」は上のカードですでに表示しているので、
+      // プルダウン内は「次の次」以降だけ表示する。
+      const dropdownStops = futureStops.slice(1);
+
       const iconUrl = getVehicleIconUrl(p.label);
       const dropdownId = `future-${String(p.tripId || "").replace(/[^a-zA-Z0-9_-]/g, "_")}-${Date.now()}`;
 
-      const futureStopsHtml = futureStops.length
-        ? futureStops.map(stop => `
+      const futureStopsHtml = dropdownStops.length
+        ? dropdownStops.map(stop => `
             <div class="bus-popup__future-stop">
               <div class="bus-popup__future-stop-main">
                 <div class="bus-popup__future-name">${escapeHtml(stop.name)}</div>
