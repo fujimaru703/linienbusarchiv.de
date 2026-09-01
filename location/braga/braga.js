@@ -1034,6 +1034,29 @@ function renderSelectedStopNameMarkers(vehicle) {
 // =========================================================
 // 左下情報パネル
 // =========================================================
+function formatApiTime(unixSeconds) {
+  if (!Number.isFinite(unixSeconds)) {
+    return "--:--:--";
+  }
+
+  try {
+    return new Intl.DateTimeFormat(
+      "pt-PT",
+      {
+        timeZone: "Europe/Lisbon",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }
+    ).format(
+      new Date(unixSeconds * 1000)
+    );
+  } catch (_) {
+    return "--:--:--";
+  }
+}
+
 function hideVehicleInfoPanel() {
   vehicleInfoPanel.hidden = true;
   vehicleInfoPanel.replaceChildren();
@@ -1072,9 +1095,18 @@ function showVehicleInfoPanel(vehicle) {
   number.className = "vip-number";
   number.textContent =
     vehicle.busId || "?";
-head.append(
+
+  const live =
+    document.createElement("div");
+
+  live.className = "vip-live";
+  live.textContent =
+    `位置更新 ${formatApiTime(vehicle.time)}`;
+
+  head.append(
     img,
-    number
+    number,
+    live
   );
 
   const route =
