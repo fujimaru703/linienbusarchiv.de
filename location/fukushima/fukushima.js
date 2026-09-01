@@ -830,23 +830,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       });
 
       map.addLayer({
-        id: "vehicles",
-        type: "symbol",
-        source: "vehicles",
-        layout: {
-          "icon-image": iconExpression(),
-          "icon-size": [
-            "interpolate", ["linear"], ["zoom"],
-            8, 0.35,
-            13, 0.65,
-            16, 0.9,
-            19, 1.15
-          ],
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "icon-rotation-alignment": "map"
-        }
-      });
+  id: "vehicles",
+  type: "symbol",
+  source: "vehicles",
+  layout: {
+    "icon-image": iconExpression(),
+
+    "icon-size": [
+      "interpolate", ["linear"], ["zoom"],
+      8, 0.35,
+      13, 0.65,
+      16, 0.9,
+      19, 1.15
+    ],
+
+    "icon-allow-overlap": true,
+    "icon-ignore-placement": true,
+
+    // 3Dでもバスを寝かせない
+    "icon-pitch-alignment": "viewport",
+
+    // 地図を回転しても常に正面
+    "icon-rotation-alignment": "viewport"
+  }
+});
 
       map.on("mouseenter", "vehicles", () => {
         map.getCanvas().style.cursor = "pointer";
