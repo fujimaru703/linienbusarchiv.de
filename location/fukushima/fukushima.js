@@ -21,7 +21,7 @@
 
     function loadSavedCamera() {
       try {
-        const raw = sessionStorage.getItem(CAMERA_STORAGE_KEY);
+        const raw = localStorage.getItem(CAMERA_STORAGE_KEY);
         if (!raw) return null;
 
         const saved = JSON.parse(raw);
@@ -36,14 +36,22 @@
     const savedCamera = loadSavedCamera();
 
     const map = new maplibregl.Map({
-  container: "map",
-  center: [140.47, 37.75],
-  zoom: 13,
-  minZoom: 6,
-  maxZoom: 19,
-  attributionControl: true,
-  style: "https://tiles.openfreemap.org/styles/positron"
-});
+      container: "map",
+
+      // 保存済み位置があればそこから再開。
+      // 初回アクセス時だけ福島市中心・zoom 13。
+      center: savedCamera?.center || [140.47, 37.75],
+      zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13,
+      bearing: Number.isFinite(savedCamera?.bearing) ? savedCamera.bearing : 0,
+      pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 0,
+
+      minZoom: 6,
+      maxZoom: 19,
+      attributionControl: true,
+
+      // 背景地図
+      style: "https://tiles.openfreemap.org/styles/positron"
+    });
 
     map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true
@@ -52,7 +60,8 @@
     function saveMapCamera() {
       try {
         const center = map.getCenter();
-        sessionStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify({
+
+        localStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify({
           center: [center.lng, center.lat],
           zoom: map.getZoom(),
           bearing: map.getBearing(),
@@ -61,9 +70,12 @@
       } catch (_) {}
     }
 
-    // ユーザーが動かした位置・ズーム・回転・3D角度を保存。
-    // Realtime更新側からカメラ操作は一切しない。
+    // ユーザー操作が終わった時点のカメラ状態だけ保存する。
+    // 15秒Realtime更新ではカメラ位置を変更しない。
     map.on("moveend", saveMapCamera);
+    map.on("zoomend", saveMapCamera);
+    map.on("rotateend", saveMapCamera);
+    map.on("pitchend", saveMapCamera);
     map.on("zoom", updateVehicleNumberMarkerOffsets);
 
     // =========================================================
