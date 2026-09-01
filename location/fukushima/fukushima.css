@@ -719,3 +719,20 @@ html, body {
 }
 
 /* stop labels are rendered directly by MapLibre from stops.txt */
+
+
+/* v7: draggable vehicle popup */
+.maplibregl-popup.bus-popup-draggable {
+  will-change: margin-left, margin-top;
+}
+
+.maplibregl-popup.bus-popup-draggable .bus-popup__hero {
+  cursor: grab !important;
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.maplibregl-popup.bus-popup-draggable.is-dragging .bus-popup__hero {
+  cursor: grabbing !important;
+}

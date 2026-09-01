@@ -68,7 +68,7 @@
     let vehicleFeaturesByTrip = new Map();
 
     const labelIconMap = new Map();
-    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179'];
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290.png'));
 
 	const label557 = ['0557','2411','2412','2408'];
@@ -164,7 +164,7 @@ label7085.forEach(label => labelIconMap.set(label, 'icon/7085.png'));
 const label7110 = ['7110'];
 label7110.forEach(label => labelIconMap.set(label, 'icon/7110.png'));
 
-const label7701 = ['7701'];
+const label7701 = ['7701','7702','7703'];
 label7701.forEach(label => labelIconMap.set(label, 'icon/7701.png'));
 
 const label8008 = ['8008'];
@@ -191,7 +191,7 @@ labelkanachan.forEach(label => labelIconMap.set(label, 'icon/kanachan.png'));
 const labelkanachumio = ['8083','0865','8095'];
 labelkanachumio.forEach(label => labelIconMap.set(label, 'icon/kanachu-mio.png'));
 
-const labelkanachumk = ['1623','1625','1668','1706','1769','1771','0562','1860','1863','0580','0581'];
+const labelkanachumk = ['1623','1625','1668','1706','1769','1771','0562','1860','1863','0580','0581','8186'];
 labelkanachumk.forEach(label => labelIconMap.set(label, 'icon/kanachu-mk.png'));
 
 const labelkanachump35 = ['1920','7032','1924','7034','1945','7118','7157','8066','8068'];
@@ -224,7 +224,7 @@ labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr.png'));
 const labelliesse = ['1382','1590','1859','0854','8147'];
 labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse.png'));
 
-const labelmk = ['0044','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541'];
+const labelmk = ['0044','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202'];
 labelmk.forEach(label => labelIconMap.set(label, 'icon/mk.png'));
 
 const labelmk517 = ['2091','2103'];
@@ -233,13 +233,13 @@ labelmk517.forEach(label => labelIconMap.set(label, 'icon/mk517.png'));
 const labelmk619 = ['2414','2416','2417','2418','2420'];
 labelmk619.forEach(label => labelIconMap.set(label, 'icon/mk619.png'));
 
-const labelmkf = ['0603','2548','2551','0501','0014'];
+const labelmkf = ['0603','2548','2551','5005','0014'];
 labelmkf.forEach(label => labelIconMap.set(label, 'icon/mk-f.png'));
 
 const labelmp35silver = ['7106','7109','7111','7112','7114','7117','7119'];
 labelmp35silver.forEach(label => labelIconMap.set(label, 'icon/mp35-silver.png'));
 
-const labelmp37 = ['2039','2046','8006','7058','8007','8009','8010','8012','7078','7079','7084','7088','7089','7090','7091','7098','7099','7100','7129','7130','7136','7139','7143','7145','7151','7152','8096'];
+const labelmp37 = ['2039','2046','8006','7058','8007','8009','8010','8012','7078','7079','7084','7088','7089','7090','7091','7098','7099','7100','7129','7130','7136','7139','7143','7145','7151','7152','8096','8171'];
 labelmp37.forEach(label => labelIconMap.set(label, 'icon/mp37.png'));
 
 const labelmp37black = ['7082','7083','7093','7094','7095','7096'];
@@ -269,7 +269,7 @@ labelrakuraku.forEach(label => labelIconMap.set(label, 'icon/rakuraku.png'));
 const labelrakurakuf = ['0017','0116'];
 labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f.png'));
 
-const labelrinkomio = ['1336','1369','1379','0433','0451','1710','1720','2020','1732','1850','1854','1857','2041','8150','8025'];
+const labelrinkomio = ['1336','1369','1379','5003','5004','1710','1720','2020','1732','1850','1854','1857','2041','8150','8025'];
 labelrinkomio.forEach(label => labelIconMap.set(label, 'icon/rinko-mio.png'));
 
 const labelserega = ['1537','1538'];
@@ -287,7 +287,7 @@ labelmiharu.forEach(label => labelIconMap.set(label, 'icon/miharu.png'));
 const labelmiharu290 = ['0386'];
 labelmiharu290.forEach(label => labelIconMap.set(label, 'icon/miharu290.png'));
 
-const label234 = ['8168','8167','8168','0429','0430','0431','8039','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133'];
+const label234 = ['5002','0430','0431','8039','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133','8185','8167','8168','8200'];
 label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
     function cleanId(v) {
@@ -740,50 +740,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         data: emptyFeatureCollection()
       });
 
-      map.addLayer({
-        id: "all-stops-circle",
-        type: "circle",
-        source: "all-stops",
-        minzoom: 14,
-        paint: {
-          "circle-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            15, 2.5,
-            17, 4,
-            19, 5.5
-          ],
-          "circle-color": "#ffffff",
-          "circle-stroke-color": "#6f7f89",
-          "circle-stroke-width": 1.5,
-          "circle-opacity": 0.95
-        }
-      });
-
-      map.addLayer({
-        id: "all-stops-label",
-        type: "symbol",
-        source: "all-stops",
-        minzoom: 15,
-        layout: {
-          "text-field": ["coalesce", ["get", "name"], "停留所"],
-          "text-size": [
-            "interpolate", ["linear"], ["zoom"],
-            15, 10,
-            17, 11,
-            19, 12
-          ],
-          "text-anchor": "left",
-          "text-offset": [0.8, 0],
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-          "text-optional": true
-        },
-        paint: {
-          "text-color": "#26343c",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2
-        }
-      });
 
       map.addLayer({
         id: "route-outline",
@@ -816,7 +772,53 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
       });
 
-      // 停留所はPNGマーカーではなく軽いcircleで表示
+      map.addLayer({
+        id: "all-stops-circle",
+        type: "circle",
+        source: "all-stops",
+        minzoom: 13,
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            13, 2,
+            15, 3,
+            17, 4.5,
+            19, 5.5
+          ],
+          "circle-color": "#ffffff",
+          "circle-stroke-color": "#697983",
+          "circle-stroke-width": 1.5,
+          "circle-opacity": 0.96
+        }
+      });
+
+      map.addLayer({
+        id: "all-stops-label",
+        type: "symbol",
+        source: "all-stops",
+        minzoom: 14,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            14, 10,
+            16, 11,
+            18, 12
+          ],
+          "text-anchor": "left",
+          "text-offset": [0.75, 0],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-optional": false
+        },
+        paint: {
+          "text-color": "#26343c",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2
+        }
+      });
+
+      // 選択便の停留所
       map.addLayer({
         id: "selected-stops-circle",
         type: "circle",
@@ -993,7 +995,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         const vehiclePopup = new maplibregl.Popup({
           closeButton: true,
-          closeOnClick: true
+          closeOnClick: false
         })
           .setLngLat(f.geometry.coordinates)
           .setHTML(buildBusPopupHtml(p))
@@ -1103,23 +1105,40 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       if (!root) return;
 
       root.classList.add("bus-popup-draggable");
-
       const handle = root.querySelector(".bus-popup__hero");
       if (!handle) return;
 
+      let x = 0;
+      let y = 0;
       let startX = 0;
       let startY = 0;
-      let offsetX = 0;
-      let offsetY = 0;
       let dragging = false;
       let pointerId = null;
 
-      const applyOffset = () => {
-        root.style.translate = `${offsetX}px ${offsetY}px`;
+      const applyPosition = () => {
+        // MapLibre自身のtransformとは別にmarginで移動量を加算する
+        root.style.marginLeft = `${x}px`;
+        root.style.marginTop = `${y}px`;
+      };
+
+      const finish = e => {
+        if (!dragging) return;
+        if (e?.pointerId !== undefined && pointerId !== null && e.pointerId !== pointerId) return;
+
+        dragging = false;
+        root.classList.remove("is-dragging");
+
+        try {
+          if (pointerId !== null && handle.hasPointerCapture?.(pointerId)) {
+            handle.releasePointerCapture(pointerId);
+          }
+        } catch (_) {}
+
+        pointerId = null;
       };
 
       handle.addEventListener("pointerdown", e => {
-        if (e.button !== undefined && e.button !== 0) return;
+        if (e.pointerType === "mouse" && e.button !== 0) return;
 
         dragging = true;
         pointerId = e.pointerId;
@@ -1128,43 +1147,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         root.classList.add("is-dragging");
         handle.setPointerCapture?.(pointerId);
+
         e.preventDefault();
         e.stopPropagation();
-      });
+      }, { passive: false });
 
       handle.addEventListener("pointermove", e => {
         if (!dragging || e.pointerId !== pointerId) return;
 
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
+        x += e.clientX - startX;
+        y += e.clientY - startY;
         startX = e.clientX;
         startY = e.clientY;
 
-        offsetX += dx;
-        offsetY += dy;
-        applyOffset();
+        applyPosition();
 
         e.preventDefault();
         e.stopPropagation();
-      });
+      }, { passive: false });
 
-      const endDrag = e => {
-        if (!dragging) return;
-        if (pointerId !== null && e.pointerId !== undefined && e.pointerId !== pointerId) return;
-
-        dragging = false;
-        root.classList.remove("is-dragging");
-
-        try {
-          if (pointerId !== null) handle.releasePointerCapture?.(pointerId);
-        } catch (_) {}
-
-        pointerId = null;
-      };
-
-      handle.addEventListener("pointerup", endDrag);
-      handle.addEventListener("pointercancel", endDrag);
+      handle.addEventListener("pointerup", finish);
+      handle.addEventListener("pointercancel", finish);
+      handle.addEventListener("lostpointercapture", finish);
     }
+
 
     function buildBusPopupHtml(p) {
       const current = latestVehicles.find(v => v.tripId === p.tripId);
@@ -1349,6 +1355,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         await loadImageToMap("icon/yokokamo.png");
 
         installLayers();
+        refreshAllStopsSource();
 
         status.textContent = "リアルタイム情報取得中...";
         setLoading(true, 72);
