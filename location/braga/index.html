@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f8f8">
+
+  <title>Braga TUB バスロケーションマップ</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css"
+  >
+  <link rel="stylesheet" href="./braga.css">
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div id="loadingBar" aria-hidden="true"></div>
+
+  <a id="homeButton" href="/" aria-label="トップへ戻る">← トップへ</a>
+
+  <div id="statusPanel">
+    <div id="statusDisplay">読み込み中...</div>
+    <div id="timestampDisplay">
+      最終更新:
+      <span id="readableTimestamp">--</span>
+    </div>
+  </div>
+
+  <section id="vehicleInfoPanel" aria-live="polite" hidden></section>
+
+  <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
+  <script src="./braga.js"></script>
+</body>
+</html>
