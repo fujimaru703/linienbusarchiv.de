@@ -846,34 +846,34 @@ async function loadImageToMap(url) {
 // 車番チップ
 // =========================================================
 function vehicleIconScaleAtZoom(zoom) {
-  // 100px画像を基準に、50px画像だった時と同じ表示サイズにする
-  if (zoom <= 8) return 0.13;
+  // 100px画像用。透明余白を考慮して少し大きめに表示する
+  if (zoom <= 8) return 0.20;
   if (zoom <= 13) {
     return (
-      0.13 +
+      0.20 +
       (zoom - 8) *
-        (0.23 - 0.13) /
+        (0.35 - 0.20) /
         5
     );
   }
   if (zoom <= 16) {
     return (
-      0.23 +
+      0.35 +
       (zoom - 13) *
-        (0.31 - 0.23) /
+        (0.47 - 0.35) /
         3
     );
   }
   if (zoom <= 19) {
     return (
-      0.31 +
+      0.47 +
       (zoom - 16) *
-        (0.41 - 0.31) /
+        (0.62 - 0.47) /
         3
     );
   }
 
-  return 0.41;
+  return 0.62;
 }
 
 function vehicleNumberMarkerOffset() {
@@ -1280,10 +1280,10 @@ function installLayers() {
         "interpolate",
         ["linear"],
         ["zoom"],
-        8, 0.13,
-        13, 0.23,
-        16, 0.31,
-        19, 0.41
+        8, 0.20,
+        13, 0.35,
+        16, 0.47,
+        19, 0.62
       ],
 
       "icon-allow-overlap": true,
