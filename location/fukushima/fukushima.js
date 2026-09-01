@@ -17,19 +17,72 @@
     // =========================================================
     // 地図
     // =========================================================
+    const CAMERA_STORAGE_KEY = "fukushima-map-camera-v1";
+
+    function loadSavedCamera() {
+      try {
+        const raw = sessionStorage.getItem(CAMERA_STORAGE_KEY);
+        if (!raw) return null;
+
+        const saved = JSON.parse(raw);
+        if (!Array.isArray(saved.center) || saved.center.length !== 2) return null;
+
+        return saved;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    const savedCamera = loadSavedCamera();
+
     const map = new maplibregl.Map({
-  container: "map",
-  center: [140.47, 37.75],
-  zoom: 13,
-  minZoom: 6,
-  maxZoom: 19,
-  attributionControl: true,
-  style: "https://tiles.openfreemap.org/styles/positron"
-});
+      container: "map",
+      center: savedCamera?.center || [140.47, 37.75],
+      zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13,
+      bearing: Number.isFinite(savedCamera?.bearing) ? savedCamera.bearing : 0,
+      pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 0,
+      minZoom: 6,
+      maxZoom: 19,
+      attributionControl: true,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "&copy; OpenStreetMap contributors"
+          }
+        },
+        layers: [
+          {
+            id: "osm",
+            type: "raster",
+            source: "osm"
+          }
+        ]
+      }
+    });
 
     map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true
     }), "bottom-right");
+
+    function saveMapCamera() {
+      try {
+        const center = map.getCenter();
+        sessionStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify({
+          center: [center.lng, center.lat],
+          zoom: map.getZoom(),
+          bearing: map.getBearing(),
+          pitch: map.getPitch()
+        }));
+      } catch (_) {}
+    }
+
+    // ユーザーが動かした位置・ズーム・回転・3D角度を保存。
+    // Realtime更新側からカメラ操作は一切しない。
+    map.on("moveend", saveMapCamera);
 
     // =========================================================
     // データ
@@ -47,10 +100,10 @@
     let staticGtfsLoaded = false;
     let updateRunning = false;
     let selectedTripId = null;
-    let activeVehiclePopup = null;
     let realtimeTimer = null;
     let vehicleFeaturesByTrip = new Map();
     let selectedStopNameMarkers = [];
+    let vehicleInfoPanel = null;
 
     const labelIconMap = new Map();
     const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
@@ -641,6 +694,224 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
+    function ensureVehicleInfoPanel() {
+      if (vehicleInfoPanel) return vehicleInfoPanel;
+
+      const style = document.createElement("style");
+      style.textContent = `
+        #vehicleInfoPanel {
+          position: fixed;
+          left: 14px;
+          bottom: 14px;
+          z-index: 30;
+          width: min(300px, calc(100vw - 28px));
+          box-sizing: border-box;
+          padding: 11px 12px;
+          border: 1px solid rgba(31, 52, 65, .15);
+          border-radius: 13px;
+          background: rgba(255, 255, 255, .94);
+          box-shadow: 0 8px 28px rgba(21, 42, 56, .18);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+          color: #17232b;
+          display: none;
+          pointer-events: auto;
+        }
+
+        #vehicleInfoPanel .vip-head {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          margin-bottom: 8px;
+        }
+
+        #vehicleInfoPanel .vip-icon {
+          width: 38px;
+          height: 38px;
+          object-fit: contain;
+          image-rendering: auto;
+          flex: 0 0 38px;
+        }
+
+        #vehicleInfoPanel .vip-number {
+          font-size: 18px;
+          line-height: 1;
+          font-weight: 900;
+        }
+
+        #vehicleInfoPanel .vip-route {
+          font-size: 12px;
+          line-height: 1.35;
+          font-weight: 800;
+          margin-bottom: 3px;
+        }
+
+        #vehicleInfoPanel .vip-destination {
+          font-size: 10px;
+          line-height: 1.35;
+          color: #5a6972;
+          margin-bottom: 9px;
+        }
+
+        #vehicleInfoPanel .vip-next {
+          padding: 8px 9px;
+          border-radius: 9px;
+          background: #f4f8fa;
+          border: 1px solid #e3ebef;
+        }
+
+        #vehicleInfoPanel .vip-next-label {
+          font-size: 8px;
+          line-height: 1.2;
+          color: #76848c;
+          font-weight: 800;
+        }
+
+        #vehicleInfoPanel .vip-next-name {
+          margin-top: 2px;
+          font-size: 11px;
+          line-height: 1.3;
+          font-weight: 900;
+        }
+
+        #vehicleInfoPanel .vip-time {
+          margin-top: 3px;
+          font-size: 10px;
+          font-weight: 700;
+          color: #5e6c74;
+        }
+
+        #vehicleInfoPanel .vip-status {
+          margin-left: 6px;
+          font-weight: 900;
+        }
+
+        #vehicleInfoPanel .vip-status.is-ontime {
+          color: #16834b;
+        }
+
+        #vehicleInfoPanel .vip-status.is-late {
+          color: #d93025;
+        }
+
+        @media (max-width: 640px) {
+          #vehicleInfoPanel {
+            left: 8px;
+            bottom: 8px;
+            width: min(245px, calc(100vw - 16px));
+            padding: 8px 9px;
+            border-radius: 11px;
+          }
+
+          #vehicleInfoPanel .vip-head {
+            gap: 7px;
+            margin-bottom: 6px;
+          }
+
+          #vehicleInfoPanel .vip-icon {
+            width: 32px;
+            height: 32px;
+            flex-basis: 32px;
+          }
+
+          #vehicleInfoPanel .vip-number {
+            font-size: 16px;
+          }
+
+          #vehicleInfoPanel .vip-route {
+            font-size: 11px;
+          }
+
+          #vehicleInfoPanel .vip-destination,
+          #vehicleInfoPanel .vip-time {
+            font-size: 9px;
+          }
+
+          #vehicleInfoPanel .vip-next {
+            padding: 7px 8px;
+          }
+
+          #vehicleInfoPanel .vip-next-name {
+            font-size: 10px;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+
+      vehicleInfoPanel = document.createElement("div");
+      vehicleInfoPanel.id = "vehicleInfoPanel";
+      vehicleInfoPanel.setAttribute("aria-live", "polite");
+      document.body.appendChild(vehicleInfoPanel);
+
+      return vehicleInfoPanel;
+    }
+
+    function hideVehicleInfoPanel() {
+      const panel = ensureVehicleInfoPanel();
+      panel.style.display = "none";
+      panel.replaceChildren();
+    }
+
+    function showVehicleInfoPanel(vehicleProperties, currentSeq) {
+      const panel = ensureVehicleInfoPanel();
+
+      const next = getNextStopInfo(vehicleProperties.tripId, currentSeq);
+      const iconUrl = getVehicleIconUrl(vehicleProperties.label);
+
+      const head = document.createElement("div");
+      head.className = "vip-head";
+
+      const img = document.createElement("img");
+      img.className = "vip-icon";
+      img.src = iconUrl;
+      img.alt = "";
+
+      const number = document.createElement("div");
+      number.className = "vip-number";
+      number.textContent = vehicleProperties.label || "?";
+
+      head.append(img, number);
+
+      const route = document.createElement("div");
+      route.className = "vip-route";
+      route.textContent = vehicleProperties.routeName || "路線名不明";
+
+      const destination = document.createElement("div");
+      destination.className = "vip-destination";
+      destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
+
+      panel.replaceChildren(head, route, destination);
+
+      if (next) {
+        const nextBox = document.createElement("div");
+        nextBox.className = "vip-next";
+
+        const label = document.createElement("div");
+        label.className = "vip-next-label";
+        label.textContent = "次の停留所";
+
+        const name = document.createElement("div");
+        name.className = "vip-next-name";
+        name.textContent = next.name;
+
+        const time = document.createElement("div");
+        time.className = "vip-time";
+        time.textContent = next.scheduledText;
+
+        const status = document.createElement("span");
+        status.className =
+          "vip-status " + (next.delay < 60 ? "is-ontime" : "is-late");
+        status.textContent = next.delayText;
+
+        time.appendChild(status);
+        nextBox.append(label, name, time);
+        panel.appendChild(nextBox);
+      }
+
+      panel.style.display = "block";
+    }
+
     function emptyFeatureCollection() {
       return {
         type: "FeatureCollection",
@@ -830,30 +1101,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       });
 
       map.addLayer({
-  id: "vehicles",
-  type: "symbol",
-  source: "vehicles",
-  layout: {
-    "icon-image": iconExpression(),
-
-    "icon-size": [
-      "interpolate", ["linear"], ["zoom"],
-      8, 0.35,
-      13, 0.65,
-      16, 0.9,
-      19, 1.15
-    ],
-
-    "icon-allow-overlap": true,
-    "icon-ignore-placement": true,
-
-    // 3Dでもバスを寝かせない
-    "icon-pitch-alignment": "viewport",
-
-    // 地図を回転しても常に正面
-    "icon-rotation-alignment": "viewport"
-  }
-});
+        id: "vehicles",
+        type: "symbol",
+        source: "vehicles",
+        layout: {
+          "icon-image": iconExpression(),
+          "icon-size": [
+            "interpolate", ["linear"], ["zoom"],
+            8, 0.35,
+            13, 0.65,
+            16, 0.9,
+            19, 1.15
+          ],
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-rotation-alignment": "map"
+        }
+      });
 
       map.on("mouseenter", "vehicles", () => {
         map.getCanvas().style.cursor = "pointer";
@@ -887,45 +1151,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           .setData(futureStopsGeoJson(selectedTripId, seq));
 
         renderSelectedStopNameMarkers(selectedTripId, seq);
-
-        if (activeVehiclePopup) {
-          activeVehiclePopup.remove();
-          activeVehiclePopup = null;
-        }
-
-        const vehiclePopup = new maplibregl.Popup({
-          closeButton: true,
-          closeOnClick: false
-        })
-          .setLngLat(f.geometry.coordinates)
-          .setHTML(buildBusPopupHtml(p))
-          .addTo(map);
-
-        activeVehiclePopup = vehiclePopup;
-
-        vehiclePopup.on("close", () => {
-          if (activeVehiclePopup === vehiclePopup) {
-            activeVehiclePopup = null;
-          }
-        });
-
-        makePopupDraggable(vehiclePopup);
+        showVehicleInfoPanel(p, seq);
       });
 
       map.on("click", e => {
-        // 車両クリックは vehicles ハンドラに任せる。
         const vehicleHit = map.queryRenderedFeatures(e.point, {
           layers: ["vehicles"]
         });
         if (vehicleHit.length) return;
 
-        // 地図の別の場所をクリックしたら車両Popupを閉じる。
-        if (activeVehiclePopup) {
-          activeVehiclePopup.remove();
-          activeVehiclePopup = null;
-        }
-
         selectedTripId = null;
+        hideVehicleInfoPanel();
         clearSelectedStopNameMarkers();
         map.getSource("selected-vehicle").setData(emptyFeatureCollection());
         map.getSource("selected-route").setData(emptyFeatureCollection());
@@ -947,12 +1183,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       if (rem === 0) return `+${min}分`;
       return `+${min}分${String(rem).padStart(2, "0")}秒`;
-    }
-
-    function delayStatusClass(sec, future = false) {
-      return Number(sec) < 60
-        ? (future ? "bus-popup__future-ontime" : "bus-popup__ontime")
-        : (future ? "bus-popup__future-delay" : "bus-popup__delay-red");
     }
 
     function scheduledTimeText(tripId, seq) {
@@ -1015,278 +1245,72 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
-    function makePopupDraggable(popup) {
-      const root = popup.getElement?.();
-      if (!root) return;
-
-      const handle = root.querySelector(".bus-popup__hero");
-      if (!handle) return;
-
-      // CSS変更なしでもドラッグできるよう、必要なスタイルはJSで付与。
-      handle.style.cursor = "grab";
-      handle.style.touchAction = "none";
-      handle.style.userSelect = "none";
-      handle.style.webkitUserSelect = "none";
-
-      let offsetX = 0;
-      let offsetY = 0;
-      let startX = 0;
-      let startY = 0;
-      let dragging = false;
-      let pointerId = null;
-
-      const applyPosition = () => {
-        // MapLibreが使うtransformには触らず、marginで移動量を加える。
-        root.style.marginLeft = `${offsetX}px`;
-        root.style.marginTop = `${offsetY}px`;
-      };
-
-      const finish = e => {
-        if (!dragging) return;
-        if (e?.pointerId !== undefined &&
-            pointerId !== null &&
-            e.pointerId !== pointerId) return;
-
-        dragging = false;
-        handle.style.cursor = "grab";
-
-        try {
-          if (pointerId !== null && handle.hasPointerCapture?.(pointerId)) {
-            handle.releasePointerCapture(pointerId);
-          }
-        } catch (_) {}
-
-        pointerId = null;
-      };
-
-      handle.addEventListener("pointerdown", e => {
-        if (e.pointerType === "mouse" && e.button !== 0) return;
-
-        dragging = true;
-        pointerId = e.pointerId;
-        startX = e.clientX;
-        startY = e.clientY;
-        handle.style.cursor = "grabbing";
-
-        handle.setPointerCapture?.(pointerId);
-
-        e.preventDefault();
-        e.stopPropagation();
-      }, { passive: false });
-
-      handle.addEventListener("pointermove", e => {
-        if (!dragging || e.pointerId !== pointerId) return;
-
-        offsetX += e.clientX - startX;
-        offsetY += e.clientY - startY;
-        startX = e.clientX;
-        startY = e.clientY;
-
-        applyPosition();
-
-        e.preventDefault();
-        e.stopPropagation();
-      }, { passive: false });
-
-      handle.addEventListener("pointerup", finish);
-      handle.addEventListener("pointercancel", finish);
-      handle.addEventListener("lostpointercapture", finish);
-    }
-
-    function buildBusPopupHtml(p) {
-      const current = latestVehicles.find(v => v.tripId === p.tripId);
-      const currentSeq = Number(current?.seq);
-      const next = getNextStopInfo(p.tripId, currentSeq);
-      const futureStops = getFutureStopsInfo(p.tripId, currentSeq);
-      // 「次の停留所」は上のカードですでに表示しているので、
-      // プルダウン内は「次の次」以降だけ表示する。
-      const dropdownStops = futureStops.slice(1);
-
-      const iconUrl = getVehicleIconUrl(p.label);
-      const dropdownId = `future-${String(p.tripId || "").replace(/[^a-zA-Z0-9_-]/g, "_")}-${Date.now()}`;
-
-      const futureStopsHtml = dropdownStops.length
-        ? dropdownStops.map(stop => `
-            <div class="bus-popup__future-stop">
-              <div class="bus-popup__future-stop-main">
-                <div class="bus-popup__future-name">${escapeHtml(stop.name)}</div>
-                <div class="bus-popup__future-time-line">
-                  ${escapeHtml(stop.scheduledText)}
-                  <span class="${delayStatusClass(stop.delay, true)}">${escapeHtml(stop.delayText)}</span>
-                </div>
-              </div>
-            </div>
-          `).join("")
-        : `<div class="bus-popup__future-empty">この先の停留所情報はありません</div>`;
-
-      return `
-        <div class="bus-popup">
-          <div class="bus-popup__hero">
-            <div class="bus-popup__vehicle-row">
-              <div class="bus-popup__vehicle-icon-wrap">
-                <img class="bus-popup__vehicle-icon"
-                     src="${escapeHtml(iconUrl)}"
-                     alt="">
-              </div>
-              <div class="bus-popup__vehicle-meta">
-                <div class="bus-popup__vehicle">${escapeHtml(p.label)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="bus-popup__body">
-            <div class="bus-popup__route">${escapeHtml(p.routeName)}</div>
-
-            <div class="bus-popup__destination">
-              <span>${escapeHtml(p.headsign)}</span>
-            </div>
-
-            ${next ? `
-              <button
-                type="button"
-                class="bus-popup__next-toggle"
-                aria-expanded="false"
-                aria-controls="${dropdownId}"
-                onclick="
-                  const el=document.getElementById('${dropdownId}');
-                  const open=!el.classList.contains('is-open');
-                  el.classList.toggle('is-open',open);
-                  this.setAttribute('aria-expanded',String(open));
-                ">
-                <div class="bus-popup__next">
-                  <div class="bus-popup__next-label">次の停留所</div>
-                  <div class="bus-popup__next-name">${escapeHtml(next.name)}</div>
-                  <div class="bus-popup__next-time">
-                    ${escapeHtml(next.scheduledText)}
-                    <span class="${delayStatusClass(next.delay)}">${escapeHtml(next.delayText)}</span>
-                  </div>
-                  <span class="bus-popup__next-chevron">⌄</span>
-                </div>
-              </button>
-
-              <div id="${dropdownId}" class="bus-popup__future-inline">
-                ${futureStopsHtml}
-              </div>
-            ` : ""}
-
-
-          </div>
-        </div>
-      `;
-    }
-
-    function escapeHtml(v) {
-      return String(v ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
     // =========================================================
     // リアルタイム更新
     // =========================================================
     async function updateRealtime() {
-  if (updateRunning) return;
-  updateRunning = true;
+      if (updateRunning) return;
+      updateRunning = true;
 
-  const status = document.getElementById("statusDisplay");
-  setLoading(true, 68);
+      const status = document.getElementById("statusDisplay");
+      setLoading(true, 68);
 
-  try {
-    // リアルタイムデータだけ取得
-    await Promise.all([
-      loadDelays(),
-      loadVehicles()
-    ]);
+      try {
+        await Promise.all([
+          loadDelays(),
+          loadVehicles()
+        ]);
 
-    // 必要な車両アイコンだけ読み込む
-    await ensureVehicleIcons(latestVehicles);
+        await ensureVehicleIcons(latestVehicles);
+        map.getSource("vehicles").setData(vehicleGeoJson());
 
-    // ★ 車両データだけ更新
-    map.getSource("vehicles").setData(vehicleGeoJson());
+        // 選択中の便だけルート/停留所を更新
+        if (selectedTripId) {
+          const current = latestVehicles.find(v => v.tripId === selectedTripId);
 
-    // 選択中のバスがある場合
-    if (selectedTripId) {
-      const current = latestVehicles.find(
-        v => v.tripId === selectedTripId
-      );
+          if (current) {
+            const selectedFeature = vehicleFeaturesByTrip.get(selectedTripId);
+            map.getSource("selected-vehicle").setData(
+              selectedFeature
+                ? { type: "FeatureCollection", features: [selectedFeature] }
+                : emptyFeatureCollection()
+            );
 
-      if (current) {
-        const selectedFeature =
-          vehicleFeaturesByTrip.get(selectedTripId);
+            map.getSource("selected-route")
+              .setData(selectedRouteGeoJson(selectedTripId));
 
-        map.getSource("selected-vehicle").setData(
-          selectedFeature
-            ? {
-                type: "FeatureCollection",
-                features: [selectedFeature]
-              }
-            : emptyFeatureCollection()
-        );
+            map.getSource("selected-stops")
+              .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
 
-        // 路線
-        map.getSource("selected-route")
-          .setData(selectedRouteGeoJson(selectedTripId));
+            renderSelectedStopNameMarkers(selectedTripId, Number(current.seq));
 
-        // この先の停留所
-        map.getSource("selected-stops")
-          .setData(
-            futureStopsGeoJson(
-              selectedTripId,
-              Number(current.seq)
-            )
-          );
+            const selectedProperties = selectedFeature?.properties;
+            if (selectedProperties) {
+              showVehicleInfoPanel(selectedProperties, Number(current.seq));
+            }
+          } else {
+            hideVehicleInfoPanel();
 
-        renderSelectedStopNameMarkers(
-          selectedTripId,
-          Number(current.seq)
-        );
-
-        // Popupだけバスの新しい位置へ追従
-        if (activeVehiclePopup) {
-          activeVehiclePopup.setLngLat([
-            current.lon,
-            current.lat
-          ]);
+            selectedTripId = null;
+            clearSelectedStopNameMarkers();
+            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
+            map.getSource("selected-route").setData(emptyFeatureCollection());
+            map.getSource("selected-stops").setData(emptyFeatureCollection());
+          }
         }
 
-      } else {
-        if (activeVehiclePopup) {
-          activeVehiclePopup.remove();
-          activeVehiclePopup = null;
-        }
+        document.getElementById("readableTimestamp").textContent =
+          new Date().toLocaleString("ja-JP");
 
-        selectedTripId = null;
-        clearSelectedStopNameMarkers();
-
-        map.getSource("selected-vehicle")
-          .setData(emptyFeatureCollection());
-
-        map.getSource("selected-route")
-          .setData(emptyFeatureCollection());
-
-        map.getSource("selected-stops")
-          .setData(emptyFeatureCollection());
+        status.textContent = `LIVE  ${latestVehicles.length}台運行中`;
+      } catch (e) {
+        console.error(e);
+        status.textContent = "リアルタイムデータ取得失敗";
+      } finally {
+        updateRunning = false;
+        setLoading(false);
       }
     }
-
-    document.getElementById("readableTimestamp").textContent =
-      new Date().toLocaleString("ja-JP");
-
-    status.textContent =
-      `${latestVehicles.length}台運行中`;
-
-  } catch (e) {
-    console.error(e);
-    status.textContent = "リアルタイムデータ取得失敗";
-
-  } finally {
-    updateRunning = false;
-    setLoading(false);
-  }
-}
 
     function startRealtimeTimer() {
       if (realtimeTimer !== null) return;
