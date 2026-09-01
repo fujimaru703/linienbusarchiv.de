@@ -594,6 +594,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
     }
 
+    function allStopsGeoJson() {
+      return {
+        type: "FeatureCollection",
+        features: Object.entries(stopDetails).map(([stopId, stop]) => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [stop.lon, stop.lat]
+          },
+          properties: {
+            stopId,
+            name: stop.name || stopNames[stopId] || "停留所名不明"
+          }
+        }))
+      };
+    }
+
     function emptyFeatureCollection() {
       return {
         type: "FeatureCollection",
@@ -701,6 +718,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         data: emptyFeatureCollection()
       });
 
+      map.addSource("all-stops", {
+        type: "geojson",
+        data: allStopsGeoJson()
+      });
+
       map.addSource("selected-route", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -709,6 +731,45 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       map.addSource("selected-stops", {
         type: "geojson",
         data: emptyFeatureCollection()
+      });
+
+      map.addLayer({
+        id: "all-stops-circle",
+        type: "circle",
+        source: "all-stops",
+        minzoom: 15,
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            15, 2.5,
+            17, 4,
+            19, 5.5
+          ],
+          "circle-color": "#ffffff",
+          "circle-stroke-color": "#6f7f89",
+          "circle-stroke-width": 1.5,
+          "circle-opacity": 0.95
+        }
+      });
+
+      map.addLayer({
+        id: "all-stops-label",
+        type: "symbol",
+        source: "all-stops",
+        minzoom: 16,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": 10,
+          "text-anchor": "left",
+          "text-offset": [0.7, 0],
+          "text-allow-overlap": false,
+          "text-optional": true
+        },
+        paint: {
+          "text-color": "#33414a",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2
+        }
       });
 
       map.addLayer({
@@ -764,7 +825,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         id: "selected-stops-label",
         type: "symbol",
         source: "selected-stops",
-        minzoom: 11,
+        minzoom: 10,
         layout: {
           "text-field": ["concat", ["get", "name"], "\n", ["get", "scheduledText"]],
           "text-size": 11,
@@ -802,7 +863,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         id: "selected-stops-delay",
         type: "symbol",
         source: "selected-stops",
-        minzoom: 11,
+        minzoom: 10,
         layout: {
           "text-field": ["get", "delayLateText"],
           "text-size": 11,
@@ -822,7 +883,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         id: "selected-stops-ontime",
         type: "symbol",
         source: "selected-stops",
-        minzoom: 11,
+        minzoom: 10,
         layout: {
           "text-field": ["get", "delayOnTimeText"],
           "text-size": 11,
@@ -865,6 +926,34 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         map.getCanvas().style.cursor = "";
       });
 
+      map.on("mouseenter", "all-stops-circle", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", "all-stops-circle", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", "all-stops-circle", e => {
+        const f = e.features?.[0];
+        if (!f) return;
+
+        e.originalEvent.cancelBubble = true;
+
+        new maplibregl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+          offset: 8
+        })
+          .setLngLat(f.geometry.coordinates)
+          .setHTML(`
+            <div style="padding:10px 12px;font-size:12px;font-weight:800;">
+              ${escapeHtml(f.properties?.name || "停留所")}
+            </div>
+          `)
+          .addTo(map);
+      });
+
       map.on("click", "vehicles", e => {
         const f = e.features?.[0];
         if (!f) return;
@@ -900,7 +989,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       map.on("click", e => {
         // 車両クリック以外なら選択ルートを消す
         const hit = map.queryRenderedFeatures(e.point, {
-          layers: ["vehicles"]
+          layers: ["vehicles", "all-stops-circle"]
         });
         if (hit.length) return;
 

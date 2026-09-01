@@ -688,3 +688,9 @@ html, body {
     line-height: 24px !important;
   }
 }
+
+
+/* standalone delay badge is intentionally hidden */
+.bus-popup__footer {
+  display: none !important;
+}
