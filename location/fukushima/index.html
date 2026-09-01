@@ -29,9 +29,11 @@
       left: 50%;
       transform: translateX(-50%);
       padding: 5px 12px;
-      background: rgba(255,255,255,.88);
-      border: 1px solid #888;
-      border-radius: 3px;
+      background: rgba(255,255,255,.90);
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.12);
+      backdrop-filter: blur(10px);
       font-size: 14px;
       font-weight: bold;
       white-space: nowrap;
@@ -44,10 +46,12 @@
       right: 8px;
       bottom: 8px;
       padding: 5px 8px;
-      background: rgba(0,0,0,.65);
+      background: rgba(20,28,36,.82);
       color: #fff;
       font-size: 11px;
-      border-radius: 3px;
+      border-radius: 999px;
+      box-shadow: 0 5px 18px rgba(0,0,0,.18);
+      backdrop-filter: blur(8px);
       pointer-events: none;
     }
 
@@ -57,23 +61,356 @@
       left: 8px;
       bottom: 8px;
       padding: 5px 8px;
-      background: rgba(255,255,255,.9);
-      border: 1px solid #999;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(0,0,0,.12);
       font-size: 11px;
-      border-radius: 3px;
+      border-radius: 999px;
+      box-shadow: 0 5px 18px rgba(0,0,0,.14);
+      backdrop-filter: blur(8px);
       max-width: 48vw;
     }
 
-    .maplibregl-popup-content {
-      font-size: 12px;
-      line-height: 1.5;
+    .maplibregl-popup {
+      max-width: 320px !important;
     }
+
+    .maplibregl-popup-content {
+      padding: 0;
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(255,255,255,.96);
+      box-shadow:
+        0 18px 45px rgba(0,0,0,.22),
+        0 3px 12px rgba(0,0,0,.12);
+      border: 1px solid rgba(255,255,255,.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .maplibregl-popup-close-button {
+      width: 30px;
+      height: 30px;
+      top: 7px;
+      right: 7px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 20px;
+      line-height: 28px;
+      background: rgba(0,0,0,.18);
+      transition: .15s ease;
+      z-index: 3;
+    }
+
+    .maplibregl-popup-close-button:hover {
+      background: rgba(0,0,0,.32);
+    }
+
+    .maplibregl-popup-tip {
+      border-top-color: rgba(255,255,255,.96) !important;
+    }
+
+    .bus-popup {
+      min-width: 250px;
+      color: #17202a;
+    }
+
+    .bus-popup__hero {
+      position: relative;
+      padding: 17px 46px 15px 18px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255,255,255,.24), transparent 42%),
+        linear-gradient(135deg, #1769aa 0%, #2386c8 52%, #31a8df 100%);
+    }
+
+    .bus-popup__eyebrow {
+      margin-bottom: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      opacity: .76;
+    }
+
+    .bus-popup__vehicle {
+      font-size: 23px;
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-shadow: 0 1px 2px rgba(0,0,0,.15);
+    }
+
+    .bus-popup__body {
+      padding: 14px 16px 15px;
+    }
+
+    .bus-popup__route {
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .bus-popup__destination {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 13px;
+      color: #4b5966;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .bus-popup__destination::before {
+      content: "→";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 21px;
+      height: 21px;
+      flex: 0 0 21px;
+      border-radius: 50%;
+      color: #1769aa;
+      background: #eaf5fb;
+      font-weight: 900;
+    }
+
+    .bus-popup__footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-top: 11px;
+      border-top: 1px solid #edf0f2;
+    }
+
+    .bus-popup__delay {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .bus-popup__delay--ok {
+      color: #147a44;
+      background: #e7f7ee;
+    }
+
+    .bus-popup__delay--late {
+      color: #b55a00;
+      background: #fff1df;
+    }
+
+    .bus-popup__trip {
+      color: #8b98a4;
+      font-size: 9px;
+      text-align: right;
+      word-break: break-all;
+    }
+  
+    #homeButton {
+      position: absolute;
+      z-index: 20;
+      top: 10px;
+      left: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 11px;
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 999px;
+      color: #17202a;
+      background: rgba(255,255,255,.93);
+      box-shadow: 0 5px 18px rgba(0,0,0,.13);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    #homeButton:hover {
+      transform: translateY(-1px);
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,.17);
+    }
+
+    #homeButton:active {
+      transform: translateY(0);
+    }
+
+    #homeButton .homeArrow {
+      font-size: 15px;
+      line-height: 1;
+      transform: translateY(-.5px);
+    }
+
+    #pageTitle {
+      max-width: calc(100vw - 230px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #loadingBar {
+      position: absolute;
+      z-index: 19;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 3px;
+      background: linear-gradient(90deg, #1769aa, #31a8df);
+      box-shadow: 0 0 12px rgba(49,168,223,.55);
+      transition: width .3s ease, opacity .25s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #legend {
+      position: absolute;
+      z-index: 10;
+      top: 54px;
+      right: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(0,0,0,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.90);
+      box-shadow: 0 6px 18px rgba(0,0,0,.11);
+      backdrop-filter: blur(9px);
+      -webkit-backdrop-filter: blur(9px);
+      color: #3c4852;
+      font-size: 10px;
+      line-height: 1.45;
+      pointer-events: none;
+    }
+
+    #legend b {
+      color: #17202a;
+      font-size: 10px;
+    }
+
+    .legendDot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 5px;
+      border-radius: 50%;
+      vertical-align: 0;
+    }
+
+    .legendDot.ok { background: #29a566; }
+    .legendDot.late { background: #e38a22; }
+
+    .bus-popup__vehicle-row {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .bus-popup__vehicle-icon-wrap {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: rgba(255,255,255,.93);
+      box-shadow: 0 4px 14px rgba(0,0,0,.16);
+      overflow: hidden;
+    }
+
+    .bus-popup__vehicle-icon {
+      display: block;
+      max-width: 46px;
+      max-height: 46px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .bus-popup__vehicle-meta {
+      min-width: 0;
+    }
+
+    .bus-popup__small {
+      margin-top: 3px;
+      font-size: 10px;
+      opacity: .82;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bus-popup__next {
+      margin: 10px 0 12px;
+      padding: 10px 11px;
+      border-radius: 11px;
+      background: #f4f8fb;
+      border: 1px solid #e8eef2;
+    }
+
+    .bus-popup__next-label {
+      margin-bottom: 2px;
+      color: #84919c;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .bus-popup__next-name {
+      color: #26323b;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .bus-popup__next-time {
+      margin-top: 2px;
+      color: #60717f;
+      font-size: 10px;
+    }
+
+    @media (max-width: 640px) {
+      #pageTitle {
+        top: 48px;
+        max-width: calc(100vw - 24px);
+        font-size: 12px;
+      }
+
+      #legend {
+        display: none;
+      }
+
+      #statusDisplay {
+        max-width: 60vw;
+      }
+
+      .maplibregl-popup {
+        max-width: 285px !important;
+      }
+    }
+
   </style>
 </head>
 
 <body>
+  <div id="loadingBar"></div>
   <div id="map"></div>
+  <a id="homeButton" href="/" aria-label="トップページに戻る">
+    <span class="homeArrow">←</span>
+    <span>トップへ</span>
+  </a>
   <div id="pageTitle">福島交通ロケーションマップ</div>
+  <div id="legend">
+    <b>LIVE STATUS</b><br>
+    <span class="legendDot ok"></span>ほぼ定刻　
+    <span class="legendDot late"></span>遅れ
+  </div>
   <div id="statusDisplay">読込中...</div>
   <div id="timestampDisplay">最終更新: <span id="readableTimestamp">-</span></div>
 
@@ -813,6 +1150,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         data: emptyFeatureCollection()
       });
 
+      map.addSource("selected-vehicle", {
+        type: "geojson",
+        data: emptyFeatureCollection()
+      });
+
       map.addSource("selected-route", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -892,6 +1234,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       });
 
       map.addLayer({
+        id: "selected-vehicle-halo",
+        type: "circle",
+        source: "selected-vehicle",
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            8, 13,
+            13, 18,
+            18, 24
+          ],
+          "circle-color": "rgba(49,168,223,0.14)",
+          "circle-stroke-color": "rgba(23,105,170,0.82)",
+          "circle-stroke-width": 3,
+          "circle-blur": 0.15
+        }
+      });
+
+      map.addLayer({
         id: "vehicles",
         type: "symbol",
         source: "vehicles",
@@ -927,6 +1287,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         const p = f.properties || {};
         selectedTripId = p.tripId || null;
 
+        map.getSource("selected-vehicle").setData({
+          type: "FeatureCollection",
+          features: [JSON.parse(JSON.stringify(f))]
+        });
+
         const current = latestVehicles.find(v => v.tripId === selectedTripId);
         const seq = Number(current?.seq);
 
@@ -941,12 +1306,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           closeOnClick: true
         })
           .setLngLat(f.geometry.coordinates)
-          .setHTML(
-            `<b>${escapeHtml(p.label)}</b><br>` +
-            `${escapeHtml(p.routeName)}<br>` +
-            `${escapeHtml(p.headsign)}<br>` +
-            `${escapeHtml(p.delayText)}`
-          )
+          .setHTML(buildBusPopupHtml(p))
           .addTo(map);
       });
 
@@ -958,9 +1318,140 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (hit.length) return;
 
         selectedTripId = null;
+        map.getSource("selected-vehicle").setData(emptyFeatureCollection());
         map.getSource("selected-route").setData(emptyFeatureCollection());
         map.getSource("selected-stops").setData(emptyFeatureCollection());
       });
+    }
+
+    function getVehicleIconUrl(label) {
+      return labelIconMap.get(String(label ?? "")) || "icon/yokokamo.png";
+    }
+
+    function getNextStopInfo(tripId, currentSeq) {
+      const updates = tripDelays[tripId];
+      if (!updates) return null;
+
+      const seqs = Object.keys(updates)
+        .map(Number)
+        .filter(n => Number.isFinite(n) && n > Number(currentSeq))
+        .sort((a, b) => a - b);
+
+      if (!seqs.length) return null;
+
+      const seq = seqs[0];
+      const info = updates[seq];
+      const stopId = cleanId(info?.stopId);
+      const stop = stopDetails[stopId];
+
+      if (!stop) return null;
+
+      let unixTime = Number(info?.arrivalTime || info?.departureTime) || null;
+
+      if (!unixTime) {
+        const timeStr = scheduledTimes[tripId]?.[seq];
+        if (timeStr) {
+          const [hh0, mm, ss] = timeStr.split(":").map(Number);
+          const now = new Date();
+          const dayOffset = Math.floor(hh0 / 24);
+          const hh = hh0 % 24;
+          const scheduled = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() + dayOffset,
+            hh, mm || 0, ss || 0
+          );
+          unixTime = Math.floor(scheduled.getTime() / 1000) + (Number(info?.delay) || 0);
+        }
+      }
+
+      return {
+        name: stop.name || stopNames[stopId] || "停留所名不明",
+        timeText: unixTime
+          ? new Date(unixTime * 1000).toLocaleTimeString("ja-JP", {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          : "時刻不明"
+      };
+    }
+
+    function setLoading(active, progress = 72) {
+      const bar = document.getElementById("loadingBar");
+      if (!bar) return;
+
+      if (active) {
+        bar.style.opacity = "1";
+        bar.style.width = `${Math.max(8, Math.min(92, progress))}%`;
+      } else {
+        bar.style.width = "100%";
+        setTimeout(() => {
+          bar.style.opacity = "0";
+          setTimeout(() => { bar.style.width = "0%"; }, 260);
+        }, 140);
+      }
+    }
+
+    function buildBusPopupHtml(p) {
+      const delay = Number(p.delay) || 0;
+      const delayClass = delay < 60
+        ? "bus-popup__delay--ok"
+        : "bus-popup__delay--late";
+      const delayIcon = delay < 60 ? "●" : "▲";
+
+      const current = latestVehicles.find(v => v.tripId === p.tripId);
+      const next = getNextStopInfo(p.tripId, Number(current?.seq));
+      const iconUrl = getVehicleIconUrl(p.label);
+
+      return `
+        <div class="bus-popup">
+          <div class="bus-popup__hero">
+            <div class="bus-popup__eyebrow">FUKUSHIMA KOTSU · LIVE</div>
+
+            <div class="bus-popup__vehicle-row">
+              <div class="bus-popup__vehicle-icon-wrap">
+                <img class="bus-popup__vehicle-icon"
+                     src="${escapeHtml(iconUrl)}"
+                     alt="">
+              </div>
+
+              <div class="bus-popup__vehicle-meta">
+                <div class="bus-popup__vehicle">車両 ${escapeHtml(p.label)}</div>
+                <div class="bus-popup__small">
+                  ${escapeHtml(p.routeId || "route ?")} · trip ${escapeHtml(p.tripId || "-")}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bus-popup__body">
+            <div class="bus-popup__route">${escapeHtml(p.routeName)}</div>
+
+            <div class="bus-popup__destination">
+              <span>${escapeHtml(p.headsign)}</span>
+            </div>
+
+            ${next ? `
+              <div class="bus-popup__next">
+                <div class="bus-popup__next-label">NEXT STOP</div>
+                <div class="bus-popup__next-name">${escapeHtml(next.name)}</div>
+                <div class="bus-popup__next-time">予想到着 ${escapeHtml(next.timeText)}</div>
+              </div>
+            ` : ""}
+
+            <div class="bus-popup__footer">
+              <span class="bus-popup__delay ${delayClass}">
+                <span>${delayIcon}</span>
+                <span>${escapeHtml(p.delayText)}</span>
+              </span>
+
+              <span class="bus-popup__trip">
+                LIVE
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function escapeHtml(v) {
@@ -980,6 +1471,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       updateRunning = true;
 
       const status = document.getElementById("statusDisplay");
+      setLoading(true, 68);
 
       try {
         await Promise.all([
@@ -994,6 +1486,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           const current = latestVehicles.find(v => v.tripId === selectedTripId);
 
           if (current) {
+            const selectedFeature = vehicleFeaturesByTrip.get(selectedTripId);
+            map.getSource("selected-vehicle").setData(
+              selectedFeature
+                ? { type: "FeatureCollection", features: [selectedFeature] }
+                : emptyFeatureCollection()
+            );
+
             map.getSource("selected-route")
               .setData(selectedRouteGeoJson(selectedTripId));
 
@@ -1001,6 +1500,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
               .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
           } else {
             selectedTripId = null;
+            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
             map.getSource("selected-route").setData(emptyFeatureCollection());
             map.getSource("selected-stops").setData(emptyFeatureCollection());
           }
@@ -1009,12 +1509,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         document.getElementById("readableTimestamp").textContent =
           new Date().toLocaleString("ja-JP");
 
-        status.textContent = `運行中車両: ${latestVehicles.length}台`;
+        status.textContent = `LIVE  ${latestVehicles.length}台運行中`;
       } catch (e) {
         console.error(e);
         status.textContent = "リアルタイムデータ取得失敗";
       } finally {
         updateRunning = false;
+        setLoading(false);
       }
     }
 
@@ -1026,6 +1527,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       try {
         status.textContent = "GTFS読込中...";
+        setLoading(true, 35);
 
         // GTFSとアイコンを並行ロード
         await Promise.all([
@@ -1036,12 +1538,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         installLayers();
 
         status.textContent = "リアルタイム情報取得中...";
+        setLoading(true, 72);
         await updateRealtime();
 
         setInterval(updateRealtime, UPDATE_INTERVAL);
       } catch (e) {
         console.error(e);
         status.textContent = "初期化に失敗しました";
+        setLoading(false);
       }
     });
   </script>
