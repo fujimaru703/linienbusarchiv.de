@@ -18,31 +18,14 @@
     // 地図
     // =========================================================
     const map = new maplibregl.Map({
-      container: "map",
-      center: [140.47, 37.75],
-      zoom: 13,
-      minZoom: 6,
-      maxZoom: 19,
-      attributionControl: true,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "&copy; OpenStreetMap contributors"
-          }
-        },
-        layers: [
-          {
-            id: "osm",
-            type: "raster",
-            source: "osm"
-          }
-        ]
-      }
-    });
+  container: "map",
+  center: [140.47, 37.75],
+  zoom: 13,
+  minZoom: 6,
+  maxZoom: 19,
+  attributionControl: true,
+  style: "https://tiles.openfreemap.org/styles/positron"
+});
 
     map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true
