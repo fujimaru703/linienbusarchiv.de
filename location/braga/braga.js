@@ -10,7 +10,7 @@ const GTFS_BASE = "./";
 // 末尾の / はあってもなくても動きます。
 // 例:
 // const BRAGA_WORKER_URL = "https://braga-vehicles.example.workers.dev/";
-const BRAGA_WORKER_URL = "https://misty-frost-9f0e.fujimaru703.workers.dev//";
+const BRAGA_WORKER_URL = "https://REPLACE-ME.workers.dev/";
 
 const UPDATE_INTERVAL = 15000;
 const CAMERA_STORAGE_KEY = "braga-map-camera-v1";
@@ -1034,29 +1034,6 @@ function renderSelectedStopNameMarkers(vehicle) {
 // =========================================================
 // 左下情報パネル
 // =========================================================
-function formatApiTime(unixSeconds) {
-  if (!Number.isFinite(unixSeconds)) {
-    return "--:--:--";
-  }
-
-  try {
-    return new Intl.DateTimeFormat(
-      "pt-PT",
-      {
-        timeZone: "Europe/Lisbon",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
-      }
-    ).format(
-      new Date(unixSeconds * 1000)
-    );
-  } catch (_) {
-    return "--:--:--";
-  }
-}
-
 function hideVehicleInfoPanel() {
   vehicleInfoPanel.hidden = true;
   vehicleInfoPanel.replaceChildren();
@@ -1095,18 +1072,9 @@ function showVehicleInfoPanel(vehicle) {
   number.className = "vip-number";
   number.textContent =
     vehicle.busId || "?";
-
-  const live =
-    document.createElement("div");
-
-  live.className = "vip-live";
-  live.textContent =
-    `位置更新 ${formatApiTime(vehicle.time)}`;
-
-  head.append(
+head.append(
     img,
-    number,
-    live
+    number
   );
 
   const route =

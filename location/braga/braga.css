@@ -51,6 +51,36 @@ body {
   text-decoration: none;
 }
 
+
+#mapTitle {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 30;
+  transform: translateX(-50%);
+
+  box-sizing: border-box;
+  max-width: min(420px, calc(100vw - 360px));
+  padding: 7px 13px;
+
+  border: 1px solid rgba(31, 52, 65, .13);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 4px 15px rgba(21, 42, 56, .11);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  color: #26343c;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 18px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
 #statusPanel {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
@@ -130,13 +160,6 @@ body {
   line-height: 1;
 }
 
-.vip-live {
-  margin-left: auto;
-  color: #60717a;
-  font-size: 9px;
-  font-weight: 750;
-  white-space: nowrap;
-}
 
 .vip-route {
   margin-bottom: 3px;
@@ -244,6 +267,14 @@ body {
 }
 
 @media (max-width: 640px) {
+  #mapTitle {
+    top: max(48px, calc(env(safe-area-inset-top) + 48px));
+    max-width: calc(100vw - 16px);
+    padding: 5px 10px;
+    font-size: 11px;
+    line-height: 16px;
+  }
+
   #homeButton {
     top: max(8px, env(safe-area-inset-top));
     left: max(8px, env(safe-area-inset-left));
