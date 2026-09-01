@@ -10,7 +10,7 @@ const GTFS_BASE = "./";
 // 末尾の / はあってもなくても動きます。
 // 例:
 // const BRAGA_WORKER_URL = "https://braga-vehicles.example.workers.dev/";
-const BRAGA_WORKER_URL = "https://REPLACE-ME.workers.dev/";
+const BRAGA_WORKER_URL = "https://misty-frost-9f0e.fujimaru703.workers.dev//";
 
 const UPDATE_INTERVAL = 15000;
 const CAMERA_STORAGE_KEY = "braga-map-camera-v1";
