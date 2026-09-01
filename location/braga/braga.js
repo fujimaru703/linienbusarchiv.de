@@ -13,10 +13,7 @@ const GTFS_BASE = "./";
 const BRAGA_WORKER_URL = "https://misty-frost-9f0e.fujimaru703.workers.dev/";
 
 const UPDATE_INTERVAL = 15000;
-const OFF_HOURS_CHECK_INTERVAL = 60000;
-const SERVICE_BEFORE_SECONDS = 10 * 60;
-const SERVICE_AFTER_SECONDS = 20 * 60;
-const CAMERA_STORAGE_KEY = "braga-map-camera-v3";
+const CAMERA_STORAGE_KEY = "braga-map-camera-v4";
 const DEFAULT_ICON_URL = "icon/default-bus.png";
 
 // GTFSにないAPI用line IDが今後必要になった場合だけ追加。
@@ -65,7 +62,7 @@ const map = new maplibregl.Map({
   center: savedCamera?.center || [-8.4200, 41.5505],
   zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13.5,
   bearing: Number.isFinite(savedCamera?.bearing) ? savedCamera.bearing : 0,
-  pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 60,
+  pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 45,
 
   minZoom: 6,
   maxZoom: 19,
@@ -116,11 +113,6 @@ const tripHeadsigns = Object.create(null);
 const tripRouteMap = Object.create(null);
 const tripDirectionMap = Object.create(null);
 const tripShapeMap = Object.create(null);
-const tripServiceMap = Object.create(null);
-const tripTimingMap = Object.create(null);
-
-const serviceCalendar = [];
-const serviceDateExceptions = new Map();
 
 const shapeMap = Object.create(null);
 
@@ -253,16 +245,6 @@ async function fetchText(url) {
   return response.text();
 }
 
-async function fetchOptionalText(url) {
-  try {
-    const response = await fetch(url, { cache: "force-cache" });
-    if (!response.ok) return "";
-    return response.text();
-  } catch (_) {
-    return "";
-  }
-}
-
 async function fetchJson(url) {
   const response = await fetch(url, {
     cache: "no-store"
@@ -292,17 +274,13 @@ async function loadStaticGtfs() {
     tripsText,
     stopsText,
     stopTimesText,
-    shapesText,
-    calendarText,
-    calendarDatesText
+    shapesText
   ] = await Promise.all([
     fetchText(GTFS_BASE + "routes.txt"),
     fetchText(GTFS_BASE + "trips.txt"),
     fetchText(GTFS_BASE + "stops.txt"),
     fetchText(GTFS_BASE + "stop_times.txt"),
-    fetchText(GTFS_BASE + "shapes.txt"),
-    fetchOptionalText(GTFS_BASE + "calendar.txt"),
-    fetchOptionalText(GTFS_BASE + "calendar_dates.txt")
+    fetchText(GTFS_BASE + "shapes.txt")
   ]);
 
   parseRoutes(routesText);
@@ -310,8 +288,6 @@ async function loadStaticGtfs() {
   parseStops(stopsText);
   parseStopTimes(stopTimesText);
   parseShapes(shapesText);
-  parseCalendar(calendarText);
-  parseCalendarDates(calendarDatesText);
 
   // Workerへ渡すline一覧はroutes.txtから自動生成。
   apiLineIds = [
@@ -358,7 +334,6 @@ function parseTrips(text) {
     if (!tripId) continue;
 
     tripRouteMap[tripId] = cleanId(row[h.route_id]);
-    tripServiceMap[tripId] = cleanId(row[h.service_id]);
     tripHeadsigns[tripId] = cleanId(row[h.trip_headsign]);
     tripDirectionMap[tripId] = Number(row[h.direction_id]);
     tripShapeMap[tripId] = cleanId(row[h.shape_id]);
@@ -410,7 +385,6 @@ function parseStopTimes(text) {
     const stopId = cleanId(row[h.stop_id]);
     const seq = Number(row[h.stop_sequence]);
     const arrival = cleanId(row[h.arrival_time]);
-    const departure = cleanId(row[h.departure_time]) || arrival;
 
     if (
       !tripId ||
@@ -435,292 +409,11 @@ function parseStopTimes(text) {
       stopId,
       scheduledText: normalizeGtfsTime(arrival)
     });
-
-    const arrivalSec = gtfsTimeToSeconds(arrival);
-    const departureSec = gtfsTimeToSeconds(departure);
-
-    if (!tripTimingMap[tripId]) {
-      tripTimingMap[tripId] = {
-        firstSeq: Infinity,
-        firstDepartureSec: null,
-        lastSeq: -Infinity,
-        lastArrivalSec: null
-      };
-    }
-
-    const timing = tripTimingMap[tripId];
-
-    if (Number.isFinite(departureSec) && seq < timing.firstSeq) {
-      timing.firstSeq = seq;
-      timing.firstDepartureSec = departureSec;
-    }
-
-    if (Number.isFinite(arrivalSec) && seq > timing.lastSeq) {
-      timing.lastSeq = seq;
-      timing.lastArrivalSec = arrivalSec;
-    }
   }
 
   for (const stops of Object.values(tripStops)) {
     stops.sort((a, b) => a.seq - b.seq);
   }
-}
-
-function gtfsTimeToSeconds(raw) {
-  if (!raw) return NaN;
-  const parts = String(raw).split(":").map(Number);
-  if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
-    return NaN;
-  }
-  return parts[0] * 3600 + parts[1] * 60 + (Number(parts[2]) || 0);
-}
-
-function parseCalendar(text) {
-  if (!text) return;
-  const rows = parseCsv(text);
-  if (!rows.length) return;
-
-  const h = headerIndex(rows[0]);
-  const weekdayFields = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday"
-  ];
-
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    const serviceId = cleanId(row[h.service_id]);
-    if (!serviceId) continue;
-
-    serviceCalendar.push({
-      serviceId,
-      startDate: Number(cleanId(row[h.start_date])),
-      endDate: Number(cleanId(row[h.end_date])),
-      weekdays: weekdayFields.map(name => Number(row[h[name]]) === 1)
-    });
-  }
-}
-
-function parseCalendarDates(text) {
-  if (!text) return;
-  const rows = parseCsv(text);
-  if (!rows.length) return;
-
-  const h = headerIndex(rows[0]);
-
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    const serviceId = cleanId(row[h.service_id]);
-    const date = cleanId(row[h.date]);
-    const exceptionType = Number(row[h.exception_type]);
-
-    if (!serviceId || !date || !Number.isFinite(exceptionType)) continue;
-
-    if (!serviceDateExceptions.has(date)) {
-      serviceDateExceptions.set(date, new Map());
-    }
-    serviceDateExceptions.get(date).set(serviceId, exceptionType);
-  }
-}
-
-function ymdKey(parts) {
-  return (
-    String(parts.year).padStart(4, "0") +
-    String(parts.month).padStart(2, "0") +
-    String(parts.day).padStart(2, "0")
-  );
-}
-
-function datePartsToDayNumber(parts) {
-  return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / 86400000);
-}
-
-function dayNumberToDateParts(dayNumber) {
-  const d = new Date(dayNumber * 86400000);
-  return {
-    year: d.getUTCFullYear(),
-    month: d.getUTCMonth() + 1,
-    day: d.getUTCDate()
-  };
-}
-
-function bragaNowParts() {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Lisbon",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23"
-  }).formatToParts(new Date());
-
-  const value = type => Number(parts.find(p => p.type === type)?.value);
-
-  return {
-    year: value("year"),
-    month: value("month"),
-    day: value("day"),
-    hour: value("hour"),
-    minute: value("minute"),
-    second: value("second")
-  };
-}
-
-function activeServiceIdsForDate(dateParts) {
-  // calendar.txt がない場合は全tripを対象にして、時間帯判定だけは動かす。
-  if (!serviceCalendar.length) {
-    return new Set(Object.values(tripServiceMap).filter(Boolean));
-  }
-
-  const key = ymdKey(dateParts);
-  const keyNumber = Number(key);
-  const weekday = new Date(
-    Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day)
-  ).getUTCDay();
-
-  const active = new Set();
-
-  for (const rule of serviceCalendar) {
-    if (
-      keyNumber >= rule.startDate &&
-      keyNumber <= rule.endDate &&
-      rule.weekdays[weekday]
-    ) {
-      active.add(rule.serviceId);
-    }
-  }
-
-  const exceptions = serviceDateExceptions.get(key);
-  if (exceptions) {
-    for (const [serviceId, type] of exceptions) {
-      if (type === 1) active.add(serviceId);
-      if (type === 2) active.delete(serviceId);
-    }
-  }
-
-  return active;
-}
-
-function tripIntervalsForClockDate(dateParts) {
-  const dayNumber = datePartsToDayNumber(dateParts);
-  const intervals = [];
-
-  // 当日分と、前日ダイヤの24:xx以降を同じ暦日の24時間へ投影する。
-  // これにより00:xxの深夜便も「朝の始発」扱いにはならない。
-  for (const sourceOffset of [-1, 0]) {
-    const sourceDate = dayNumberToDateParts(dayNumber + sourceOffset);
-    const activeServices = activeServiceIdsForDate(sourceDate);
-
-    for (const [tripId, timing] of Object.entries(tripTimingMap)) {
-      if (!activeServices.has(tripServiceMap[tripId])) continue;
-      if (!Number.isFinite(timing.firstDepartureSec) || !Number.isFinite(timing.lastArrivalSec)) continue;
-
-      let start = sourceOffset * 86400 + timing.firstDepartureSec;
-      let end = sourceOffset * 86400 + timing.lastArrivalSec;
-      if (end < start) end += 86400;
-
-      const clippedStart = Math.max(0, start);
-      const clippedEnd = Math.min(86400, end);
-
-      if (clippedEnd > clippedStart) {
-        intervals.push([clippedStart, clippedEnd]);
-      }
-    }
-  }
-
-  intervals.sort((a, b) => a[0] - b[0]);
-  return intervals;
-}
-
-function mergedIntervalsForClockDate(dateParts) {
-  const intervals = tripIntervalsForClockDate(dateParts);
-  const merged = [];
-
-  for (const interval of intervals) {
-    const last = merged[merged.length - 1];
-    if (!last || interval[0] > last[1]) {
-      merged.push(interval.slice());
-    } else {
-      last[1] = Math.max(last[1], interval[1]);
-    }
-  }
-
-  return merged;
-}
-
-function getBusLocationServiceState() {
-  const now = bragaNowParts();
-  const nowSec = now.hour * 3600 + now.minute * 60 + now.second;
-  const intervals = mergedIntervalsForClockDate(now);
-
-  if (!intervals.length) {
-    return { operating: false, reason: "no-service" };
-  }
-
-  // 24時間を円として見て、全路線で最も長くバスが走らない区間を
-  // 「終バス～翌始発」の運行時間外とみなす。固定の深夜時刻は使わない。
-  let bestGap = null;
-
-  for (let i = 0; i < intervals.length - 1; i++) {
-    const start = intervals[i][1];
-    const end = intervals[i + 1][0];
-    const length = end - start;
-    if (!bestGap || length > bestGap.length) {
-      bestGap = { start, end, length, wraps: false };
-    }
-  }
-
-  const circularStart = intervals[intervals.length - 1][1];
-  const circularEnd = intervals[0][0] + 86400;
-  const circularLength = circularEnd - circularStart;
-
-  if (!bestGap || circularLength > bestGap.length) {
-    bestGap = {
-      start: circularStart,
-      end: circularEnd,
-      length: circularLength,
-      wraps: true
-    };
-  }
-
-  const offStart = bestGap.start + SERVICE_AFTER_SECONDS;
-  const offEnd = bestGap.end - SERVICE_BEFORE_SECONDS;
-
-  // 終バス+20分と始発-10分が重なる日なら、停止時間は作らない。
-  if (offEnd <= offStart) {
-    return { operating: true };
-  }
-
-  let testSec = nowSec;
-  if (bestGap.wraps && testSec < intervals[0][0]) {
-    testSec += 86400;
-  }
-
-  const operating = !(testSec >= offStart && testSec < offEnd);
-
-  return {
-    operating,
-    offStart,
-    offEnd,
-    wraps: bestGap.wraps
-  };
-}
-
-function clearRealtimeVehiclesForOffHours() {
-  latestVehicles = [];
-
-  if (map.getSource("vehicles")) {
-    map.getSource("vehicles").setData(emptyFeatureCollection());
-  }
-
-  updateVehicleNumberMarkers([]);
-  clearVehicleSelection();
 }
 
 function parseShapes(text) {
@@ -1466,72 +1159,6 @@ head.append(
   vehicleInfoPanel.hidden = false;
 }
 
-// =========================================================
-// 3D地形
-// =========================================================
-function installTerrain() {
-  // MapterhornはTerrarium形式・512pxのDEM。
-  // TileJSON任せにせず明示して、さらにhillshadeも重ねて
-  // 高低差が目で分かるようにする。
-  const demSpec = {
-    type: "raster-dem",
-    tiles: [
-      "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"
-    ],
-    encoding: "terrarium",
-    tileSize: 512,
-    maxzoom: 14,
-    attribution:
-      '<a href="https://mapterhorn.com/attribution">© Mapterhorn</a>'
-  };
-
-  if (!map.getSource("terrainSource")) {
-    map.addSource(
-      "terrainSource",
-      demSpec
-    );
-  }
-
-  if (!map.getSource("hillshadeSource")) {
-    map.addSource(
-      "hillshadeSource",
-      demSpec
-    );
-  }
-
-  // 1だとBraga中心部ではかなり控えめなので少し強調。
-  map.setTerrain({
-    source: "terrainSource",
-    exaggeration: 1.6
-  });
-
-  if (!map.getLayer("terrain-hillshade")) {
-    const layers =
-      map.getStyle()?.layers || [];
-
-    // 背景のすぐ上、道路・文字より下に入れる。
-    const beforeId =
-      layers.find(
-        layer =>
-          layer.type !== "background"
-      )?.id;
-
-    map.addLayer(
-      {
-        id: "terrain-hillshade",
-        type: "hillshade",
-        source: "hillshadeSource",
-        paint: {
-          "hillshade-exaggeration": 0.55,
-          "hillshade-shadow-color": "#5b5147",
-          "hillshade-highlight-color": "#ffffff",
-          "hillshade-accent-color": "#8f867c"
-        }
-      },
-      beforeId
-    );
-  }
-}
 
 // =========================================================
 // MapLibreレイヤ
@@ -1805,16 +1432,7 @@ function clearVehicleSelection() {
 // Realtime更新
 // =========================================================
 async function updateRealtime() {
-  if (updateRunning) return null;
-
-  const serviceState = getBusLocationServiceState();
-  if (!serviceState.operating) {
-    clearRealtimeVehiclesForOffHours();
-    statusDisplay.textContent = "現在は運行時間外です";
-    readableTimestamp.textContent = new Date().toLocaleString("ja-JP");
-    setLoading(false);
-    return false;
-  }
+  if (updateRunning) return;
 
   updateRunning = true;
   setLoading(true, 72);
@@ -1912,8 +1530,6 @@ async function updateRealtime() {
     statusDisplay.textContent =
       `${latestVehicles.length}台運行中`;
 
-    return true;
-
   } catch (error) {
     console.error(error);
 
@@ -1922,28 +1538,26 @@ async function updateRealtime() {
         ? "リアルタイムデータ取得失敗"
         : "Worker URLを設定してください";
 
-    return true;
-
   } finally {
     updateRunning = false;
     setLoading(false);
   }
 }
 
-function startRealtimeTimer(delay = UPDATE_INTERVAL) {
-  stopRealtimeTimer();
+function startRealtimeTimer() {
+  if (realtimeTimer !== null) {
+    return;
+  }
 
-  realtimeTimer = window.setTimeout(async () => {
-    realtimeTimer = null;
-    if (document.hidden) return;
-
-    const operating = await updateRealtime();
-    startRealtimeTimer(
-      operating === false
-        ? OFF_HOURS_CHECK_INTERVAL
-        : UPDATE_INTERVAL
+  realtimeTimer =
+    window.setInterval(
+      () => {
+        if (!document.hidden) {
+          updateRealtime();
+        }
+      },
+      UPDATE_INTERVAL
     );
-  }, delay);
 }
 
 function stopRealtimeTimer() {
@@ -1951,22 +1565,18 @@ function stopRealtimeTimer() {
     return;
   }
 
-  clearTimeout(realtimeTimer);
+  clearInterval(realtimeTimer);
   realtimeTimer = null;
 }
 
 document.addEventListener(
   "visibilitychange",
-  async () => {
+  () => {
     if (document.hidden) {
       stopRealtimeTimer();
     } else {
-      const operating = await updateRealtime();
-      startRealtimeTimer(
-        operating === false
-          ? OFF_HOURS_CHECK_INTERVAL
-          : UPDATE_INTERVAL
-      );
+      updateRealtime();
+      startRealtimeTimer();
     }
   }
 );
@@ -1988,9 +1598,6 @@ map.on(
         DEFAULT_ICON_URL
       );
 
-      // OpenFreeMap Positronの上に実際の標高地形を追加
-      installTerrain();
-
       installLayers();
 
       if (!workerConfigured()) {
@@ -2009,12 +1616,8 @@ map.on(
 
       setLoading(true, 72);
 
-      const operating = await updateRealtime();
-      startRealtimeTimer(
-        operating === false
-          ? OFF_HOURS_CHECK_INTERVAL
-          : UPDATE_INTERVAL
-      );
+      await updateRealtime();
+      startRealtimeTimer();
 
     } catch (error) {
       console.error(error);
