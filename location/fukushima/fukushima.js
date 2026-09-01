@@ -596,28 +596,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
     }
 
-    function allStopsGeoJson() {
-      return {
-        type: "FeatureCollection",
-        features: Object.entries(stopDetails).map(([stopId, stop]) => ({
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [stop.lon, stop.lat]
-          },
-          properties: {
-            stopId,
-            name: stop.name || stopNames[stopId] || "停留所名不明"
-          }
-        }))
-      };
-    }
-
-    function refreshAllStopsSource() {
-      const src = map.getSource("all-stops");
-      if (src) src.setData(allStopsGeoJson());
-    }
-
     function emptyFeatureCollection() {
       return {
         type: "FeatureCollection",
@@ -726,11 +704,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         data: emptyFeatureCollection()
       });
 
-      map.addSource("all-stops", {
-        type: "geojson",
-        data: allStopsGeoJson()
-      });
-
       map.addSource("selected-route", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -773,52 +746,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       });
 
       // 全停留所: 拡大時に表示。ルート線より上に置く。
-      map.addLayer({
-        id: "all-stops-circle",
-        type: "circle",
-        source: "all-stops",
-        minzoom: 13,
-        paint: {
-          "circle-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            13, 2,
-            15, 3,
-            17, 4.5,
-            19, 5.5
-          ],
-          "circle-color": "#ffffff",
-          "circle-stroke-color": "#697983",
-          "circle-stroke-width": 1.5,
-          "circle-opacity": 0.96
-        }
-      });
-
-      map.addLayer({
-        id: "all-stops-label",
-        type: "symbol",
-        source: "all-stops",
-        minzoom: 14,
-        layout: {
-          "text-field": ["get", "name"],
-          "text-size": [
-            "interpolate", ["linear"], ["zoom"],
-            14, 10,
-            16, 11,
-            18, 12
-          ],
-          "text-anchor": "left",
-          "text-offset": [0.75, 0],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-          "text-optional": false
-        },
-        paint: {
-          "text-color": "#26343c",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2
-        }
-      });
-
 
       // 停留所はPNGマーカーではなく軽いcircleで表示
       map.addLayer({
@@ -829,8 +756,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
             10, 3,
-            15, 6,
-            18, 8
+            14, 4.5,
+            17, 6,
+            19, 7
           ],
           "circle-color": "#ffffff",
           "circle-stroke-color": "#1e90ff",
@@ -842,12 +770,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         id: "selected-stops-label",
         type: "symbol",
         source: "selected-stops",
-        minzoom: 10,
+        minzoom: 9,
         layout: {
-          "text-field": ["concat", ["get", "name"], "\n", ["get", "scheduledText"]],
-          "text-size": 11,
+          "text-field": ["get", "name"],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            9, 10,
+            13, 11,
+            17, 12
+          ],
           "text-anchor": "left",
-          "text-offset": [0.8, 0],
+          "text-offset": [0.8, -0.2],
           "text-allow-overlap": true,
           "text-ignore-placement": true,
           "text-optional": false
@@ -878,6 +811,27 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       });
 
       map.addLayer({
+        id: "selected-stops-scheduled",
+        type: "symbol",
+        source: "selected-stops",
+        minzoom: 10,
+        layout: {
+          "text-field": ["get", "scheduledText"],
+          "text-size": 10,
+          "text-anchor": "left",
+          "text-offset": [0.8, 1.0],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-optional": false
+        },
+        paint: {
+          "text-color": "#5f6b73",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2
+        }
+      });
+
+      map.addLayer({
         id: "selected-stops-delay",
         type: "symbol",
         source: "selected-stops",
@@ -886,9 +840,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "text-field": ["get", "delayLateText"],
           "text-size": 11,
           "text-anchor": "left",
-          "text-offset": [0.8, 1.15],
-          "text-allow-overlap": false,
-          "text-optional": true
+          "text-offset": [3.0, 1.0],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-optional": false
         },
         paint: {
           "text-color": "#d93025",
@@ -906,9 +861,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "text-field": ["get", "delayOnTimeText"],
           "text-size": 11,
           "text-anchor": "left",
-          "text-offset": [0.8, 1.15],
-          "text-allow-overlap": false,
-          "text-optional": true
+          "text-offset": [3.0, 1.0],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-optional": false
         },
         paint: {
           "text-color": "#16834b",
@@ -942,44 +898,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       map.on("mouseleave", "vehicles", () => {
         map.getCanvas().style.cursor = "";
-      });
-
-      map.on("mouseenter", "all-stops-circle", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-
-      map.on("mouseleave", "all-stops-circle", () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      map.on("click", "all-stops-circle", e => {
-        const f = e.features?.[0];
-        if (!f) return;
-
-        e.originalEvent.cancelBubble = true;
-
-        if (activeVehiclePopup) {
-          activeVehiclePopup.remove();
-          activeVehiclePopup = null;
-        }
-
-        selectedTripId = null;
-        map.getSource("selected-vehicle").setData(emptyFeatureCollection());
-        map.getSource("selected-route").setData(emptyFeatureCollection());
-        map.getSource("selected-stops").setData(emptyFeatureCollection());
-
-        new maplibregl.Popup({
-          closeButton: true,
-          closeOnClick: true,
-          offset: 8
-        })
-          .setLngLat(f.geometry.coordinates)
-          .setHTML(`
-            <div style="padding:10px 12px;font-size:12px;font-weight:800;">
-              ${escapeHtml(f.properties?.name || "停留所")}
-            </div>
-          `)
-          .addTo(map);
       });
 
       map.on("click", "vehicles", e => {
@@ -1401,7 +1319,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         await loadImageToMap("icon/yokokamo.png");
 
         installLayers();
-        refreshAllStopsSource();
 
         status.textContent = "リアルタイム情報取得中...";
         setLoading(true, 72);
