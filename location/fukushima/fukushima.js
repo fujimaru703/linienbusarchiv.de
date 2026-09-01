@@ -14,6 +14,12 @@
 
     const UPDATE_INTERVAL = 15000;
 
+    // バスロケ表示時間:
+    // その日の始発10分前 ～ 終バスの終点到着20分後
+    const SERVICE_START_MARGIN_SEC = 10 * 60;
+    const SERVICE_END_MARGIN_SEC = 20 * 60;
+    const SERVICE_TIMEZONE = "Asia/Tokyo";
+
     // =========================================================
     // 地図
     // =========================================================
@@ -84,6 +90,11 @@
     const routeNames = Object.create(null);
     const tripHeadsigns = Object.create(null);
     const tripShapeMap = Object.create(null);
+    const tripServiceMap = Object.create(null);
+    const tripServiceTimes = Object.create(null);
+
+    let calendarRows = [];
+    let calendarDateRows = [];
     const shapeMap = Object.create(null);
     const stopNames = Object.create(null);
     const stopDetails = Object.create(null);
@@ -388,24 +399,46 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return r.json();
     }
 
+    // calendar.txt / calendar_dates.txt は、無いGTFSでも動くよう任意読込。
+    async function fetchOptionalText(url) {
+      try {
+        const r = await fetch(url, { cache: "force-cache" });
+        if (!r.ok) return "";
+        return r.text();
+      } catch (_) {
+        return "";
+      }
+    }
+
     // =========================================================
     // 静的GTFS: 初回に1回だけ読む
     // =========================================================
     async function loadStaticGtfs() {
-      const [routesText, tripsText, stopsText, stopTimesText, shapesText] =
-        await Promise.all([
-          fetchText(GTFS_BASE + "routes.txt"),
-          fetchText(GTFS_BASE + "trips.txt"),
-          fetchText(GTFS_BASE + "stops.txt"),
-          fetchText(GTFS_BASE + "stop_times.txt"),
-          fetchText(GTFS_BASE + "shapes.txt")
-        ]);
+      const [
+        routesText,
+        tripsText,
+        stopsText,
+        stopTimesText,
+        shapesText,
+        calendarText,
+        calendarDatesText
+      ] = await Promise.all([
+        fetchText(GTFS_BASE + "routes.txt"),
+        fetchText(GTFS_BASE + "trips.txt"),
+        fetchText(GTFS_BASE + "stops.txt"),
+        fetchText(GTFS_BASE + "stop_times.txt"),
+        fetchText(GTFS_BASE + "shapes.txt"),
+        fetchOptionalText(GTFS_BASE + "calendar.txt"),
+        fetchOptionalText(GTFS_BASE + "calendar_dates.txt")
+      ]);
 
       parseRoutes(routesText);
       parseTrips(tripsText);
       parseStops(stopsText);
       parseStopTimes(stopTimesText);
       parseShapes(shapesText);
+      parseCalendar(calendarText);
+      parseCalendarDates(calendarDatesText);
 
       staticGtfsLoaded = true;
     }
@@ -438,6 +471,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (!tripId) continue;
         tripHeadsigns[tripId] = cleanId(r[h.trip_headsign]);
         tripShapeMap[tripId] = cleanId(r[h.shape_id]);
+        tripServiceMap[tripId] =
+          h.service_id != null ? cleanId(r[h.service_id]) : "";
       }
     }
 
@@ -458,19 +493,242 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
+    function gtfsTimeToSeconds(raw) {
+      const parts = String(raw ?? "").split(":").map(Number);
+      if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+        return NaN;
+      }
+
+      const hh = parts[0];
+      const mm = parts[1];
+      const ss = Number.isFinite(parts[2]) ? parts[2] : 0;
+      return hh * 3600 + mm * 60 + ss;
+    }
+
     function parseStopTimes(text) {
       const rows = parseCsv(text);
       if (!rows.length) return;
       const h = headerIndex(rows[0]);
+
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         const tripId = cleanId(r[h.trip_id]);
         const seq = Number(r[h.stop_sequence]);
         if (!tripId || !Number.isFinite(seq)) continue;
 
+        const arrival = cleanId(r[h.arrival_time]);
+        const departure =
+          h.departure_time != null
+            ? cleanId(r[h.departure_time])
+            : arrival;
+
         if (!scheduledTimes[tripId]) scheduledTimes[tripId] = Object.create(null);
-        scheduledTimes[tripId][seq] = cleanId(r[h.arrival_time]);
+        scheduledTimes[tripId][seq] = arrival;
+
+        if (!tripServiceTimes[tripId]) {
+          tripServiceTimes[tripId] = {
+            firstSeq: Infinity,
+            firstDepartureSec: NaN,
+            lastSeq: -Infinity,
+            lastArrivalSec: NaN
+          };
+        }
+
+        const t = tripServiceTimes[tripId];
+        const departureSec = gtfsTimeToSeconds(departure || arrival);
+        const arrivalSec = gtfsTimeToSeconds(arrival || departure);
+
+        if (seq < t.firstSeq) {
+          t.firstSeq = seq;
+          t.firstDepartureSec = departureSec;
+        }
+
+        if (seq > t.lastSeq) {
+          t.lastSeq = seq;
+          t.lastArrivalSec = arrivalSec;
+        }
       }
+    }
+
+    function parseCalendar(text) {
+      calendarRows = [];
+      if (!text) return;
+
+      const rows = parseCsv(text);
+      if (!rows.length) return;
+      const h = headerIndex(rows[0]);
+
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const serviceId = cleanId(r[h.service_id]);
+        if (!serviceId) continue;
+
+        calendarRows.push({
+          serviceId,
+          monday: Number(r[h.monday]) === 1,
+          tuesday: Number(r[h.tuesday]) === 1,
+          wednesday: Number(r[h.wednesday]) === 1,
+          thursday: Number(r[h.thursday]) === 1,
+          friday: Number(r[h.friday]) === 1,
+          saturday: Number(r[h.saturday]) === 1,
+          sunday: Number(r[h.sunday]) === 1,
+          startDate: cleanId(r[h.start_date]),
+          endDate: cleanId(r[h.end_date])
+        });
+      }
+    }
+
+    function parseCalendarDates(text) {
+      calendarDateRows = [];
+      if (!text) return;
+
+      const rows = parseCsv(text);
+      if (!rows.length) return;
+      const h = headerIndex(rows[0]);
+
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const serviceId = cleanId(r[h.service_id]);
+        const date = cleanId(r[h.date]);
+        const exceptionType = Number(r[h.exception_type]);
+
+        if (!serviceId || !date || !Number.isFinite(exceptionType)) continue;
+        calendarDateRows.push({ serviceId, date, exceptionType });
+      }
+    }
+
+    function japanNowParts(date = new Date()) {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: SERVICE_TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23"
+      }).formatToParts(date);
+
+      const get = type => parts.find(p => p.type === type)?.value || "";
+      const year = get("year");
+      const month = get("month");
+      const day = get("day");
+
+      return {
+        dateKey: `${year}${month}${day}`,
+        weekday: get("weekday").toLowerCase(),
+        seconds:
+          Number(get("hour")) * 3600 +
+          Number(get("minute")) * 60 +
+          Number(get("second"))
+      };
+    }
+
+    function activeServiceIdsForToday(nowParts) {
+      const active = new Set();
+
+      // calendar.txt がある場合は曜日・有効期間で絞る。
+      if (calendarRows.length) {
+        for (const row of calendarRows) {
+          if (row.startDate && nowParts.dateKey < row.startDate) continue;
+          if (row.endDate && nowParts.dateKey > row.endDate) continue;
+          if (row[nowParts.weekday]) active.add(row.serviceId);
+        }
+      } else {
+        // calendar.txt が無いGTFSでは trips.txt にある全service_idを候補にする。
+        for (const serviceId of Object.values(tripServiceMap)) {
+          if (serviceId) active.add(serviceId);
+        }
+      }
+
+      // calendar_dates.txt の例外を反映。1=追加、2=運休。
+      for (const row of calendarDateRows) {
+        if (row.date !== nowParts.dateKey) continue;
+        if (row.exceptionType === 1) active.add(row.serviceId);
+        if (row.exceptionType === 2) active.delete(row.serviceId);
+      }
+
+      return active;
+    }
+
+    function getTodayServiceWindow() {
+      const nowParts = japanNowParts();
+      const activeServices = activeServiceIdsForToday(nowParts);
+      const hasServiceIds = Object.values(tripServiceMap).some(Boolean);
+
+      let firstDepartureSec = Infinity;
+      let lastArrivalSec = -Infinity;
+
+      for (const [tripId, times] of Object.entries(tripServiceTimes)) {
+        const serviceId = tripServiceMap[tripId];
+
+        // service_id が使える場合だけ、その日の運行便に絞る。
+        if (hasServiceIds && serviceId && !activeServices.has(serviceId)) continue;
+
+        if (Number.isFinite(times.firstDepartureSec)) {
+          firstDepartureSec = Math.min(firstDepartureSec, times.firstDepartureSec);
+        }
+
+        if (Number.isFinite(times.lastArrivalSec)) {
+          lastArrivalSec = Math.max(lastArrivalSec, times.lastArrivalSec);
+        }
+      }
+
+      if (!Number.isFinite(firstDepartureSec) || !Number.isFinite(lastArrivalSec)) {
+        return null;
+      }
+
+      return {
+        nowSec: nowParts.seconds,
+        startSec: firstDepartureSec - SERVICE_START_MARGIN_SEC,
+        endSec: lastArrivalSec + SERVICE_END_MARGIN_SEC
+      };
+    }
+
+    function isBusLocationOperating() {
+      const window = getTodayServiceWindow();
+
+      // 時刻表を判定できなかった場合は、誤停止を避けて従来どおり動かす。
+      if (!window) return true;
+
+      return window.nowSec >= window.startSec && window.nowSec <= window.endSec;
+    }
+
+    function clearRealtimeDisplayForOffHours() {
+      latestVehicles = [];
+      tripDelays = Object.create(null);
+      selectedTripId = null;
+
+      updateVehicleNumberMarkers([]);
+      clearSelectedStopNameMarkers();
+
+      if (vehicleInfoPanel) {
+        vehicleInfoPanel.style.display = "none";
+        vehicleInfoPanel.replaceChildren();
+      }
+
+      for (const sourceId of [
+        "vehicles",
+        "selected-vehicle",
+        "selected-route",
+        "selected-stops"
+      ]) {
+        const source = map.getSource(sourceId);
+        if (source) source.setData(emptyFeatureCollection());
+      }
+    }
+
+    function showOutOfService() {
+      clearRealtimeDisplayForOffHours();
+
+      const status = document.getElementById("statusDisplay");
+      if (status) status.textContent = "現在は運行時間外です";
+
+      const timestamp = document.getElementById("readableTimestamp");
+      if (timestamp) timestamp.textContent = "--";
+
+      setLoading(false);
     }
 
     function parseShapes(text) {
@@ -1342,6 +1600,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // =========================================================
     async function updateRealtime() {
       if (updateRunning) return;
+
+      // 運行時間外はWorkerを一切呼ばない。
+      // 判定自体はブラウザ内のGTFSデータだけで行う。
+      if (!isBusLocationOperating()) {
+        showOutOfService();
+        return;
+      }
+
       updateRunning = true;
 
       const status = document.getElementById("statusDisplay");
@@ -1409,6 +1675,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       if (realtimeTimer !== null) return;
 
       realtimeTimer = window.setInterval(() => {
+        // 15秒ごとに時刻判定するが、運行時間外はupdateRealtime内で
+        // Workerアクセス前に終了するためCloudflareへのリクエストは発生しない。
         if (!document.hidden) updateRealtime();
       }, UPDATE_INTERVAL);
     }
