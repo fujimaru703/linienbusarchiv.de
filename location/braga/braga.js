@@ -16,6 +16,36 @@ const UPDATE_INTERVAL = 15000;
 const CAMERA_STORAGE_KEY = "braga-map-camera-v4";
 const DEFAULT_ICON_URL = "icon/default-bus.png";
 
+// =========================================================
+// 車番ごとの車両画像
+// 福島版と同じく「同じ画像を使う車番」を配列でまとめて指定する。
+// =========================================================
+const labelIconMap = new Map();
+
+const labelConecto = ["900", "901", "902", "903", "904","905", "906", "907", "908", "909","910", "911", "912", "913", "914","915", "916", "917", "918", "919","920", "921", "922", "923", "924"];
+labelConecto.forEach(label =>
+  labelIconMap.set(label, "icon/Conecto.png")
+);
+
+const labelMAN = ["439", "441"];
+labelMAN.forEach(label =>
+  labelIconMap.set(label, "icon/man.png")
+);
+
+実際には次の形で何グループでも追加できます:
+
+const labelXXX = ["車番1", "車番2", "車番3"];
+labelXXX.forEach(label =>
+  labelIconMap.set(label, "icon/画像名.png")
+);
+
+function getVehicleIconUrl(busId) {
+  return (
+    labelIconMap.get(String(busId)) ||
+    DEFAULT_ICON_URL
+  );
+}
+
 // GTFSにないAPI用line IDが今後必要になった場合だけ追加。
 // 例: ["2T", "22F"]
 const EXTRA_API_LINES = [];
@@ -741,7 +771,7 @@ function vehicleGeoJson() {
           apiTime: Number.isFinite(vehicle.time)
             ? vehicle.time
             : 0,
-          iconUrl: DEFAULT_ICON_URL
+          iconUrl: getVehicleIconUrl(vehicle.busId)
         }
       };
 
@@ -1065,7 +1095,7 @@ function showVehicleInfoPanel(vehicle) {
     document.createElement("img");
 
   img.className = "vip-icon";
-  img.src = DEFAULT_ICON_URL;
+  img.src = getVehicleIconUrl(vehicle.busId);
   img.alt = "";
 
   const number =
@@ -1254,7 +1284,7 @@ function installLayers() {
     type: "symbol",
     source: "vehicles",
     layout: {
-      "icon-image": DEFAULT_ICON_URL,
+      "icon-image": ["get", "iconUrl"],
 
       "icon-size": [
         "interpolate",
@@ -1594,8 +1624,17 @@ map.on(
       setLoading(true, 32);
 
       await loadStaticGtfs();
-      await loadImageToMap(
-        DEFAULT_ICON_URL
+
+      // デフォルト画像 + labelIconMapで指定した全画像をMapLibreへ登録。
+      const allVehicleIconUrls = [
+        DEFAULT_ICON_URL,
+        ...new Set(labelIconMap.values())
+      ];
+
+      await Promise.all(
+        allVehicleIconUrls.map(url =>
+          loadImageToMap(url)
+        )
       );
 
       installLayers();
