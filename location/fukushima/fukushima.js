@@ -36,14 +36,34 @@
     const savedCamera = loadSavedCamera();
 
     const map = new maplibregl.Map({
-  container: "map",
-  center: [140.47, 37.75],
-  zoom: 13,
-  minZoom: 6,
-  maxZoom: 19,
-  attributionControl: true,
-  style: "https://tiles.openfreemap.org/styles/positron"
-});
+      container: "map",
+      center: savedCamera?.center || [140.47, 37.75],
+      zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13,
+      bearing: Number.isFinite(savedCamera?.bearing) ? savedCamera.bearing : 0,
+      pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 0,
+      minZoom: 6,
+      maxZoom: 19,
+      attributionControl: true,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "&copy; OpenStreetMap contributors"
+          }
+        },
+        layers: [
+          {
+            id: "osm",
+            type: "raster",
+            source: "osm"
+          }
+        ]
+      }
+    });
+
     map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true
     }), "bottom-right");
@@ -63,6 +83,7 @@
     // ユーザーが動かした位置・ズーム・回転・3D角度を保存。
     // Realtime更新側からカメラ操作は一切しない。
     map.on("moveend", saveMapCamera);
+    map.on("zoom", updateVehicleNumberMarkerOffsets);
 
     // =========================================================
     // データ
@@ -84,6 +105,7 @@
     let vehicleFeaturesByTrip = new Map();
     let selectedStopNameMarkers = [];
     let vehicleInfoPanel = null;
+    const vehicleNumberMarkers = new Map();
 
     const labelIconMap = new Map();
     const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
@@ -892,6 +914,102 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       panel.style.display = "block";
     }
 
+    function vehicleIconScaleAtZoom(zoom) {
+      if (zoom <= 8) return 0.35;
+      if (zoom <= 13) return 0.35 + (zoom - 8) * (0.65 - 0.35) / 5;
+      if (zoom <= 16) return 0.65 + (zoom - 13) * (0.90 - 0.65) / 3;
+      if (zoom <= 19) return 0.90 + (zoom - 16) * (1.15 - 0.90) / 3;
+      return 1.15;
+    }
+
+    function vehicleNumberMarkerOffset() {
+      // 50pxアイコンの下端より少し下に車番チップを置く
+      const halfIcon = 25 * vehicleIconScaleAtZoom(map.getZoom());
+      return [0, Math.round(halfIcon + 3)];
+    }
+
+    function createVehicleNumberElement(label) {
+      const el = document.createElement("div");
+
+      el.textContent = label || "?";
+      el.style.pointerEvents = "none";
+      el.style.whiteSpace = "nowrap";
+      el.style.padding = "1px 4px";
+      el.style.border = "1px solid rgba(38, 52, 60, .16)";
+      el.style.borderRadius = "4px";
+      el.style.background = "rgba(255, 255, 255, .90)";
+      el.style.boxShadow = "0 1px 4px rgba(21, 42, 56, .12)";
+      el.style.color = "#26343c";
+      el.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', sans-serif";
+      el.style.fontSize = "9px";
+      el.style.fontWeight = "800";
+      el.style.lineHeight = "1.15";
+      el.style.letterSpacing = ".1px";
+      el.style.backdropFilter = "blur(3px)";
+      el.style.webkitBackdropFilter = "blur(3px)";
+      el.style.userSelect = "none";
+      el.style.webkitUserSelect = "none";
+
+      return el;
+    }
+
+    function vehicleMarkerKey(v) {
+      // 車番が基本的に一意なので車番優先。無い場合のみtrip_idを使う。
+      return cleanId(v?.label) || cleanId(v?.tripId) || `${v?.lat},${v?.lon}`;
+    }
+
+    function updateVehicleNumberMarkers(vehicles) {
+      const alive = new Set();
+      const offset = vehicleNumberMarkerOffset();
+
+      for (const v of vehicles || []) {
+        if (!Number.isFinite(v.lat) || !Number.isFinite(v.lon)) continue;
+
+        const key = vehicleMarkerKey(v);
+        alive.add(key);
+
+        let item = vehicleNumberMarkers.get(key);
+
+        if (!item) {
+          const element = createVehicleNumberElement(v.label);
+
+          const marker = new maplibregl.Marker({
+            element,
+            anchor: "top",
+            offset,
+            pitchAlignment: "viewport",
+            rotationAlignment: "viewport"
+          })
+            .setLngLat([v.lon, v.lat])
+            .addTo(map);
+
+          item = { marker, element };
+          vehicleNumberMarkers.set(key, item);
+        } else {
+          item.marker.setLngLat([v.lon, v.lat]);
+          item.marker.setOffset(offset);
+
+          const nextText = v.label || "?";
+          if (item.element.textContent !== nextText) {
+            item.element.textContent = nextText;
+          }
+        }
+      }
+
+      for (const [key, item] of vehicleNumberMarkers) {
+        if (alive.has(key)) continue;
+        item.marker.remove();
+        vehicleNumberMarkers.delete(key);
+      }
+    }
+
+    function updateVehicleNumberMarkerOffsets() {
+      const offset = vehicleNumberMarkerOffset();
+      for (const { marker } of vehicleNumberMarkers.values()) {
+        marker.setOffset(offset);
+      }
+    }
+
     function emptyFeatureCollection() {
       return {
         type: "FeatureCollection",
@@ -1095,7 +1213,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           ],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-rotation-alignment": "map"
+          "icon-pitch-alignment": "viewport",
+          "icon-rotation-alignment": "viewport"
         }
       });
 
@@ -1243,6 +1362,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         await ensureVehicleIcons(latestVehicles);
         map.getSource("vehicles").setData(vehicleGeoJson());
+        updateVehicleNumberMarkers(latestVehicles);
 
         // 選択中の便だけルート/停留所を更新
         if (selectedTripId) {
