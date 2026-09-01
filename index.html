@@ -8,6 +8,129 @@
     <link rel="stylesheet" href="css/index.css">
 
   <link rel="stylesheet" href="/css/modern.css">
+
+  <style>
+    /* バスロケ・プルダウン試作 */
+    .nav-table .busloc-dropdown {
+      position: relative !important;
+      overflow: visible !important;
+    }
+
+    .nav-table .busloc-toggle {
+      width: 100%;
+      height: 100%;
+      min-height: 46px;
+      padding: 14px 6px;
+      border: 0;
+      background: #fff;
+      color: var(--brand, #174a78);
+      font: inherit;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .nav-table .busloc-toggle:hover,
+    .nav-table .busloc-toggle:focus-visible,
+    .nav-table .busloc-dropdown.open .busloc-toggle {
+      color: #fff;
+      background: var(--brand-2, #23679e);
+      outline: none;
+    }
+
+    .busloc-caret {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: .7em;
+      transition: transform .18s ease;
+    }
+
+    .busloc-dropdown.open .busloc-caret {
+      transform: rotate(180deg);
+    }
+
+    .busloc-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 1000;
+      display: none;
+      width: max-content;
+      min-width: 310px;
+      padding: 6px;
+      border: 1px solid #d8e0e8;
+      border-radius: 0 0 10px 10px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(0,0,0,.16);
+      text-align: left;
+    }
+
+    .busloc-dropdown.open .busloc-menu,
+    .busloc-dropdown:focus-within .busloc-menu {
+      display: block;
+    }
+
+    .nav-table .busloc-menu a {
+      display: block !important;
+      padding: 10px 12px !important;
+      border-radius: 6px;
+      background: #fff !important;
+      color: var(--brand, #174a78) !important;
+      font-weight: 700 !important;
+      line-height: 1.35;
+      white-space: nowrap !important;
+    }
+
+    .nav-table .busloc-menu a:hover,
+    .nav-table .busloc-menu a:focus-visible {
+      background: #eef5fb !important;
+      color: var(--brand-2, #23679e) !important;
+      outline: none;
+    }
+
+    .busloc-menu a span {
+      font-weight: 500;
+      color: #687785;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .busloc-dropdown:hover .busloc-menu {
+        display: block;
+      }
+
+      .busloc-dropdown:hover .busloc-toggle {
+        color: #fff;
+        background: var(--brand-2, #23679e);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .nav-table .busloc-toggle {
+        min-height: 0;
+        padding: 10px 3px;
+        font-size: 10px;
+      }
+
+      .busloc-menu {
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: min(92vw, 330px);
+      }
+
+      .nav-table .busloc-menu a {
+        padding: 11px 12px !important;
+        font-size: 12px !important;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .nav-table .busloc-toggle {
+        font-size: 8px;
+      }
+    }
+  </style>
+
 </head>
 <body id="top">
   <div class="page">
@@ -18,16 +141,24 @@
       <h1>Linienbusarchiv<span class="de">.de</span></h1>
       <p class="subtitle">～ ドイツ製路線バス資料館 ～</p>
     </header>
-
-     <nav aria-label="メインメニュー">
+    <nav aria-label="メインメニュー">
       <table class="nav-table">
         <tr>
-<td><a href="/">ホーム</a></td>
-<td><a href="/manufacturers/">メーカ別</a></td>
-<td><a href="/map/">地図から</a></td>
-<td><a href="/location/">バスロケ</a></td>
-<td><a href="/blog/">ブログ</a></td>
-<td><a href="/link/">リンク</a></td>
+          <td><a href="#top">ホーム</a></td>
+          <td><a href="manufacturers/">メーカ別</a></td>
+          <td><a href="map/">地図から</a></td>
+          <td class="busloc-dropdown">
+            <button class="busloc-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+              バスロケ <span class="busloc-caret" aria-hidden="true">▼</span>
+            </button>
+            <div class="busloc-menu" role="menu">
+              <a role="menuitem" href="/location/fukushima/">福島交通 <span>/ Fukushima Kotsu</span></a>
+              <a role="menuitem" href="/location/braga/">Transportes Urbanos de Braga <span>(TUB)</span></a>
+              <a role="menuitem" href="/location/varna/">Градски транспорт Варна <span>/ City Transport Varna</span></a>
+            </div>
+          </td>
+          <td><a href="#blog/">ブログ</a></td>
+          <td><a href="#link/">リンク</a></td>
         </tr>
       </table>
     </nav>
@@ -188,5 +319,36 @@
       Copyright &copy; 2026 Linienbusarchiv.de All Rights Reserved.<br>
     </footer>
   </div>
+
+<script>
+  (() => {
+    const dropdown = document.querySelector('.busloc-dropdown');
+    if (!dropdown) return;
+
+    const toggle = dropdown.querySelector('.busloc-toggle');
+
+    const setOpen = (open) => {
+      dropdown.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setOpen(!dropdown.classList.contains('open'));
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!dropdown.contains(event.target)) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  })();
+</script>
+
 </body>
 </html>
