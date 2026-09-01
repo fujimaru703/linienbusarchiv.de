@@ -1255,24 +1255,6 @@ function installLayers() {
     }
   });
 
-  map.addLayer({
-    id: "selected-vehicle-halo",
-    type: "circle",
-    source: "selected-vehicle",
-    paint: {
-      "circle-radius": [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        8, 12,
-        13, 18,
-        19, 27
-      ],
-      "circle-color": "rgba(35,133,216,0.12)",
-      "circle-stroke-color": "#2385d8",
-      "circle-stroke-width": 2
-    }
-  });
 
   map.addLayer({
     id: "vehicles",
