@@ -621,63 +621,28 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
     function futureStopsGeoJson(tripId, currentSeq) {
-      const updates = tripDelays[tripId];
-      if (!updates) return emptyFeatureCollection();
-
-      const features = [];
-
-      for (const [seqStr, info] of Object.entries(updates)) {
-        const seq = Number(seqStr);
-        if (!Number.isFinite(seq) || seq <= currentSeq) continue;
-
-        const stopId = cleanId(info.stopId);
-        const stop = stopDetails[stopId];
-        if (!stop) continue;
-
-        let unixTime = Number(info.arrivalTime || info.departureTime) || null;
-
-        if (!unixTime) {
-          const timeStr = scheduledTimes[tripId]?.[seq];
-          if (timeStr) {
-            const [hh0, mm, ss] = timeStr.split(":").map(Number);
-            const now = new Date();
-            const dayOffset = Math.floor(hh0 / 24);
-            const hh = hh0 % 24;
-            const scheduled = new Date(
-              now.getFullYear(),
-              now.getMonth(),
-              now.getDate() + dayOffset,
-              hh, mm || 0, ss || 0
-            );
-            unixTime = Math.floor(scheduled.getTime() / 1000) + (Number(info.delay) || 0);
-          }
-        }
-
-        const arrivalText = unixTime
-          ? new Date(unixTime * 1000).toLocaleTimeString("ja-JP", {
-              hour: "2-digit",
-              minute: "2-digit"
-            })
-          : "時刻不明";
-
-        features.push({
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [stop.lon, stop.lat]
-          },
-          properties: {
-            stopId,
-            name: stop.name || stopNames[stopId] || "停留所名不明",
-            arrivalText,
-            label: `${stop.name || stopNames[stopId] || "停留所名不明"}（${arrivalText}）`
-          }
-        });
-      }
+      const future = getFutureStopsInfo(tripId, currentSeq);
 
       return {
         type: "FeatureCollection",
-        features
+        features: future.map(stop => {
+          const detail = stopDetails[stop.stopId];
+          return {
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [detail.lon, detail.lat]
+            },
+            properties: {
+              stopId: stop.stopId,
+              name: stop.name,
+              scheduledText: stop.scheduledText,
+              delayText: stop.delayText,
+              label: `${stop.name}
+予定 ${stop.scheduledText}  ${stop.delayText}`
+            }
+          };
+        })
       };
     }
 
@@ -801,7 +766,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         source: "selected-stops",
         minzoom: 11,
         layout: {
-          "text-field": ["get", "label"],
+          "text-field": ["concat", ["get", "name"], "\n", ["get", "scheduledText"]],
           "text-size": 11,
           "text-anchor": "left",
           "text-offset": [0.8, 0],
@@ -830,6 +795,46 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "circle-stroke-color": "rgba(23,105,170,0.82)",
           "circle-stroke-width": 3,
           "circle-blur": 0.15
+        }
+      });
+
+      map.addLayer({
+        id: "selected-stops-delay",
+        type: "symbol",
+        source: "selected-stops",
+        minzoom: 11,
+        layout: {
+          "text-field": ["get", "delayLateText"],
+          "text-size": 11,
+          "text-anchor": "left",
+          "text-offset": [0.8, 1.15],
+          "text-allow-overlap": false,
+          "text-optional": true
+        },
+        paint: {
+          "text-color": "#d93025",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2
+        }
+      });
+
+      map.addLayer({
+        id: "selected-stops-ontime",
+        type: "symbol",
+        source: "selected-stops",
+        minzoom: 11,
+        layout: {
+          "text-field": ["get", "delayOnTimeText"],
+          "text-size": 11,
+          "text-anchor": "left",
+          "text-offset": [0.8, 1.15],
+          "text-allow-overlap": false,
+          "text-optional": true
+        },
+        paint: {
+          "text-color": "#16834b",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2
         }
       });
 
@@ -910,6 +915,36 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return labelIconMap.get(String(label ?? "")) || "icon/yokokamo.png";
     }
 
+
+    function formatPlusDelay(sec) {
+      sec = Math.max(0, Number(sec) || 0);
+      if (sec < 60) return "定刻";
+
+      const min = Math.floor(sec / 60);
+      const rem = Math.floor(sec % 60);
+
+      if (rem === 0) return `+${min}分`;
+      return `+${min}分${String(rem).padStart(2, "0")}秒`;
+    }
+
+    function delayStatusClass(sec, future = false) {
+      return Number(sec) < 60
+        ? (future ? "bus-popup__future-ontime" : "bus-popup__ontime")
+        : (future ? "bus-popup__future-delay" : "bus-popup__delay-red");
+    }
+
+    function scheduledTimeText(tripId, seq) {
+      const raw = scheduledTimes[tripId]?.[seq];
+      if (!raw) return "予定時刻不明";
+      const parts = String(raw).split(":").map(Number);
+      if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+        return raw;
+      }
+      const hh = parts[0] % 24;
+      const mm = parts[1];
+      return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+    }
+
     function getFutureStopsInfo(tripId, currentSeq) {
       const updates = tripDelays[tripId];
       if (!updates) return [];
@@ -924,86 +959,22 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           const stop = stopDetails[stopId];
           if (!stop) return null;
 
-          let unixTime = Number(info?.arrivalTime || info?.departureTime) || null;
-
-          if (!unixTime) {
-            const timeStr = scheduledTimes[tripId]?.[seq];
-            if (timeStr) {
-              const [hh0, mm, ss] = timeStr.split(":").map(Number);
-              const now = new Date();
-              const dayOffset = Math.floor(hh0 / 24);
-              const hh = hh0 % 24;
-              const scheduled = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate() + dayOffset,
-                hh, mm || 0, ss || 0
-              );
-              unixTime = Math.floor(scheduled.getTime() / 1000) + (Number(info?.delay) || 0);
-            }
-          }
+          const delay = Math.max(0, Number(info?.delay) || 0);
 
           return {
             seq,
             stopId,
             name: stop.name || stopNames[stopId] || "停留所名不明",
-            timeText: unixTime
-              ? new Date(unixTime * 1000).toLocaleTimeString("ja-JP", {
-                  hour: "2-digit",
-                  minute: "2-digit"
-                })
-              : "時刻不明"
+            scheduledText: scheduledTimeText(tripId, seq),
+            delay,
+            delayText: formatPlusDelay(delay)
           };
         })
         .filter(Boolean);
     }
 
     function getNextStopInfo(tripId, currentSeq) {
-      const updates = tripDelays[tripId];
-      if (!updates) return null;
-
-      const seqs = Object.keys(updates)
-        .map(Number)
-        .filter(n => Number.isFinite(n) && n > Number(currentSeq))
-        .sort((a, b) => a - b);
-
-      if (!seqs.length) return null;
-
-      const seq = seqs[0];
-      const info = updates[seq];
-      const stopId = cleanId(info?.stopId);
-      const stop = stopDetails[stopId];
-
-      if (!stop) return null;
-
-      let unixTime = Number(info?.arrivalTime || info?.departureTime) || null;
-
-      if (!unixTime) {
-        const timeStr = scheduledTimes[tripId]?.[seq];
-        if (timeStr) {
-          const [hh0, mm, ss] = timeStr.split(":").map(Number);
-          const now = new Date();
-          const dayOffset = Math.floor(hh0 / 24);
-          const hh = hh0 % 24;
-          const scheduled = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate() + dayOffset,
-            hh, mm || 0, ss || 0
-          );
-          unixTime = Math.floor(scheduled.getTime() / 1000) + (Number(info?.delay) || 0);
-        }
-      }
-
-      return {
-        name: stop.name || stopNames[stopId] || "停留所名不明",
-        timeText: unixTime
-          ? new Date(unixTime * 1000).toLocaleTimeString("ja-JP", {
-              hour: "2-digit",
-              minute: "2-digit"
-            })
-          : "時刻不明"
-      };
+      return getFutureStopsInfo(tripId, currentSeq)[0] || null;
     }
 
     function setLoading(active, progress = 72) {
@@ -1034,12 +1005,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const next = getNextStopInfo(p.tripId, currentSeq);
       const futureStops = getFutureStopsInfo(p.tripId, currentSeq);
       const iconUrl = getVehicleIconUrl(p.label);
+      const dropdownId = `future-${String(p.tripId || "").replace(/[^a-zA-Z0-9_-]/g, "_")}-${Date.now()}`;
 
       const futureStopsHtml = futureStops.length
         ? futureStops.map(stop => `
             <div class="bus-popup__future-stop">
-              <div class="bus-popup__future-time">${escapeHtml(stop.timeText)}</div>
-              <div class="bus-popup__future-name">${escapeHtml(stop.name)}</div>
+              <div class="bus-popup__future-stop-main">
+                <div class="bus-popup__future-name">${escapeHtml(stop.name)}</div>
+                <div class="bus-popup__future-time-line">
+                  ${escapeHtml(stop.scheduledText)}
+                  <span class="${delayStatusClass(stop.delay, true)}">${escapeHtml(stop.delayText)}</span>
+                </div>
+              </div>
             </div>
           `).join("")
         : `<div class="bus-popup__future-empty">この先の停留所情報はありません</div>`;
@@ -1053,7 +1030,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
                      src="${escapeHtml(iconUrl)}"
                      alt="">
               </div>
-
               <div class="bus-popup__vehicle-meta">
                 <div class="bus-popup__vehicle">${escapeHtml(p.label)}</div>
               </div>
@@ -1068,19 +1044,32 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             </div>
 
             ${next ? `
-              <div class="bus-popup__next">
-                <div class="bus-popup__next-label">次の停留所</div>
-                <div class="bus-popup__next-name">${escapeHtml(next.name)}</div>
-                <div class="bus-popup__next-time">予想到着 ${escapeHtml(next.timeText)}</div>
-              </div>
-            ` : ""}
+              <button
+                type="button"
+                class="bus-popup__next-toggle"
+                aria-expanded="false"
+                aria-controls="${dropdownId}"
+                onclick="
+                  const el=document.getElementById('${dropdownId}');
+                  const open=!el.classList.contains('is-open');
+                  el.classList.toggle('is-open',open);
+                  this.setAttribute('aria-expanded',String(open));
+                ">
+                <div class="bus-popup__next">
+                  <div class="bus-popup__next-label">次の停留所</div>
+                  <div class="bus-popup__next-name">${escapeHtml(next.name)}</div>
+                  <div class="bus-popup__next-time">
+                    ${escapeHtml(next.scheduledText)}
+                    <span class="${delayStatusClass(next.delay)}">${escapeHtml(next.delayText)}</span>
+                  </div>
+                  <span class="bus-popup__next-chevron">⌄</span>
+                </div>
+              </button>
 
-            <details class="bus-popup__future">
-              <summary>この先のバス停（${futureStops.length}）</summary>
-              <div class="bus-popup__future-list">
+              <div id="${dropdownId}" class="bus-popup__future-inline">
                 ${futureStopsHtml}
               </div>
-            </details>
+            ` : ""}
 
             <div class="bus-popup__footer">
               <span class="bus-popup__delay ${delayClass}">

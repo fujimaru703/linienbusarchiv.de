@@ -456,3 +456,147 @@ html, body {
       color: #7a8790;
       font-size: 10px;
     }
+
+
+/* ===== 2026-09 compact popup refinements ===== */
+.bus-popup__hero {
+  padding: 10px 40px 10px 12px !important;
+}
+
+.bus-popup__vehicle-row {
+  gap: 8px !important;
+}
+
+.bus-popup__vehicle-icon-wrap {
+  width: 40px !important;
+  height: 40px !important;
+  flex-basis: 40px !important;
+  border-radius: 10px !important;
+}
+
+.bus-popup__vehicle-icon {
+  max-width: 36px !important;
+  max-height: 36px !important;
+}
+
+.bus-popup__vehicle {
+  font-size: 19px !important;
+}
+
+.bus-popup__body {
+  padding: 12px 14px 14px !important;
+}
+
+/* 次停留所カード自体を開閉ボタンにする */
+.bus-popup__next-toggle {
+  display: block;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.bus-popup__next-toggle .bus-popup__next {
+  position: relative;
+  margin: 0;
+  padding-right: 34px;
+  transition: background .15s ease, transform .15s ease;
+}
+
+.bus-popup__next-toggle:hover .bus-popup__next {
+  background: #eef6fb;
+}
+
+.bus-popup__next-toggle:active .bus-popup__next {
+  transform: scale(.995);
+}
+
+.bus-popup__next-chevron {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #60717f;
+  transition: transform .16s ease;
+}
+
+.bus-popup__next-toggle[aria-expanded="true"] .bus-popup__next-chevron {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.bus-popup__future-inline {
+  display: none;
+  margin: 7px 0 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e5edf2;
+  border-radius: 11px;
+  background: rgba(255,255,255,.96);
+}
+
+.bus-popup__future-inline.is-open {
+  display: block;
+}
+
+.bus-popup__future-stop {
+  grid-template-columns: 1fr auto !important;
+  align-items: center;
+}
+
+.bus-popup__future-stop-main {
+  min-width: 0;
+}
+
+.bus-popup__future-name {
+  font-size: 11px;
+}
+
+.bus-popup__future-time-line {
+  margin-top: 2px;
+  color: #62717c;
+  font-size: 10px;
+}
+
+.bus-popup__future-delay {
+  margin-left: 6px;
+  color: #d93025;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.bus-popup__scheduled {
+  color: #60717f;
+  font-size: 10px;
+}
+
+.bus-popup__delay-red {
+  margin-left: 6px;
+  color: #d93025;
+  font-weight: 900;
+}
+
+/* 旧「この先のバス停」details は使用しない */
+.bus-popup__future {
+  display: none !important;
+}
+
+
+/* 1分未満は定刻表示 */
+.bus-popup__ontime {
+  margin-left: 6px;
+  color: #16834b;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.bus-popup__future-ontime {
+  margin-left: 6px;
+  color: #16834b;
+  font-weight: 900;
+  white-space: nowrap;
+}
