@@ -69,10 +69,10 @@
 
 const labelIconMap = new Map();
 const labelbydk8 = ['7701','7702','7703'];
-label557.forEach(label => labelIconMap.set(label, 'icon/bydk8.png'));
+labelbydk8.forEach(label => labelIconMap.set(label, 'icon/bydk8.png'));
 
 const labelergaev = ['7704','7705','7706'];
-label557.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
+labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
 
 const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
 label290.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
