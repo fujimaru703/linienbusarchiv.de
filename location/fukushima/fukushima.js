@@ -63,21 +63,16 @@
     let latestVehicles = [];
     let staticGtfsLoaded = false;
     let updateRunning = false;
-    let realtimeTimer = null;
     let selectedTripId = null;
+    let activeVehiclePopup = null;
+    let realtimeTimer = null;
     let vehicleFeaturesByTrip = new Map();
 
-const labelIconMap = new Map();
-const labelbydk8 = ['7701','7702','7703'];
-labelbydk8.forEach(label => labelIconMap.set(label, 'icon/bydk8.png'));
+    const labelIconMap = new Map();
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+    label290.forEach(label => labelIconMap.set(label, 'icon/290.png'));
 
-const labelergaev = ['7704','7705','7706'];
-labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
-
-const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
-label290.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
-
-const label557 = ['0557','2411','2412','2408'];
+	const label557 = ['0557','2411','2412','2408'];
 label557.forEach(label => labelIconMap.set(label, 'icon/557&2411.png'));
 
 const label600 = ['8181'];
@@ -601,12 +596,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
     }
 
-    function refreshAllStopsSource() {
-      if (!map || !map.getSource) return;
-      const src = map.getSource("all-stops");
-      if (src) src.setData(allStopsGeoJson());
-    }
-
     function allStopsGeoJson() {
       return {
         type: "FeatureCollection",
@@ -622,6 +611,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           }
         }))
       };
+    }
+
+    function refreshAllStopsSource() {
+      const src = map.getSource("all-stops");
+      if (src) src.setData(allStopsGeoJson());
     }
 
     function emptyFeatureCollection() {
@@ -657,6 +651,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         type: "FeatureCollection",
         features: future.map(stop => {
           const detail = stopDetails[stop.stopId];
+          if (!detail) return null;
+
           return {
             type: "Feature",
             geometry: {
@@ -667,12 +663,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
               stopId: stop.stopId,
               name: stop.name,
               scheduledText: stop.scheduledText,
+              delay: stop.delay,
               delayText: stop.delayText,
-              label: `${stop.name}
-予定 ${stop.scheduledText}  ${stop.delayText}`
+              delayLateText: stop.delay >= 60 ? stop.delayText : "",
+              delayOnTimeText: stop.delay < 60 ? "定刻" : ""
             }
           };
-        })
+        }).filter(Boolean)
       };
     }
 
@@ -701,7 +698,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         urls.add(iconUrlForLabel(v.label));
       }
 
-      // 実際に画面へ出る車両分だけロード。通常は数個～数十個。
       await Promise.all([...urls].map(loadImageToMap));
     }
 
@@ -735,7 +731,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         data: allStopsGeoJson()
       });
 
-      setTimeout(refreshAllStopsSource, 0);
       map.addSource("selected-route", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -745,7 +740,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         type: "geojson",
         data: emptyFeatureCollection()
       });
-
 
       map.addLayer({
         id: "route-outline",
@@ -778,6 +772,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
       });
 
+      // 全停留所: 拡大時に表示。ルート線より上に置く。
       map.addLayer({
         id: "all-stops-circle",
         type: "circle",
@@ -824,7 +819,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
       });
 
-      // 選択便の停留所
+
+      // 停留所はPNGマーカーではなく軽いcircleで表示
       map.addLayer({
         id: "selected-stops-circle",
         type: "circle",
@@ -962,6 +958,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         e.originalEvent.cancelBubble = true;
 
+        if (activeVehiclePopup) {
+          activeVehiclePopup.remove();
+          activeVehiclePopup = null;
+        }
+
+        selectedTripId = null;
+        map.getSource("selected-vehicle").setData(emptyFeatureCollection());
+        map.getSource("selected-route").setData(emptyFeatureCollection());
+        map.getSource("selected-stops").setData(emptyFeatureCollection());
+
         new maplibregl.Popup({
           closeButton: true,
           closeOnClick: true,
@@ -999,6 +1005,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         map.getSource("selected-stops")
           .setData(futureStopsGeoJson(selectedTripId, seq));
 
+        if (activeVehiclePopup) {
+          activeVehiclePopup.remove();
+          activeVehiclePopup = null;
+        }
+
         const vehiclePopup = new maplibregl.Popup({
           closeButton: true,
           closeOnClick: false
@@ -1007,15 +1018,29 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           .setHTML(buildBusPopupHtml(p))
           .addTo(map);
 
+        activeVehiclePopup = vehiclePopup;
+
+        vehiclePopup.on("close", () => {
+          if (activeVehiclePopup === vehiclePopup) {
+            activeVehiclePopup = null;
+          }
+        });
+
         makePopupDraggable(vehiclePopup);
       });
 
       map.on("click", e => {
-        // 車両クリック以外なら選択ルートを消す
-        const hit = map.queryRenderedFeatures(e.point, {
-          layers: ["vehicles", "all-stops-circle"]
+        // 車両クリックは vehicles ハンドラに任せる。
+        const vehicleHit = map.queryRenderedFeatures(e.point, {
+          layers: ["vehicles"]
         });
-        if (hit.length) return;
+        if (vehicleHit.length) return;
+
+        // 地図の別の場所をクリックしたら車両Popupを閉じる。
+        if (activeVehiclePopup) {
+          activeVehiclePopup.remove();
+          activeVehiclePopup = null;
+        }
 
         selectedTripId = null;
         map.getSource("selected-vehicle").setData(emptyFeatureCollection());
@@ -1110,29 +1135,36 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const root = popup.getElement?.();
       if (!root) return;
 
-      root.classList.add("bus-popup-draggable");
       const handle = root.querySelector(".bus-popup__hero");
       if (!handle) return;
 
-      let x = 0;
-      let y = 0;
+      // CSS変更なしでもドラッグできるよう、必要なスタイルはJSで付与。
+      handle.style.cursor = "grab";
+      handle.style.touchAction = "none";
+      handle.style.userSelect = "none";
+      handle.style.webkitUserSelect = "none";
+
+      let offsetX = 0;
+      let offsetY = 0;
       let startX = 0;
       let startY = 0;
       let dragging = false;
       let pointerId = null;
 
       const applyPosition = () => {
-        // MapLibre自身のtransformとは別にmarginで移動量を加算する
-        root.style.marginLeft = `${x}px`;
-        root.style.marginTop = `${y}px`;
+        // MapLibreが使うtransformには触らず、marginで移動量を加える。
+        root.style.marginLeft = `${offsetX}px`;
+        root.style.marginTop = `${offsetY}px`;
       };
 
       const finish = e => {
         if (!dragging) return;
-        if (e?.pointerId !== undefined && pointerId !== null && e.pointerId !== pointerId) return;
+        if (e?.pointerId !== undefined &&
+            pointerId !== null &&
+            e.pointerId !== pointerId) return;
 
         dragging = false;
-        root.classList.remove("is-dragging");
+        handle.style.cursor = "grab";
 
         try {
           if (pointerId !== null && handle.hasPointerCapture?.(pointerId)) {
@@ -1150,8 +1182,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         pointerId = e.pointerId;
         startX = e.clientX;
         startY = e.clientY;
+        handle.style.cursor = "grabbing";
 
-        root.classList.add("is-dragging");
         handle.setPointerCapture?.(pointerId);
 
         e.preventDefault();
@@ -1161,8 +1193,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       handle.addEventListener("pointermove", e => {
         if (!dragging || e.pointerId !== pointerId) return;
 
-        x += e.clientX - startX;
-        y += e.clientY - startY;
+        offsetX += e.clientX - startX;
+        offsetY += e.clientY - startY;
         startX = e.clientX;
         startY = e.clientY;
 
@@ -1176,7 +1208,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       handle.addEventListener("pointercancel", finish);
       handle.addEventListener("lostpointercapture", finish);
     }
-
 
     function buildBusPopupHtml(p) {
       const current = latestVehicles.find(v => v.tripId === p.tripId);
@@ -1301,7 +1332,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
             map.getSource("selected-stops")
               .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
+
+            // Popupはドラッグ量を維持したまま車両位置へ追従。
+            if (activeVehiclePopup) {
+              activeVehiclePopup.setLngLat([current.lon, current.lat]);
+            }
           } else {
+            if (activeVehiclePopup) {
+              activeVehiclePopup.remove();
+              activeVehiclePopup = null;
+            }
+
             selectedTripId = null;
             map.getSource("selected-vehicle").setData(emptyFeatureCollection());
             map.getSource("selected-route").setData(emptyFeatureCollection());
@@ -1322,9 +1363,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
-
     function startRealtimeTimer() {
       if (realtimeTimer !== null) return;
+
       realtimeTimer = window.setInterval(() => {
         if (!document.hidden) updateRealtime();
       }, UPDATE_INTERVAL);
@@ -1355,8 +1396,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         status.textContent = "GTFS読込中...";
         setLoading(true, 35);
 
-        // 静的GTFSだけを初回に1回ロード。
-        // 車両画像は実際に運行中のものだけ後から読み込む。
+        // 静的GTFSは初回だけ。車両画像は運行中のものだけ後から読む。
         await loadStaticGtfs();
         await loadImageToMap("icon/yokokamo.png");
 
