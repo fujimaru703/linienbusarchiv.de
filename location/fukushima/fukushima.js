@@ -994,12 +994,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
     function buildBusPopupHtml(p) {
-      const delay = Number(p.delay) || 0;
-      const delayClass = delay < 60
-        ? "bus-popup__delay--ok"
-        : "bus-popup__delay--late";
-      const delayIcon = delay < 60 ? "●" : "▲";
-
       const current = latestVehicles.find(v => v.tripId === p.tripId);
       const currentSeq = Number(current?.seq);
       const next = getNextStopInfo(p.tripId, currentSeq);
@@ -1071,12 +1065,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
               </div>
             ` : ""}
 
-            <div class="bus-popup__footer">
-              <span class="bus-popup__delay ${delayClass}">
-                <span>${delayIcon}</span>
-                <span>${escapeHtml(p.delayText)}</span>
-              </span>
-            </div>
+
           </div>
         </div>
       `;

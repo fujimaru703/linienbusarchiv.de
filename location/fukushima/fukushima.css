@@ -600,3 +600,91 @@ html, body {
   font-weight: 900;
   white-space: nowrap;
 }
+
+
+/* ===== mobile popup compact ===== */
+@media (max-width: 640px) {
+  .maplibregl-popup {
+    max-width: 250px !important;
+  }
+
+  .maplibregl-popup-content {
+    border-radius: 13px !important;
+  }
+
+  .bus-popup {
+    min-width: 220px !important;
+  }
+
+  .bus-popup__hero {
+    padding: 8px 34px 8px 10px !important;
+  }
+
+  .bus-popup__vehicle-icon-wrap {
+    width: 34px !important;
+    height: 34px !important;
+    flex-basis: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  .bus-popup__vehicle-icon {
+    max-width: 30px !important;
+    max-height: 30px !important;
+  }
+
+  .bus-popup__vehicle {
+    font-size: 17px !important;
+  }
+
+  .bus-popup__body {
+    padding: 10px 11px 11px !important;
+  }
+
+  .bus-popup__route {
+    margin-bottom: 5px !important;
+    font-size: 12px !important;
+  }
+
+  .bus-popup__destination {
+    margin-bottom: 8px !important;
+    font-size: 10px !important;
+  }
+
+  .bus-popup__next {
+    padding: 8px 30px 8px 9px !important;
+    border-radius: 9px !important;
+  }
+
+  .bus-popup__next-label {
+    font-size: 8px !important;
+  }
+
+  .bus-popup__next-name {
+    font-size: 11px !important;
+  }
+
+  .bus-popup__next-time,
+  .bus-popup__future-time-line,
+  .bus-popup__future-name {
+    font-size: 9px !important;
+  }
+
+  .bus-popup__future-inline {
+    max-height: 170px !important;
+    margin-top: 5px !important;
+    border-radius: 9px !important;
+  }
+
+  .bus-popup__future-stop {
+    padding: 6px 8px !important;
+  }
+
+  .maplibregl-popup-close-button {
+    width: 26px !important;
+    height: 26px !important;
+    top: 5px !important;
+    right: 5px !important;
+    font-size: 17px !important;
+    line-height: 24px !important;
+  }
+}
