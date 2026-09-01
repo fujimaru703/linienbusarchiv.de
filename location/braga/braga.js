@@ -27,17 +27,7 @@ labelConecto.forEach(label =>
   labelIconMap.set(label, "icon/Conecto.png")
 );
 
-const labelMAN = ["439", "441"];
-labelMAN.forEach(label =>
-  labelIconMap.set(label, "icon/man.png")
-);
 
-実際には次の形で何グループでも追加できます:
-
-const labelXXX = ["車番1", "車番2", "車番3"];
-labelXXX.forEach(label =>
-  labelIconMap.set(label, "icon/画像名.png")
-);
 
 function getVehicleIconUrl(busId) {
   return (
