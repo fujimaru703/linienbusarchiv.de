@@ -1570,23 +1570,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
       });
 
-      map.addLayer({
-        id: "selected-vehicle-halo",
-        type: "circle",
-        source: "selected-vehicle",
-        paint: {
-          "circle-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            8, 13,
-            13, 18,
-            18, 24
-          ],
-          "circle-color": "rgba(49,168,223,0.14)",
-          "circle-stroke-color": "rgba(23,105,170,0.82)",
-          "circle-stroke-width": 3,
-          "circle-blur": 0.15
-        }
-      });
 
       map.addLayer({
         id: "vehicles",
