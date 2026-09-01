@@ -63,6 +63,7 @@
     let latestVehicles = [];
     let staticGtfsLoaded = false;
     let updateRunning = false;
+    let realtimeTimer = null;
     let selectedTripId = null;
     let vehicleFeaturesByTrip = new Map();
 
@@ -594,6 +595,12 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
     }
 
+    function refreshAllStopsSource() {
+      if (!map || !map.getSource) return;
+      const src = map.getSource("all-stops");
+      if (src) src.setData(allStopsGeoJson());
+    }
+
     function allStopsGeoJson() {
       return {
         type: "FeatureCollection",
@@ -667,12 +674,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // 車両アイコン画像をMapLibreへ登録
     // 同じPNGは一度しかロードしない
     // =========================================================
-    function uniqueVehicleIcons() {
-      const urls = new Set(labelIconMap.values());
-      urls.add("icon/yokokamo.png");
-      return [...urls];
-    }
-
     async function loadImageToMap(url) {
       if (map.hasImage(url)) return;
       try {
@@ -683,14 +684,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
-    async function preloadVehicleIcons() {
-      // 全画像を並列で一気に読みすぎないよう6個ずつロード
-      const urls = uniqueVehicleIcons();
-      const concurrency = 6;
+    function iconUrlForLabel(label) {
+      return labelIconMap.get(String(label ?? "").trim()) || "icon/yokokamo.png";
+    }
 
-      for (let i = 0; i < urls.length; i += concurrency) {
-        await Promise.all(urls.slice(i, i + concurrency).map(loadImageToMap));
+    async function ensureVehicleIcons(vehicles) {
+      const urls = new Set(["icon/yokokamo.png"]);
+
+      for (const v of vehicles || []) {
+        urls.add(iconUrlForLabel(v.label));
       }
+
+      // 実際に画面へ出る車両分だけロード。通常は数個～数十個。
+      await Promise.all([...urls].map(loadImageToMap));
     }
 
     function iconExpression() {
@@ -723,6 +729,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         data: allStopsGeoJson()
       });
 
+      setTimeout(refreshAllStopsSource, 0);
       map.addSource("selected-route", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -737,7 +744,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         id: "all-stops-circle",
         type: "circle",
         source: "all-stops",
-        minzoom: 15,
+        minzoom: 14,
         paint: {
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
@@ -756,17 +763,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         id: "all-stops-label",
         type: "symbol",
         source: "all-stops",
-        minzoom: 16,
+        minzoom: 15,
         layout: {
-          "text-field": ["get", "name"],
-          "text-size": 10,
+          "text-field": ["coalesce", ["get", "name"], "停留所"],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            15, 10,
+            17, 11,
+            19, 12
+          ],
           "text-anchor": "left",
-          "text-offset": [0.7, 0],
+          "text-offset": [0.8, 0],
           "text-allow-overlap": false,
+          "text-ignore-placement": false,
           "text-optional": true
         },
         paint: {
-          "text-color": "#33414a",
+          "text-color": "#26343c",
           "text-halo-color": "#ffffff",
           "text-halo-width": 2
         }
@@ -831,8 +844,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "text-size": 11,
           "text-anchor": "left",
           "text-offset": [0.8, 0],
-          "text-allow-overlap": false,
-          "text-optional": true
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-optional": false
         },
         paint: {
           "text-color": "#111111",
@@ -977,13 +991,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         map.getSource("selected-stops")
           .setData(futureStopsGeoJson(selectedTripId, seq));
 
-        new maplibregl.Popup({
+        const vehiclePopup = new maplibregl.Popup({
           closeButton: true,
           closeOnClick: true
         })
           .setLngLat(f.geometry.coordinates)
           .setHTML(buildBusPopupHtml(p))
           .addTo(map);
+
+        makePopupDraggable(vehiclePopup);
       });
 
       map.on("click", e => {
@@ -1080,6 +1096,74 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           setTimeout(() => { bar.style.width = "0%"; }, 260);
         }, 140);
       }
+    }
+
+    function makePopupDraggable(popup) {
+      const root = popup.getElement?.();
+      if (!root) return;
+
+      root.classList.add("bus-popup-draggable");
+
+      const handle = root.querySelector(".bus-popup__hero");
+      if (!handle) return;
+
+      let startX = 0;
+      let startY = 0;
+      let offsetX = 0;
+      let offsetY = 0;
+      let dragging = false;
+      let pointerId = null;
+
+      const applyOffset = () => {
+        root.style.translate = `${offsetX}px ${offsetY}px`;
+      };
+
+      handle.addEventListener("pointerdown", e => {
+        if (e.button !== undefined && e.button !== 0) return;
+
+        dragging = true;
+        pointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        root.classList.add("is-dragging");
+        handle.setPointerCapture?.(pointerId);
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      handle.addEventListener("pointermove", e => {
+        if (!dragging || e.pointerId !== pointerId) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        offsetX += dx;
+        offsetY += dy;
+        applyOffset();
+
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      const endDrag = e => {
+        if (!dragging) return;
+        if (pointerId !== null && e.pointerId !== undefined && e.pointerId !== pointerId) return;
+
+        dragging = false;
+        root.classList.remove("is-dragging");
+
+        try {
+          if (pointerId !== null) handle.releasePointerCapture?.(pointerId);
+        } catch (_) {}
+
+        pointerId = null;
+      };
+
+      handle.addEventListener("pointerup", endDrag);
+      handle.addEventListener("pointercancel", endDrag);
     }
 
     function buildBusPopupHtml(p) {
@@ -1185,6 +1269,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           loadVehicles()
         ]);
 
+        await ensureVehicleIcons(latestVehicles);
         map.getSource("vehicles").setData(vehicleGeoJson());
 
         // 選択中の便だけルート/停留所を更新
@@ -1225,6 +1310,29 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
+
+    function startRealtimeTimer() {
+      if (realtimeTimer !== null) return;
+      realtimeTimer = window.setInterval(() => {
+        if (!document.hidden) updateRealtime();
+      }, UPDATE_INTERVAL);
+    }
+
+    function stopRealtimeTimer() {
+      if (realtimeTimer === null) return;
+      clearInterval(realtimeTimer);
+      realtimeTimer = null;
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stopRealtimeTimer();
+      } else {
+        updateRealtime();
+        startRealtimeTimer();
+      }
+    });
+
     // =========================================================
     // 起動
     // =========================================================
@@ -1235,11 +1343,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         status.textContent = "GTFS読込中...";
         setLoading(true, 35);
 
-        // GTFSとアイコンを並行ロード
-        await Promise.all([
-          loadStaticGtfs(),
-          preloadVehicleIcons()
-        ]);
+        // 静的GTFSだけを初回に1回ロード。
+        // 車両画像は実際に運行中のものだけ後から読み込む。
+        await loadStaticGtfs();
+        await loadImageToMap("icon/yokokamo.png");
 
         installLayers();
 
@@ -1247,7 +1354,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         setLoading(true, 72);
         await updateRealtime();
 
-        setInterval(updateRealtime, UPDATE_INTERVAL);
+        startRealtimeTimer();
       } catch (e) {
         console.error(e);
         status.textContent = "初期化に失敗しました";

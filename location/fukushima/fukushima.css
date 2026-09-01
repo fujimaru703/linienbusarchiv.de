@@ -200,7 +200,7 @@ html, body {
       text-align: right;
       word-break: break-all;
     }
-  
+
     #homeButton {
       position: absolute;
       z-index: 20;
@@ -385,7 +385,7 @@ html, body {
       }
     }
 
-  
+
     .bus-popup__future {
       margin: 10px 0 12px;
       border: 1px solid #e5edf2;
@@ -694,3 +694,28 @@ html, body {
 .bus-popup__footer {
   display: none !important;
 }
+
+
+/* ===== draggable vehicle popup ===== */
+.maplibregl-popup.bus-popup-draggable {
+  touch-action: none;
+}
+
+.maplibregl-popup.bus-popup-draggable .bus-popup__hero {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.maplibregl-popup.bus-popup-draggable.is-dragging .bus-popup__hero {
+  cursor: grabbing;
+}
+
+@media (max-width: 640px) {
+  .maplibregl-popup.bus-popup-draggable .bus-popup__hero {
+    cursor: grab;
+  }
+}
+
+/* stop labels are rendered directly by MapLibre from stops.txt */
