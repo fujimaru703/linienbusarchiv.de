@@ -13,7 +13,7 @@ const GTFS_BASE = "./";
 const BRAGA_WORKER_URL = "https://misty-frost-9f0e.fujimaru703.workers.dev/";
 
 const UPDATE_INTERVAL = 15000;
-const CAMERA_STORAGE_KEY = "braga-map-camera-v2";
+const CAMERA_STORAGE_KEY = "braga-map-camera-v1";
 const DEFAULT_ICON_URL = "icon/default-bus.png";
 
 // GTFSにないAPI用line IDが今後必要になった場合だけ追加。
@@ -59,10 +59,10 @@ const map = new maplibregl.Map({
   container: "map",
 
   // 初回だけBraga中心。以後は最後に見ていた位置を復元。
-  center: savedCamera?.center || [-8.4200, 41.5505],
-  zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13.5,
+  center: savedCamera?.center || [-8.4200, 41.5510],
+  zoom: Number.isFinite(savedCamera?.zoom) ? savedCamera.zoom : 13,
   bearing: Number.isFinite(savedCamera?.bearing) ? savedCamera.bearing : 0,
-  pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 45,
+  pitch: Number.isFinite(savedCamera?.pitch) ? savedCamera.pitch : 0,
 
   minZoom: 6,
   maxZoom: 19,
@@ -825,34 +825,33 @@ async function loadImageToMap(url) {
 // 車番チップ
 // =========================================================
 function vehicleIconScaleAtZoom(zoom) {
-  // 50px画像を基準に、地図を邪魔しないサイズに抑える
-  if (zoom <= 8) return 0.26;
+  if (zoom <= 8) return 0.35;
   if (zoom <= 13) {
     return (
-      0.26 +
+      0.35 +
       (zoom - 8) *
-        (0.46 - 0.26) /
+        (0.65 - 0.35) /
         5
     );
   }
   if (zoom <= 16) {
     return (
-      0.46 +
+      0.65 +
       (zoom - 13) *
-        (0.62 - 0.46) /
+        (0.90 - 0.65) /
         3
     );
   }
   if (zoom <= 19) {
     return (
-      0.62 +
+      0.90 +
       (zoom - 16) *
-        (0.82 - 0.62) /
+        (1.15 - 0.90) /
         3
     );
   }
 
-  return 0.82;
+  return 1.15;
 }
 
 function vehicleNumberMarkerOffset() {
@@ -1035,6 +1034,29 @@ function renderSelectedStopNameMarkers(vehicle) {
 // =========================================================
 // 左下情報パネル
 // =========================================================
+function formatApiTime(unixSeconds) {
+  if (!Number.isFinite(unixSeconds)) {
+    return "--:--:--";
+  }
+
+  try {
+    return new Intl.DateTimeFormat(
+      "pt-PT",
+      {
+        timeZone: "Europe/Lisbon",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }
+    ).format(
+      new Date(unixSeconds * 1000)
+    );
+  } catch (_) {
+    return "--:--:--";
+  }
+}
+
 function hideVehicleInfoPanel() {
   vehicleInfoPanel.hidden = true;
   vehicleInfoPanel.replaceChildren();
@@ -1073,9 +1095,18 @@ function showVehicleInfoPanel(vehicle) {
   number.className = "vip-number";
   number.textContent =
     vehicle.busId || "?";
-head.append(
+
+  const live =
+    document.createElement("div");
+
+  live.className = "vip-live";
+  live.textContent =
+    `位置更新 ${formatApiTime(vehicle.time)}`;
+
+  head.append(
     img,
-    number
+    number,
+    live
   );
 
   const route =
@@ -1258,10 +1289,10 @@ function installLayers() {
         "interpolate",
         ["linear"],
         ["zoom"],
-        8, 0.26,
-        13, 0.46,
-        16, 0.62,
-        19, 0.82
+        8, 0.35,
+        13, 0.65,
+        16, 0.90,
+        19, 1.15
       ],
 
       "icon-allow-overlap": true,
