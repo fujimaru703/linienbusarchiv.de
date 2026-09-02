@@ -117,7 +117,7 @@
     const vehicleNumberMarkers = new Map();
 
     const labelIconMap = new Map();
-   const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290.png'));
 
 const labelergaev = ['7704','7704','7706'];
@@ -1818,15 +1818,125 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const status = document.getElementById("statusDisplay");
       setLoading(true, 68);
 
+      // 現在の車両状態をMapLibreへ反映する共通処理。
+      async function renderCurrentVehicles() {
+        const allVehicles = displayedVehicles();
+
+        await ensureVehicleIcons(allVehicles);
+
+        map.getSource("vehicles").setData(vehicleGeoJson());
+        updateVehicleNumberMarkers(allVehicles);
+
+        // 選択中の通常便だけルート/停留所を更新
+        if (selectedTripId) {
+          const current =
+            latestVehicles.find(
+              v => v.tripId === selectedTripId
+            );
+
+          if (current) {
+            const selectedFeature =
+              vehicleFeaturesByTrip.get(selectedTripId);
+
+            map.getSource("selected-vehicle").setData(
+              selectedFeature
+                ? {
+                    type: "FeatureCollection",
+                    features: [selectedFeature]
+                  }
+                : emptyFeatureCollection()
+            );
+
+            map.getSource("selected-route")
+              .setData(
+                selectedRouteGeoJson(selectedTripId)
+              );
+
+            map.getSource("selected-stops")
+              .setData(
+                futureStopsGeoJson(
+                  selectedTripId,
+                  Number(current.seq)
+                )
+              );
+
+            renderSelectedStopNameMarkers(
+              selectedTripId,
+              Number(current.seq)
+            );
+
+            const selectedProperties =
+              selectedFeature?.properties;
+
+            if (selectedProperties) {
+              showVehicleInfoPanel(
+                selectedProperties,
+                Number(current.seq)
+              );
+            }
+          } else {
+            hideVehicleInfoPanel();
+
+            selectedTripId = null;
+            clearSelectedStopNameMarkers();
+
+            map.getSource("selected-vehicle")
+              .setData(emptyFeatureCollection());
+
+            map.getSource("selected-route")
+              .setData(emptyFeatureCollection());
+
+            map.getSource("selected-stops")
+              .setData(emptyFeatureCollection());
+          }
+        }
+
+        document.getElementById(
+          "readableTimestamp"
+        ).textContent =
+          new Date().toLocaleString("ja-JP");
+      }
+
+      function updateStatusText() {
+        if (normalOperating) {
+          status.textContent =
+            `LIVE  ${latestVehicles.length}台運行中` +
+            (
+              fallbackVehicles.length
+                ? ` / 非営業 ${fallbackVehicles.length}台`
+                : ""
+            );
+        } else {
+          status.textContent =
+            fallbackVehicles.length
+              ? `非営業車両 ${fallbackVehicles.length}台`
+              : "現在は営業運行終了後です";
+        }
+      }
+
       try {
 
         if (normalOperating) {
-          // 通常運行時間中:
-          // CloudflareのGTFS-RTを先に取得する。
+          // =====================================================
+          // 第1段階:
+          // Cloudflareの通常営業車だけ先に取得して即表示する。
+          // GAS fallbackを待たせない。
+          // =====================================================
           await Promise.all([
             loadDelays(),
             loadVehicles()
           ]);
+
+          // 前回のfallbackを一旦消して、
+          // 最新の通常車だけを先に描画する。
+          fallbackVehicles = [];
+
+          await renderCurrentVehicles();
+          updateStatusText();
+
+          // 通常車が見えた時点でローディングを解除。
+          setLoading(false);
+
         } else {
           // 最終便終了後～04:00:
           // Cloudflare Workerは呼ばない。
@@ -1834,83 +1944,56 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           tripDelays = Object.create(null);
         }
 
-        // active車両一覧をGASへ渡し、
-        // Cloudflareにいない車両だけfallback位置を取得する。
+        // =======================================================
+        // 第2段階:
+        // GAS fallbackは後から取得して地図へ追加する。
+        // 通常車の初回表示をブロックしない。
+        // =======================================================
         if (fallbackOperating) {
           try {
             await loadFallbackVehicles();
+
+            await renderCurrentVehicles();
+            updateStatusText();
+
           } catch (fallbackError) {
-            // GASだけ失敗しても通常の営業車表示は維持する。
-            console.error("fallback取得失敗:", fallbackError);
+            console.error(
+              "fallback取得失敗:",
+              fallbackError
+            );
+
             fallbackVehicles = [];
+
+            // 通常営業中なら既に通常車は表示済み。
+            // 営業終了後の場合だけ空状態を反映する。
+            if (!normalOperating) {
+              await renderCurrentVehicles();
+              updateStatusText();
+            }
           }
         } else {
           fallbackVehicles = [];
-        }
 
-        const allVehicles = displayedVehicles();
-
-        await ensureVehicleIcons(allVehicles);
-        map.getSource("vehicles").setData(vehicleGeoJson());
-        updateVehicleNumberMarkers(allVehicles);
-
-        // 選択中の通常便だけルート/停留所を更新
-        if (selectedTripId) {
-          const current = latestVehicles.find(v => v.tripId === selectedTripId);
-
-          if (current) {
-            const selectedFeature = vehicleFeaturesByTrip.get(selectedTripId);
-            map.getSource("selected-vehicle").setData(
-              selectedFeature
-                ? { type: "FeatureCollection", features: [selectedFeature] }
-                : emptyFeatureCollection()
-            );
-
-            map.getSource("selected-route")
-              .setData(selectedRouteGeoJson(selectedTripId));
-
-            map.getSource("selected-stops")
-              .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
-
-            renderSelectedStopNameMarkers(selectedTripId, Number(current.seq));
-
-            const selectedProperties = selectedFeature?.properties;
-            if (selectedProperties) {
-              showVehicleInfoPanel(selectedProperties, Number(current.seq));
-            }
-          } else {
-            hideVehicleInfoPanel();
-
-            selectedTripId = null;
-            clearSelectedStopNameMarkers();
-            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
-            map.getSource("selected-route").setData(emptyFeatureCollection());
-            map.getSource("selected-stops").setData(emptyFeatureCollection());
+          if (!normalOperating) {
+            await renderCurrentVehicles();
+            updateStatusText();
           }
         }
 
-        document.getElementById("readableTimestamp").textContent =
-          new Date().toLocaleString("ja-JP");
-
-        if (normalOperating) {
-          status.textContent =
-            `LIVE  ${latestVehicles.length}台運行中` +
-            (fallbackVehicles.length
-              ? ` / 非営業 ${fallbackVehicles.length}台`
-              : "");
-        } else {
-          status.textContent =
-            fallbackVehicles.length
-              ? `非営業車両 ${fallbackVehicles.length}台`
-              : "現在は営業運行終了後です";
+        // 営業終了後はfallback取得完了までローディングを維持しているので、
+        // ここで解除する。
+        if (!normalOperating) {
+          setLoading(false);
         }
 
       } catch (e) {
         console.error(e);
-        status.textContent = "リアルタイムデータ取得失敗";
+        status.textContent =
+          "リアルタイムデータ取得失敗";
+        setLoading(false);
+
       } finally {
         updateRunning = false;
-        setLoading(false);
       }
     }
 
