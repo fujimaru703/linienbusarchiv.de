@@ -313,7 +313,7 @@ labelmp317.forEach(label => labelIconMap.set(label, 'icon/mp317.png'));
 const labelnankairj = ['8063','8064'];
 labelnankairj.forEach(label => labelIconMap.set(label, 'icon/nankai-rj.png'));
 
-const labelpdgkr = ['1836','1837','0997','0998','1091','1092','1196','1197','1217','7132','7148','7150','7153','8112','8069','0885'];
+const labelpdgkr = ['1836','1837','0997','0998','1091','1092','1196','1197','1217','7132','7146','7148','7150','7153','8112','8069','0885'];
 labelpdgkr.forEach(label => labelIconMap.set(label, 'icon/pdg-kr.png'));
 
 const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','0998','1091','1092','1196','1197','1217','1605','1835','8036','8041'];
