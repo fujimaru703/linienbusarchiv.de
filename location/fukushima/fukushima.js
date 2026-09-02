@@ -337,7 +337,7 @@ labelrinkomio.forEach(label => labelIconMap.set(label, 'icon/rinko-mio.png'));
 const labelserega = ['1537','1538',,'8001','8002'];
 labelserega.forEach(label => labelIconMap.set(label, 'icon/serega(15~).png'));
 
-const labeltkgmk = ['1472','1473','0879','0510','0878','8045','1660','0878','7133','8183','1833','1834','1926','1927','1928','1929','1930','2004','2005'];
+const labeltkgmk = ['1472','1473','0879','5006','0878','8045','1660','0878','7133','8183','1833','1834','1926','1927','1928','1929','1930','2004','2005'];
 labeltkgmk.forEach(label => labelIconMap.set(label, 'icon/tkg-mk.png'));
 
 const labeltoeimklong = ['7046','1990','7047','1999'];
