@@ -305,7 +305,7 @@ labelkanachan.forEach(label => labelIconMap.set(label, 'icon/kanachan.png'));
 const labelkanachumio = ['8083','0865','8095'];
 labelkanachumio.forEach(label => labelIconMap.set(label, 'icon/kanachu-mio.png'));
 
-const labelkanachumk = ['1623','1625','1668','1706','1769','1771','0562','1860','1863','0580','0581'];
+const labelkanachumk = ['1623','1625','1668','1706','1769','1771','0562','1860','1863','0580','0581','8186'];
 labelkanachumk.forEach(label => labelIconMap.set(label, 'icon/kanachu-mk.png'));
 
 const labelkanachump35 = ['1920','7032','1924','7034','1945','7118','7157','8066','8068'];
@@ -338,7 +338,7 @@ labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr.png'));
 const labelliesse = ['1382','1590','1859','0854','8147','0905'];
 labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse.png'));
 
-const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672','8186'];
+const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672'];
 labelmk.forEach(label => labelIconMap.set(label, 'icon/mk.png'));
 
 const labelmk517 = ['2091','2103'];
@@ -1113,12 +1113,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         time.textContent = stop.scheduledText;
         time.style.color = "#56636c";
 
-        const status = document.createElement("span");
-        status.textContent = ` ${stop.delayText}`;
-        status.style.color = stop.delay < 60 ? "#16834b" : "#d93025";
-        status.style.fontWeight = "900";
+        if (stop.delay < 60) {
+          // 定刻扱いは従来どおり
+          const status = document.createElement("span");
+          status.textContent = ` ${stop.delayText}`;
+          status.style.color = "#16834b";
+          status.style.fontWeight = "900";
 
-        meta.append(time, status);
+          meta.append(time, status);
+        } else {
+          // 遅延時だけ、元の予定時刻を取消線にして
+          // 遅延を加味した予定到着時刻を赤字で横に表示
+          time.style.textDecoration = "line-through";
+          time.style.textDecorationThickness = "1px";
+
+          const expected = document.createElement("span");
+          const adjustedMapTime =
+            adjustedTimeText(stop.scheduledText, stop.delay);
+          expected.textContent =
+            ` ${adjustedMapTime.replace(/:\\d{2}$/, "")}`;
+          expected.style.color = "#d93025";
+          expected.style.fontWeight = "900";
+
+          meta.append(time, expected);
+        }
         el.append(name, meta);
 
         const marker = new maplibregl.Marker({
@@ -1219,6 +1237,25 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           font-size: 10px;
           font-weight: 700;
           color: #5e6c74;
+        }
+
+        #vehicleInfoPanel .vip-scheduled-time {
+          text-decoration: line-through;
+          text-decoration-thickness: 1px;
+          opacity: .75;
+        }
+
+        #vehicleInfoPanel .vip-expected-time {
+          margin-left: 7px;
+          font-weight: 900;
+        }
+
+        #vehicleInfoPanel .vip-expected-time.is-ontime {
+          color: #16834b;
+        }
+
+        #vehicleInfoPanel .vip-expected-time.is-late {
+          color: #d93025;
         }
 
         #vehicleInfoPanel .vip-status {
@@ -1762,8 +1799,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         const time =
           document.createElement("div");
         time.className = "vip-time";
-        time.textContent =
+
+        const scheduled =
+          document.createElement("span");
+        scheduled.className =
+          next.delay >= 60
+            ? "vip-scheduled-time"
+            : "";
+        scheduled.textContent =
           next.scheduledText;
+
+        const expected =
+          document.createElement("span");
+        expected.className =
+          "vip-expected-time " +
+          (
+            next.delay < 60
+              ? "is-ontime"
+              : "is-late"
+          );
+        expected.textContent =
+          adjustedTimeText(
+            next.scheduledText,
+            next.delay
+          );
 
         const status =
           document.createElement("span");
@@ -1778,7 +1837,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         status.textContent =
           next.delayText;
 
-        time.appendChild(status);
+        time.append(
+          scheduled,
+          expected,
+          status
+        );
 
         nextBox.append(
           label,
@@ -2197,6 +2260,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const mm = parts[1];
       return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
     }
+
+    function adjustedTimeText(scheduledText, delaySec) {
+      const m = String(scheduledText ?? "").match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m) return scheduledText || "--:--";
+
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      const ss = Number(m[3] || 0);
+      const delay = Math.max(0, Math.round(Number(delaySec) || 0));
+
+      let total = hh * 3600 + mm * 60 + ss + delay;
+      total %= 24 * 3600;
+
+      const outH = Math.floor(total / 3600);
+      const outM = Math.floor((total % 3600) / 60);
+      const outS = total % 60;
+
+      return (
+        `${String(outH).padStart(2, "0")}:` +
+        `${String(outM).padStart(2, "0")}:` +
+        `${String(outS).padStart(2, "0")}`
+      );
+    }
+
 
     function getFutureStopsInfo(tripId, currentSeq) {
       const updates = tripDelays[tripId];
