@@ -313,7 +313,7 @@ labelmp317.forEach(label => labelIconMap.set(label, 'icon/mp317.png'));
 const labelnankairj = ['8063','8064'];
 labelnankairj.forEach(label => labelIconMap.set(label, 'icon/nankai-rj.png'));
 
-const labelpdgkr = ['1836','1837','0997','0998','1091','1092','1196','1197','1217','7132','7146','7148','7150','7153','8112','8069','0885'];
+const labelpdgkr = ['1836','1837','0997','0998','1091','1092','1196','1197','1217','7132','7148','7150','7153','8112','8069','0885'];
 labelpdgkr.forEach(label => labelIconMap.set(label, 'icon/pdg-kr.png'));
 
 const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','0998','1091','1092','1196','1197','1217','1605','1835','8036','8041'];
@@ -1182,6 +1182,31 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           margin-top: 8px;
         }
 
+        #vehicleInfoPanel .vip-track-button,
+        #vehicleInfoPanel .vip-history-toggle {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #d9e4ea;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #21313a;
+          font: inherit;
+          font-size: 10px;
+          font-weight: 850;
+          line-height: 1.2;
+          padding: 7px 9px;
+          cursor: pointer;
+          text-align: left;
+        }
+
+        #vehicleInfoPanel .vip-track-button {
+          display: block;
+          text-decoration: none;
+          background: #eef7ff;
+          border-color: #cfe5f6;
+          margin-bottom: 6px;
+        }
+
         #vehicleInfoPanel .vip-history-toggle {
           width: 100%;
           box-sizing: border-box;
@@ -1440,18 +1465,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         mapUrl
       ) {
         const track = document.createElement("a");
+        track.className = "vip-track-button";
         track.href = mapUrl;
         track.target = "_blank";
         track.rel = "noopener noreferrer";
         track.textContent = "回送追跡";
-        track.style.display = "block";
-        track.style.marginTop = "10px";
-        track.style.textAlign = "center";
-        track.style.fontWeight = "700";
-        track.style.textDecoration = "none";
-        track.style.padding = "9px 12px";
-        track.style.border = "1px solid currentColor";
-        track.style.borderRadius = "8px";
         actions.appendChild(track);
       }
 
