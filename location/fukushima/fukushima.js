@@ -73,6 +73,58 @@
       visualizePitch: true
     }), "bottom-right");
 
+    class BasemapToggleControl {
+      onAdd(mapInstance) {
+        this.map = mapInstance;
+        this.isSatellite = false;
+
+        this.container = document.createElement("div");
+        this.container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+
+        this.button = document.createElement("button");
+        this.button.type = "button";
+        this.button.title = "衛星写真に切り替え";
+        this.button.setAttribute("aria-label", "衛星写真に切り替え");
+        this.button.style.width = "auto";
+        this.button.style.minWidth = "54px";
+        this.button.style.padding = "0 8px";
+        this.button.style.fontSize = "11px";
+        this.button.style.fontWeight = "700";
+        this.button.textContent = "衛星写真";
+
+        this.button.addEventListener("click", () => {
+          this.isSatellite = !this.isSatellite;
+
+          if (this.map.getLayer("gsi-seamlessphoto")) {
+            this.map.setLayoutProperty(
+              "gsi-seamlessphoto",
+              "visibility",
+              this.isSatellite ? "visible" : "none"
+            );
+          }
+
+          this.button.textContent =
+            this.isSatellite ? "地図" : "衛星写真";
+          this.button.title =
+            this.isSatellite ? "通常地図に戻す" : "衛星写真に切り替え";
+          this.button.setAttribute(
+            "aria-label",
+            this.isSatellite ? "通常地図に戻す" : "衛星写真に切り替え"
+          );
+        });
+
+        this.container.appendChild(this.button);
+        return this.container;
+      }
+
+      onRemove() {
+        this.container?.remove();
+        this.map = undefined;
+      }
+    }
+
+    map.addControl(new BasemapToggleControl(), "top-right");
+
     function saveMapCamera() {
       try {
         const center = map.getCenter();
@@ -1939,6 +1991,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // MapLibreレイヤ
     // =========================================================
     function installLayers() {
+      // 国土地理院 全国最新写真（シームレス）
+      // 通常地図の上、バス・ルート等の下に重ねる。
+      map.addSource("gsi-seamlessphoto", {
+        type: "raster",
+        tiles: [
+          "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg"
+        ],
+        tileSize: 256,
+        minzoom: 14,
+        maxzoom: 18,
+        attribution: "国土地理院"
+      });
+
+      map.addLayer({
+        id: "gsi-seamlessphoto",
+        type: "raster",
+        source: "gsi-seamlessphoto",
+        layout: {
+          visibility: "none"
+        },
+        paint: {
+          "raster-opacity": 1
+        }
+      });
       map.addSource("vehicles", {
         type: "geojson",
         data: emptyFeatureCollection()
