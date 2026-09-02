@@ -1260,15 +1260,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           color: #62727b;
         }
 
-        #vehicleInfoPanel .vip-history-map {
-          display: inline-block;
-          margin-top: 4px;
-          font-size: 8px;
-          font-weight: 800;
-          color: #1769aa;
-          text-decoration: none;
-        }
-
         @media (max-width: 640px) {
           #vehicleInfoPanel {
             left: 8px;
@@ -1370,17 +1361,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           `${trip.destination || "行先不明"}`;
 
         item.append(time, route, path);
-
-        const mapUrl = cleanId(trip.mapUrl);
-        if (mapUrl) {
-          const link = document.createElement("a");
-          link.className = "vip-history-map";
-          link.href = mapUrl;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.textContent = "Bus-Visionで見る";
-          item.appendChild(link);
-        }
 
         container.appendChild(item);
       }
@@ -1565,85 +1545,191 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     function showVehicleInfoPanel(vehicleProperties, currentSeq) {
       const panel = ensureVehicleInfoPanel();
 
-      const next = getNextStopInfo(vehicleProperties.tripId, currentSeq);
-      const iconUrl = getVehicleIconUrl(vehicleProperties.label);
+      const isFallback =
+        Number(vehicleProperties.isFallback) === 1;
 
-      const head = document.createElement("div");
+      const next =
+        isFallback
+          ? null
+          : getNextStopInfo(
+              vehicleProperties.tripId,
+              currentSeq
+            );
+
+      const iconUrl =
+        getVehicleIconUrl(
+          vehicleProperties.label
+        );
+
+      const head =
+        document.createElement("div");
       head.className = "vip-head";
 
-      const img = document.createElement("img");
+      const img =
+        document.createElement("img");
       img.className = "vip-icon";
       img.src = iconUrl;
       img.alt = "";
 
-      const number = document.createElement("div");
+      const number =
+        document.createElement("div");
       number.className = "vip-number";
-      number.textContent = vehicleProperties.label || "?";
+      number.textContent =
+        vehicleProperties.label || "?";
 
       head.append(img, number);
 
-      const route = document.createElement("div");
+      const route =
+        document.createElement("div");
       route.className = "vip-route";
-      route.textContent = vehicleProperties.routeName || "路線名不明";
 
-      const destination = document.createElement("div");
-      destination.className = "vip-destination";
-      destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
+      const destination =
+        document.createElement("div");
+      destination.className =
+        "vip-destination";
 
-      panel.replaceChildren(head, route, destination);
+      if (isFallback) {
+        route.textContent = "回送";
+        destination.textContent =
+          "Bus-Visionで位置追跡中";
+      } else {
+        route.textContent =
+          vehicleProperties.routeName ||
+          "路線名不明";
 
-      if (Number(vehicleProperties.isFallback) === 1) {
-        const nextBox = document.createElement("div");
+        destination.textContent =
+          `→ ${
+            vehicleProperties.headsign ||
+            "行先不明"
+          }`;
+      }
+
+      panel.replaceChildren(
+        head,
+        route,
+        destination
+      );
+
+      if (isFallback) {
+        const nextBox =
+          document.createElement("div");
         nextBox.className = "vip-next";
 
-        const label = document.createElement("div");
-        label.className = "vip-next-label";
-        label.textContent = "直前の運行";
+        const label =
+          document.createElement("div");
+        label.className =
+          "vip-next-label";
+        label.textContent =
+          "直前の運行";
 
-        const name = document.createElement("div");
-        name.className = "vip-next-name";
+        const lastRoute =
+          document.createElement("div");
+        lastRoute.className =
+          "vip-next-name";
+        lastRoute.textContent =
+          vehicleProperties.routeName ||
+          "路線名不明";
 
-        const terminalTime = vehicleProperties.terminalTime || "";
-        name.textContent = terminalTime
-          ? `終着 ${terminalTime}`
-          : "終着時刻不明";
+        const path =
+          document.createElement("div");
+        path.className =
+          "vip-time";
 
-        const status = document.createElement("div");
+        const startName =
+          cleanId(
+            vehicleProperties.shihatsuName
+          ) || "始発情報不明";
+
+        const startTime =
+          formatHistoryClock(
+            vehicleProperties.shihatsuTime
+          );
+
+        const endName =
+          cleanId(
+            vehicleProperties.headsign
+          ) || "行先不明";
+
+        const endTime =
+          formatHistoryClock(
+            vehicleProperties.terminalTime
+          );
+
+        path.textContent =
+          `${startName} ${startTime} → ` +
+          `${endName} ${endTime}`;
+
+        const status =
+          document.createElement("div");
         status.className = "vip-time";
 
-        const age = Number(vehicleProperties.positionAge);
-        status.textContent =
-          Number.isFinite(age) && age >= 0
-            ? `非営業・位置 ${age}秒前`
-            : "非営業";
+        const age =
+          Number(
+            vehicleProperties.positionAge
+          );
 
-        nextBox.append(label, name, status);
+        status.textContent =
+          Number.isFinite(age) &&
+          age >= 0
+            ? `${age}秒前に更新`
+            : "更新時刻不明";
+
+        nextBox.append(
+          label,
+          lastRoute,
+          path,
+          status
+        );
+
         panel.appendChild(nextBox);
       }
 
       if (next) {
-        const nextBox = document.createElement("div");
+        const nextBox =
+          document.createElement("div");
         nextBox.className = "vip-next";
 
-        const label = document.createElement("div");
-        label.className = "vip-next-label";
-        label.textContent = "次の停留所";
+        const label =
+          document.createElement("div");
+        label.className =
+          "vip-next-label";
+        label.textContent =
+          "次の停留所";
 
-        const name = document.createElement("div");
-        name.className = "vip-next-name";
-        name.textContent = next.name;
+        const name =
+          document.createElement("div");
+        name.className =
+          "vip-next-name";
+        name.textContent =
+          next.name;
 
-        const time = document.createElement("div");
+        const time =
+          document.createElement("div");
         time.className = "vip-time";
-        time.textContent = next.scheduledText;
+        time.textContent =
+          next.scheduledText;
 
-        const status = document.createElement("span");
+        const status =
+          document.createElement("span");
         status.className =
-          "vip-status " + (next.delay < 60 ? "is-ontime" : "is-late");
-        status.textContent = next.delayText;
+          "vip-status " +
+          (
+            next.delay < 60
+              ? "is-ontime"
+              : "is-late"
+          );
+
+        status.textContent =
+          next.delayText;
 
         time.appendChild(status);
-        nextBox.append(label, name, time);
+
+        nextBox.append(
+          label,
+          name,
+          time
+        );
+
         panel.appendChild(nextBox);
       }
 
