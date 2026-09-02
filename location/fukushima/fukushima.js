@@ -305,7 +305,7 @@ labelkanachan.forEach(label => labelIconMap.set(label, 'icon/kanachan.png'));
 const labelkanachumio = ['8083','0865','8095'];
 labelkanachumio.forEach(label => labelIconMap.set(label, 'icon/kanachu-mio.png'));
 
-const labelkanachumk = ['1623','1625','1668','1706','1769','1771','0562','1860','1863','0580','0581','8186'];
+const labelkanachumk = ['1623','1625','1668','1706','1769','1771','0562','1860','1863','0580','0581'];
 labelkanachumk.forEach(label => labelIconMap.set(label, 'icon/kanachu-mk.png'));
 
 const labelkanachump35 = ['1920','7032','1924','7034','1945','7118','7157','8066','8068'];
@@ -338,7 +338,7 @@ labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr.png'));
 const labelliesse = ['1382','1590','1859','0854','8147','0905'];
 labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse.png'));
 
-const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672'];
+const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672','8186'];
 labelmk.forEach(label => labelIconMap.set(label, 'icon/mk.png'));
 
 const labelmk517 = ['2091','2103'];
