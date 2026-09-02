@@ -23,8 +23,12 @@
       BUSVISION_FALLBACK_BASE + "/history";
 
     // 運用予測 Worker
+    // 通常カードは1段だけ取得し、詳細はクリック時だけ全ツリーを取得する。
     const UNYO_PREDICT_URL =
       "https://unyo-predict.fujimaru703.workers.dev/predict";
+
+    const UNYO_PREDICT_TREE_URL =
+      "https://unyo-predict.fujimaru703.workers.dev/predict-tree";
 
     const UPDATE_INTERVAL = 15000;
 
@@ -1909,6 +1913,58 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       overlay.style.display = "flex";
     }
 
+    async function loadAndShowPredictionTree(tripId, vehicleCd) {
+      const overlay = ensurePredictionPopup();
+      const body = overlay.querySelector(".unyo-prediction-body");
+
+      body.replaceChildren();
+
+      const loading = document.createElement("div");
+      loading.textContent = "この先の予測を読み込み中...";
+      loading.style.cssText =
+        "font-size:11px;color:#687780;padding:8px 2px;";
+      body.appendChild(loading);
+
+      overlay.style.display = "flex";
+
+      try {
+        const response = await fetch(
+          UNYO_PREDICT_TREE_URL +
+          "?trip_id=" +
+          encodeURIComponent(tripId) +
+          (vehicleCd
+            ? "&vehicle=" + encodeURIComponent(vehicleCd)
+            : ""),
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error(`predict-tree HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data?.ok) {
+          throw new Error(
+            data?.error || "predict-tree API error"
+          );
+        }
+
+        showPredictionPopup(data);
+      } catch (e) {
+        console.error("詳細運用予測取得失敗:", e);
+
+        body.replaceChildren();
+
+        const error = document.createElement("div");
+        error.textContent =
+          "この先の予測を取得できませんでした";
+        error.style.cssText =
+          "font-size:11px;color:#687780;padding:8px 2px;";
+        body.appendChild(error);
+      }
+    }
+
     async function appendNextTripPrediction(panel, vehicleProperties) {
       const tripId = cleanId(vehicleProperties?.tripId);
       if (!tripId) return;
@@ -1993,13 +2049,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         path.textContent = predictionPathText(best);
 
-        // さらに先の全分岐はクリックで表示。
+        // 通常表示では /predict の1段分しか取得していない。
+        // さらに先はクリックされた時だけ /predict-tree を取得する。
         box.style.cursor = "pointer";
         box.title = "クリックしてさらに先の予測を表示";
         box.tabIndex = 0;
         box.setAttribute("role", "button");
 
-        const open = () => showPredictionPopup(data);
+        const open = () =>
+          loadAndShowPredictionTree(
+            tripId,
+            vehicleCd
+          );
+
         box.addEventListener("click", open);
         box.addEventListener("keydown", e => {
           if (e.key === "Enter" || e.key === " ") {
