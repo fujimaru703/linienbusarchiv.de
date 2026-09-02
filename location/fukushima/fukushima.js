@@ -1868,7 +1868,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           status.textContent =
             `LIVE  ${latestVehicles.length}台運行中` +
             (fallbackVehicles.length
-              ? ` / 非営業 ${fallbackVehicles.length}台`
+              ? ` / 非営業中 ${fallbackVehicles.length}台`
               : "");
         } else {
           status.textContent =
