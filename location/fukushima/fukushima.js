@@ -14,7 +14,7 @@
 
     // 非営業・回送車両用 GAS Web API
     const GAS_FALLBACK_URL =
-      "https://script.google.com/macros/s/AKfycbwy8EobHt6NgBRJIwi7_DwSFLUpGacDR7gwLTdFP_u0F6fZ7mm1SO2v8Lehxydqq67x/exec";
+      "https://fukushima-busvision-fallback.fujimaru703.workers.dev/fallback";
 
     const CLOUDFLARE_UPDATE_INTERVAL = 5000;
     const FALLBACK_UPDATE_INTERVAL = 15000;
