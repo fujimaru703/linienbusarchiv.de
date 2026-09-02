@@ -413,7 +413,6 @@ const label234 = ['7146','5002','0430','0431','8039','7135','7144','8159','7163'
 label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
 
-
     function cleanId(v) {
       return String(v ?? "").replace(/^"|"$/g, "").trim();
     }
@@ -1757,6 +1756,135 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       let overlay = document.getElementById("unyoPredictionOverlay");
       if (overlay) return overlay;
 
+      // 深い運用ツリー用の接続線・横スクロールCSS
+      if (!document.getElementById("unyoPredictionTreeStyle")) {
+        const style = document.createElement("style");
+        style.id = "unyoPredictionTreeStyle";
+        style.textContent = `
+          .unyo-prediction-popup {
+            width: min(760px, calc(100vw - 28px));
+            max-height: min(760px, calc(100vh - 36px));
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 13px;
+            border: 1px solid rgba(31, 52, 65, .15);
+            border-radius: 13px;
+            background: rgba(255,255,255,.98);
+            box-shadow: 0 12px 38px rgba(21,42,56,.24);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: #17232b;
+          }
+
+          .unyo-prediction-body {
+            max-height: min(660px, calc(100vh - 105px));
+            overflow-x: auto;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            padding: 2px 10px 12px 2px;
+          }
+
+          .unyo-tree-root {
+            width: max-content;
+            min-width: 100%;
+            box-sizing: border-box;
+          }
+
+          .unyo-tree-level {
+            position: relative;
+            margin-left: 0;
+          }
+
+          .unyo-tree-branch {
+            position: relative;
+            margin-top: 7px;
+            padding-left: 24px;
+          }
+
+          .unyo-tree-root > .unyo-tree-branch {
+            padding-left: 0;
+            margin-top: 0;
+          }
+
+          .unyo-tree-children {
+            position: relative;
+            margin-left: 18px;
+            padding-left: 0;
+          }
+
+          .unyo-tree-children::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 15px;
+            border-left: 1.5px solid #b8c7cf;
+          }
+
+          .unyo-tree-children > .unyo-tree-branch::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 18px;
+            width: 24px;
+            border-top: 1.5px solid #b8c7cf;
+          }
+
+          .unyo-tree-card {
+            position: relative;
+            display: inline-block;
+            min-width: 285px;
+            max-width: 430px;
+            box-sizing: border-box;
+            padding: 7px 9px;
+            border-radius: 8px;
+            background: #f4f8fa;
+            border: 1px solid #e3ebef;
+            vertical-align: top;
+          }
+
+          .unyo-tree-name {
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1.3;
+            white-space: nowrap;
+          }
+
+          .unyo-tree-path {
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.35;
+            color: #5e6c74;
+            white-space: nowrap;
+          }
+
+          .unyo-tree-assigned {
+            margin-left: 6px;
+            color: #16834b;
+            font-weight: 900;
+            text-decoration: none;
+          }
+
+          @media (max-width: 640px) {
+            .unyo-prediction-popup {
+              width: calc(100vw - 16px);
+              max-height: calc(100vh - 16px);
+              padding: 10px;
+            }
+
+            .unyo-prediction-body {
+              max-height: calc(100vh - 88px);
+            }
+
+            .unyo-tree-card {
+              min-width: 255px;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
       overlay = document.createElement("div");
       overlay.id = "unyoPredictionOverlay";
       overlay.style.cssText = `
@@ -1773,19 +1901,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       const box = document.createElement("div");
       box.className = "unyo-prediction-popup";
-      box.style.cssText = `
-        width: min(520px, calc(100vw - 28px));
-        max-height: min(720px, calc(100vh - 36px));
-        overflow: auto;
-        box-sizing: border-box;
-        padding: 13px;
-        border: 1px solid rgba(31, 52, 65, .15);
-        border-radius: 13px;
-        background: rgba(255,255,255,.98);
-        box-shadow: 0 12px 38px rgba(21,42,56,.24);
-        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-        color: #17232b;
-      `;
 
       const head = document.createElement("div");
       head.style.cssText = `
@@ -1835,19 +1950,21 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
     function renderPredictionTreeNodes(nodes, container, depth = 0) {
+      const level = document.createElement("div");
+      level.className =
+        depth === 0
+          ? "unyo-tree-root"
+          : "unyo-tree-children";
+
       for (const node of nodes || []) {
+        const branch = document.createElement("div");
+        branch.className = "unyo-tree-branch";
+
         const item = document.createElement("div");
-        item.style.cssText = `
-          margin-top: ${depth === 0 ? 0 : 6}px;
-          margin-left: ${Math.min(depth, 8) * 14}px;
-          padding: 7px 8px;
-          border-radius: 8px;
-          background: #f4f8fa;
-          border: 1px solid #e3ebef;
-        `;
+        item.className = "unyo-tree-card";
 
         const name = document.createElement("div");
-        name.style.cssText = `font-size:11px;font-weight:900;line-height:1.3;`;
+        name.className = "unyo-tree-name";
 
         if (isPredictionServiceEnd(node)) {
           name.textContent = "運用終了";
@@ -1859,12 +1976,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           routeText.style.opacity = ".72";
 
           const assignedText = document.createElement("span");
+          assignedText.className = "unyo-tree-assigned";
           assignedText.textContent =
-            ` ${cleanId(node?.assigned_vehicle) || "?"}号車が充当`;
-          assignedText.style.marginLeft = "6px";
-          assignedText.style.color = "#16834b";
-          assignedText.style.fontWeight = "900";
-          assignedText.style.textDecoration = "none";
+            `${cleanId(node?.assigned_vehicle) || "?"}号車が充当`;
 
           name.append(routeText, assignedText);
         } else {
@@ -1872,26 +1986,27 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
 
         const path = document.createElement("div");
-        path.style.cssText = `
-          margin-top: 3px;
-          font-size: 10px;
-          font-weight: 700;
-          line-height: 1.35;
-          color: #5e6c74;
-        `;
+        path.className = "unyo-tree-path";
         path.textContent = predictionPathText(node);
 
         item.append(name, path);
-        container.appendChild(item);
+        branch.appendChild(item);
 
         const children = getPredictionChildren(node);
 
-        // 他車が充当した枝は、この便までは表示するが、
-        // その先の予測枝は表示しない。
+        // 他車充当の枝はこの便まで表示し、その先は表示しない。
         if (!node?.occupied_by_other && children.length) {
-          renderPredictionTreeNodes(children, container, depth + 1);
+          renderPredictionTreeNodes(
+            children,
+            branch,
+            depth + 1
+          );
         }
+
+        level.appendChild(branch);
       }
+
+      container.appendChild(level);
     }
 
     function showPredictionPopup(data) {
