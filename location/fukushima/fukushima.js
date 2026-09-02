@@ -14,9 +14,7 @@
 
     // 非営業・回送車両用 GAS Web API
     const GAS_FALLBACK_URL =
-      "  // 非営業・回送車両用 GAS Web API
-    const GAS_FALLBACK_URL =
-      "https://script.google.com/macros/s/AKfycbyOyXgfURN7CXy4kmBp1iVjagqqmMB8rB7JCFp_h9a-6E2iijgaxfaVaEpW-IC14Z-U/exec";
+      "https://script.google.com/macros/s/AKfycbwTR2z6rfcNOMgHwcyzqtgN179Q3caqYEAN1-zwfVwVfZwZio5VIvXp46cqxaW3DlTR/exec";
 
     const UPDATE_INTERVAL = 15000;
 
