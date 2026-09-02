@@ -1389,7 +1389,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           }
 
           #vehicleInfoPanel .vip-head {
-            gap: 7px;
+            gap: 5px;
             margin-bottom: 6px;
           }
 
@@ -1804,11 +1804,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           .unyo-flow-card {
             position: absolute;
             z-index: 2;
-            width: 270px;
-            min-height: 70px;
+            width: 220px;
+            min-height: 62px;
             box-sizing: border-box;
-            padding: 9px 11px;
-            border-radius: 10px;
+            padding: 7px 9px;
+            border-radius: 8px;
             border: 1px solid #dbe6eb;
             background: rgba(255,255,255,.98);
             box-shadow: 0 2px 7px rgba(37,57,69,.10);
@@ -1821,8 +1821,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           }
 
           .unyo-flow-card-end {
-            width: 170px;
-            min-height: 54px;
+            width: 135px;
+            min-height: 48px;
             background: #f4f6f7;
           }
 
@@ -1834,7 +1834,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           .unyo-flow-topline {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 5px;
             min-width: 0;
           }
 
@@ -1843,18 +1843,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-size: 11px;
-            line-height: 1.35;
+            font-size: 10px;
+            line-height: 1.3;
             font-weight: 900;
           }
 
           .unyo-flow-badge {
             flex: 0 0 auto;
-            padding: 2px 6px;
+            padding: 1px 5px;
             border-radius: 999px;
             background: #eaf0f3;
-            font-size: 10px;
-            line-height: 1.25;
+            font-size: 9px;
+            line-height: 1.2;
             font-weight: 900;
             color: #435761;
           }
@@ -1865,26 +1865,28 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           }
 
           .unyo-flow-path {
-            margin-top: 5px;
-            font-size: 10px;
+            margin-top: 3px;
+            font-size: 9px;
             font-weight: 700;
-            line-height: 1.4;
+            line-height: 1.35;
             color: #61717a;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           .unyo-flow-sample {
-            margin-top: 3px;
-            font-size: 9px;
-            line-height: 1.3;
-            color: #87949b;
+            margin-top: 2px;
+            font-size: 8.5px;
+            line-height: 1.25;
+            color: #7a8991;
           }
 
           .unyo-flow-assigned {
             display: block;
-            margin-top: 4px;
+            margin-top: 3px;
             color: #16834b;
-            font-size: 10px;
+            font-size: 9px;
             line-height: 1.3;
             font-weight: 900;
           }
@@ -1930,13 +1932,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
               max-height: calc(100vh - 70px);
             }
 
-            .unyo-flow-card {
-              width: 245px;
-            }
-
-            .unyo-flow-card-end {
-              width: 150px;
-            }
           }
         `;
         document.head.appendChild(style);
@@ -2053,14 +2048,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
       collect(rootEntry);
 
-      const CARD_W = 270;
-      const CARD_H = 70;
-      const END_W = 170;
-      const END_H = 54;
-      const COL_GAP = 105;
-      const ROW_GAP = 28;
-      const PAD_X = 24;
-      const PAD_Y = 22;
+      const CARD_W = 220;
+      const CARD_H = 62;
+      const END_W = 135;
+      const END_H = 48;
+      const COL_GAP = 65;
+      const ROW_GAP = 18;
+      const PAD_X = 18;
+      const PAD_Y = 16;
 
       const cardWidth = entry =>
         isPredictionServiceEnd(entry.node) ? END_W : CARD_W;
@@ -2149,6 +2144,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return entry;
     }
 
+    function formatCumulativeProbability(node) {
+      const value = Number(node?.cumulative_probability);
+
+      if (!Number.isFinite(value)) {
+        return "";
+      }
+
+      return `累積 ${Number.isInteger(value) ? value : value.toFixed(1)}%`;
+    }
+
     function createPredictionFlowCard(entry) {
       const node = entry.node;
       const item = document.createElement("div");
@@ -2205,13 +2210,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         path.textContent =
           `${predictionFromStop(node)} ${predictionFromTime(node)} → ` +
           `${predictionToStop(node)} ${predictionToTime(node)}`;
+        path.title = path.textContent;
         item.appendChild(path);
       }
 
       if (!entry.currentNode && !node?.virtual_root) {
         const sample = document.createElement("div");
         sample.className = "unyo-flow-sample";
-        sample.textContent = formatPredictionN(node);
+
+        const cumulative =
+          formatCumulativeProbability(node);
+        const nText =
+          formatPredictionN(node);
+
+        sample.textContent =
+          [cumulative, nText]
+            .filter(Boolean)
+            .join(" ・ ");
+
         item.appendChild(sample);
       }
 
