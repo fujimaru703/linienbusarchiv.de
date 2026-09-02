@@ -1844,9 +1844,28 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         const name = document.createElement("div");
         name.style.cssText = `font-size:11px;font-weight:900;line-height:1.3;`;
-        name.textContent = isPredictionServiceEnd(node)
-          ? "運用終了"
-          : predictionRouteName(node);
+
+        if (isPredictionServiceEnd(node)) {
+          name.textContent = "運用終了";
+        } else if (node?.occupied_by_other) {
+          const routeText = document.createElement("span");
+          routeText.textContent = predictionRouteName(node);
+          routeText.style.textDecoration = "line-through";
+          routeText.style.textDecorationThickness = "1px";
+          routeText.style.opacity = ".72";
+
+          const assignedText = document.createElement("span");
+          assignedText.textContent =
+            ` ${cleanId(node?.assigned_vehicle) || "?"}号車が充当`;
+          assignedText.style.marginLeft = "6px";
+          assignedText.style.color = "#16834b";
+          assignedText.style.fontWeight = "900";
+          assignedText.style.textDecoration = "none";
+
+          name.append(routeText, assignedText);
+        } else {
+          name.textContent = predictionRouteName(node);
+        }
 
         const path = document.createElement("div");
         path.style.cssText = `
@@ -1862,7 +1881,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         container.appendChild(item);
 
         const children = getPredictionChildren(node);
-        if (children.length) {
+
+        // 他車が充当した枝は、この便までは表示するが、
+        // その先の予測枝は表示しない。
+        if (!node?.occupied_by_other && children.length) {
           renderPredictionTreeNodes(children, container, depth + 1);
         }
       }
@@ -1911,10 +1933,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       panel.appendChild(box);
 
       try {
+        const vehicleCd = cleanId(vehicleProperties?.label);
+
         const response = await fetch(
           UNYO_PREDICT_URL +
           "?trip_id=" +
-          encodeURIComponent(tripId),
+          encodeURIComponent(tripId) +
+          (vehicleCd
+            ? "&vehicle=" + encodeURIComponent(vehicleCd)
+            : ""),
           { cache: "no-store" }
         );
 
@@ -1940,9 +1967,29 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           return;
         }
 
-        name.textContent = isPredictionServiceEnd(best)
-          ? "運用終了"
-          : predictionRouteName(best);
+        name.replaceChildren();
+
+        if (isPredictionServiceEnd(best)) {
+          name.textContent = "運用終了";
+        } else if (best?.occupied_by_other) {
+          const routeText = document.createElement("span");
+          routeText.textContent = predictionRouteName(best);
+          routeText.style.textDecoration = "line-through";
+          routeText.style.textDecorationThickness = "1px";
+          routeText.style.opacity = ".72";
+
+          const assignedText = document.createElement("span");
+          assignedText.textContent =
+            ` ${cleanId(best?.assigned_vehicle) || "?"}号車が充当`;
+          assignedText.style.marginLeft = "6px";
+          assignedText.style.color = "#16834b";
+          assignedText.style.fontWeight = "900";
+          assignedText.style.textDecoration = "none";
+
+          name.append(routeText, assignedText);
+        } else {
+          name.textContent = predictionRouteName(best);
+        }
 
         path.textContent = predictionPathText(best);
 
