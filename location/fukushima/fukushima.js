@@ -22,6 +22,10 @@
     const VEHICLE_HISTORY_URL =
       BUSVISION_FALLBACK_BASE + "/history";
 
+    // 運用予測 Worker
+    const UNYO_PREDICT_URL =
+      "https://unyo-predict.fujimaru703.workers.dev/predict";
+
     const UPDATE_INTERVAL = 15000;
 
     // バスロケ表示時間:
@@ -403,6 +407,7 @@ labelmiharu290.forEach(label => labelIconMap.set(label, 'icon/miharu290.png'));
 
 const label234 = ['7146','5002','0430','0431','8039','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133','8185','8167','8168','8200'];
 label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
+
 
 
     function cleanId(v) {
@@ -963,6 +968,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (lat === 0 && lon === 0) continue;
 
         vehicles.push({
+          // fallback Worker が返す「前便」の trip_id。画面には表示せず運用予測の起点に使う。
           tripId: cleanId(v?.tripId),
           routeId: "",
           seq: NaN,
@@ -1648,6 +1654,321 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
 
+    // =========================================================
+    // 運用予測表示
+    // =========================================================
+    function getPredictionRootNodes(data) {
+      if (Array.isArray(data?.predictions)) return data.predictions;
+      if (Array.isArray(data?.tree)) return data.tree;
+      if (Array.isArray(data?.children)) return data.children;
+      if (Array.isArray(data?.root?.children)) return data.root.children;
+      return [];
+    }
+
+    function getPredictionChildren(node) {
+      if (Array.isArray(node?.children)) return node.children;
+      if (Array.isArray(node?.predictions)) return node.predictions;
+      if (Array.isArray(node?.next)) return node.next;
+      return [];
+    }
+
+    function isPredictionServiceEnd(node) {
+      if (!node) return false;
+      if (node.service_end === true) return true;
+      if (node.type === "service_end") return true;
+      if (node.status === "service_end") return true;
+      if (node.end === true) return true;
+      return false;
+    }
+
+    function predictionProbability(node) {
+      const p = Number(node?.probability);
+      return Number.isFinite(p) ? p : 0;
+    }
+
+    function formatPredictionProbability(node) {
+      const p = predictionProbability(node);
+      return `${Number.isInteger(p) ? p : p.toFixed(1)}%`;
+    }
+
+    function formatPredictionN(node) {
+      const count = Number(node?.count);
+      const n = Number(node?.n);
+
+      if (Number.isFinite(count) && Number.isFinite(n)) {
+        return `(n=${count}/${n})`;
+      }
+
+      if (Number.isFinite(n)) {
+        return `(n=${n})`;
+      }
+
+      return "";
+    }
+
+    function predictionRouteName(node) {
+      return cleanId(node?.route_name || node?.routeName) || "路線名不明";
+    }
+
+    function predictionFromStop(node) {
+      return cleanId(node?.from_stop || node?.fromStop) || "始発不明";
+    }
+
+    function predictionToStop(node) {
+      return cleanId(node?.to_stop || node?.toStop) || "終点不明";
+    }
+
+    function predictionFromTime(node) {
+      return formatHistoryClock(node?.from_time || node?.fromTime);
+    }
+
+    function predictionToTime(node) {
+      return formatHistoryClock(node?.to_time || node?.toTime);
+    }
+
+    function getMostLikelyPrediction(nodes) {
+      if (!Array.isArray(nodes) || !nodes.length) return null;
+
+      return [...nodes].sort(
+        (a, b) => predictionProbability(b) - predictionProbability(a)
+      )[0] || null;
+    }
+
+    function predictionPathText(node) {
+      const probability = formatPredictionProbability(node);
+      const nText = formatPredictionN(node);
+
+      if (isPredictionServiceEnd(node)) {
+        return [probability, nText].filter(Boolean).join(" ");
+      }
+
+      return (
+        `${predictionFromStop(node)} ${predictionFromTime(node)} → ` +
+        `${predictionToStop(node)} ${predictionToTime(node)}   ` +
+        [probability, nText].filter(Boolean).join(" ")
+      );
+    }
+
+    function ensurePredictionPopup() {
+      let overlay = document.getElementById("unyoPredictionOverlay");
+      if (overlay) return overlay;
+
+      overlay = document.createElement("div");
+      overlay.id = "unyoPredictionOverlay";
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        box-sizing: border-box;
+        background: rgba(15, 27, 35, .34);
+      `;
+
+      const box = document.createElement("div");
+      box.className = "unyo-prediction-popup";
+      box.style.cssText = `
+        width: min(520px, calc(100vw - 28px));
+        max-height: min(720px, calc(100vh - 36px));
+        overflow: auto;
+        box-sizing: border-box;
+        padding: 13px;
+        border: 1px solid rgba(31, 52, 65, .15);
+        border-radius: 13px;
+        background: rgba(255,255,255,.98);
+        box-shadow: 0 12px 38px rgba(21,42,56,.24);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #17232b;
+      `;
+
+      const head = document.createElement("div");
+      head.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 9px;
+      `;
+
+      const title = document.createElement("div");
+      title.className = "unyo-prediction-title";
+      title.textContent = "この先の運用予測";
+      title.style.cssText = `font-size:14px;font-weight:900;`;
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "×";
+      close.setAttribute("aria-label", "閉じる");
+      close.style.cssText = `
+        border: 0;
+        background: transparent;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 2px 5px;
+        color: #52616a;
+      `;
+
+      const body = document.createElement("div");
+      body.className = "unyo-prediction-body";
+
+      close.addEventListener("click", () => {
+        overlay.style.display = "none";
+      });
+
+      overlay.addEventListener("click", e => {
+        if (e.target === overlay) overlay.style.display = "none";
+      });
+
+      head.append(title, close);
+      box.append(head, body);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      return overlay;
+    }
+
+    function renderPredictionTreeNodes(nodes, container, depth = 0) {
+      for (const node of nodes || []) {
+        const item = document.createElement("div");
+        item.style.cssText = `
+          margin-top: ${depth === 0 ? 0 : 6}px;
+          margin-left: ${Math.min(depth, 8) * 14}px;
+          padding: 7px 8px;
+          border-radius: 8px;
+          background: #f4f8fa;
+          border: 1px solid #e3ebef;
+        `;
+
+        const name = document.createElement("div");
+        name.style.cssText = `font-size:11px;font-weight:900;line-height:1.3;`;
+        name.textContent = isPredictionServiceEnd(node)
+          ? "運用終了"
+          : predictionRouteName(node);
+
+        const path = document.createElement("div");
+        path.style.cssText = `
+          margin-top: 3px;
+          font-size: 10px;
+          font-weight: 700;
+          line-height: 1.35;
+          color: #5e6c74;
+        `;
+        path.textContent = predictionPathText(node);
+
+        item.append(name, path);
+        container.appendChild(item);
+
+        const children = getPredictionChildren(node);
+        if (children.length) {
+          renderPredictionTreeNodes(children, container, depth + 1);
+        }
+      }
+    }
+
+    function showPredictionPopup(data) {
+      const overlay = ensurePredictionPopup();
+      const body = overlay.querySelector(".unyo-prediction-body");
+      body.replaceChildren();
+
+      const nodes = getPredictionRootNodes(data);
+
+      if (!nodes.length) {
+        const empty = document.createElement("div");
+        empty.textContent = "この先の予測データはありません";
+        empty.style.cssText = `font-size:11px;color:#687780;padding:8px 2px;`;
+        body.appendChild(empty);
+      } else {
+        renderPredictionTreeNodes(nodes, body, 0);
+      }
+
+      overlay.style.display = "flex";
+    }
+
+    async function appendNextTripPrediction(panel, vehicleProperties) {
+      const tripId = cleanId(vehicleProperties?.tripId);
+      if (!tripId) return;
+
+      const box = document.createElement("div");
+      box.className = "vip-next";
+      box.style.marginTop = "6px";
+
+      const label = document.createElement("div");
+      label.className = "vip-next-label";
+      label.textContent = "次便予測";
+
+      const name = document.createElement("div");
+      name.className = "vip-next-name";
+      name.textContent = "予測を読み込み中...";
+
+      const path = document.createElement("div");
+      path.className = "vip-time";
+      path.textContent = "";
+
+      box.append(label, name, path);
+      panel.appendChild(box);
+
+      try {
+        const response = await fetch(
+          UNYO_PREDICT_URL +
+          "?trip_id=" +
+          encodeURIComponent(tripId),
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error(`predict HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data?.ok) {
+          throw new Error(data?.error || "predict API error");
+        }
+
+        // パネルを閉じた後や別車両へ切り替えた後の遅延レスポンスを無視する。
+        if (!box.isConnected) return;
+
+        const nodes = getPredictionRootNodes(data);
+        const best = getMostLikelyPrediction(nodes);
+
+        if (!best) {
+          name.textContent = "予測なし";
+          path.textContent = "";
+          return;
+        }
+
+        name.textContent = isPredictionServiceEnd(best)
+          ? "運用終了"
+          : predictionRouteName(best);
+
+        path.textContent = predictionPathText(best);
+
+        // さらに先の全分岐はクリックで表示。
+        box.style.cursor = "pointer";
+        box.title = "クリックしてさらに先の予測を表示";
+        box.tabIndex = 0;
+        box.setAttribute("role", "button");
+
+        const open = () => showPredictionPopup(data);
+        box.addEventListener("click", open);
+        box.addEventListener("keydown", e => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            open();
+          }
+        });
+      } catch (e) {
+        console.error("運用予測取得失敗:", e);
+        if (!box.isConnected) return;
+        name.textContent = "予測を取得できませんでした";
+        path.textContent = "";
+      }
+    }
+
+
     function showVehicleInfoPanel(vehicleProperties, currentSeq) {
       const panel = ensureVehicleInfoPanel();
 
@@ -1851,6 +2172,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         panel.appendChild(nextBox);
       }
+
+      // 通常運行中は現在便のtripId、fallback回送中は前便のtripIdを起点に、
+      // どちらの車両にも同じデザインの「次便予測」を表示する。
+      appendNextTripPrediction(
+        panel,
+        vehicleProperties
+      );
 
       appendVehicleActions(
         panel,
