@@ -1777,7 +1777,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           .unyo-prediction-body {
             position: relative;
             max-height: calc(88vh - 78px);
-            overflow: auto;
+            overflow-y: auto;
+            overflow-x: scroll;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
             padding: 8px 12px 18px 8px;
@@ -1940,6 +1941,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             .unyo-prediction-body {
               max-height: calc(100vh - 78px);
               padding: 5px 7px 12px 5px;
+              overflow-x: auto;
             }
 
             .unyo-prediction-title {
@@ -2088,14 +2090,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       if (body.dataset.zoomGesturesInstalled === "1") return;
       body.dataset.zoomGesturesInstalled = "1";
 
-      // PC: Ctrl + ホイールでズーム。
+      // PC: ホイールだけでズーム。
+      // 上方向 = 拡大 / 下方向 = 縮小
       body.addEventListener(
         "wheel",
         e => {
-          if (!e.ctrlKey) return;
           e.preventDefault();
 
-          const step = e.deltaY < 0 ? 0.08 : -0.08;
+          const step =
+            e.deltaY < 0
+              ? 0.08
+              : -0.08;
+
           setPredictionZoom(
             body,
             getPredictionZoom(body) + step
