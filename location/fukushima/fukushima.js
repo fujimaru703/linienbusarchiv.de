@@ -2268,19 +2268,20 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const hh = Number(m[1]);
       const mm = Number(m[2]);
       const ss = Number(m[3] || 0);
-      const delay = Math.max(0, Math.round(Number(delaySec) || 0));
+      const delay = Math.max(0, Number(delaySec) || 0);
 
-      let total = hh * 3600 + mm * 60 + ss + delay;
-      total %= 24 * 3600;
+      // 予定時刻 + 遅延秒数を、最終的に「分」へ四捨五入する。
+      let totalSec = hh * 3600 + mm * 60 + ss + delay;
+      let roundedMin = Math.round(totalSec / 60);
 
-      const outH = Math.floor(total / 3600);
-      const outM = Math.floor((total % 3600) / 60);
-      const outS = total % 60;
+      roundedMin %= 24 * 60;
+
+      const outH = Math.floor(roundedMin / 60);
+      const outM = roundedMin % 60;
 
       return (
         `${String(outH).padStart(2, "0")}:` +
-        `${String(outM).padStart(2, "0")}:` +
-        `${String(outS).padStart(2, "0")}`
+        `${String(outM).padStart(2, "0")}`
       );
     }
 
