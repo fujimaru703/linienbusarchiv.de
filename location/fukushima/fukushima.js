@@ -18,6 +18,10 @@
 
     const UPDATE_INTERVAL = 15000;
 
+    // スマホではバスアイコンを少し小さくする
+    const MOBILE_ICON_SCALE =
+      window.matchMedia("(max-width: 640px)").matches ? 0.72 : 1.0;
+
     // バスロケ表示時間:
     // その日の始発10分前 ～ 終バスの終点到着20分後
     const SERVICE_START_MARGIN_SEC = 10 * 60;
@@ -57,7 +61,6 @@
 
       minZoom: 6,
       maxZoom: 19,
-      maxPitch: 85,  
       attributionControl: true,
 
       // 背景地図
@@ -67,6 +70,58 @@
     map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true
     }), "bottom-right");
+
+    class BasemapToggleControl {
+      onAdd(mapInstance) {
+        this.map = mapInstance;
+        this.isSatellite = false;
+
+        this.container = document.createElement("div");
+        this.container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+
+        this.button = document.createElement("button");
+        this.button.type = "button";
+        this.button.title = "衛星写真に切り替え";
+        this.button.setAttribute("aria-label", "衛星写真に切り替え");
+        this.button.style.width = "auto";
+        this.button.style.minWidth = "54px";
+        this.button.style.padding = "0 8px";
+        this.button.style.fontSize = "11px";
+        this.button.style.fontWeight = "700";
+        this.button.textContent = "衛星写真";
+
+        this.button.addEventListener("click", () => {
+          this.isSatellite = !this.isSatellite;
+
+          if (this.map.getLayer("gsi-seamlessphoto")) {
+            this.map.setLayoutProperty(
+              "gsi-seamlessphoto",
+              "visibility",
+              this.isSatellite ? "visible" : "none"
+            );
+          }
+
+          this.button.textContent =
+            this.isSatellite ? "地図" : "衛星写真";
+          this.button.title =
+            this.isSatellite ? "通常地図に戻す" : "衛星写真に切り替え";
+          this.button.setAttribute(
+            "aria-label",
+            this.isSatellite ? "通常地図に戻す" : "衛星写真に切り替え"
+          );
+        });
+
+        this.container.appendChild(this.button);
+        return this.container;
+      }
+
+      onRemove() {
+        this.container?.remove();
+        this.map = undefined;
+      }
+    }
+
+    map.addControl(new BasemapToggleControl(), "top-right");
 
     function saveMapCamera() {
       try {
@@ -1294,7 +1349,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         const age = Number(vehicleProperties.positionAge);
         status.textContent =
           Number.isFinite(age) && age >= 0
-            ? `位置 ${age}秒前`
+            ? `非営業・位置 ${age}秒前`
             : "非営業";
 
         nextBox.append(
@@ -1375,11 +1430,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
     function vehicleIconScaleAtZoom(zoom) {
-      if (zoom <= 8) return 0.35;
-      if (zoom <= 13) return 0.35 + (zoom - 8) * (0.65 - 0.35) / 5;
-      if (zoom <= 16) return 0.65 + (zoom - 13) * (0.90 - 0.65) / 3;
-      if (zoom <= 19) return 0.90 + (zoom - 16) * (1.15 - 0.90) / 3;
-      return 1.15;
+      let scale;
+      if (zoom <= 8) scale = 0.35;
+      else if (zoom <= 13) scale = 0.35 + (zoom - 8) * (0.65 - 0.35) / 5;
+      else if (zoom <= 16) scale = 0.65 + (zoom - 13) * (0.90 - 0.65) / 3;
+      else if (zoom <= 19) scale = 0.90 + (zoom - 16) * (1.15 - 0.90) / 3;
+      else scale = 1.15;
+
+      return scale * MOBILE_ICON_SCALE;
     }
 
     function vehicleNumberMarkerOffset() {
@@ -1568,6 +1626,31 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // MapLibreレイヤ
     // =========================================================
     function installLayers() {
+      // 国土地理院 全国最新写真（シームレス）
+      // 写真レイヤは通常地図の上、バス・ルート等の下に重ねる。
+      map.addSource("gsi-seamlessphoto", {
+        type: "raster",
+        tiles: [
+          "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg"
+        ],
+        tileSize: 256,
+        minzoom: 14,
+        maxzoom: 18,
+        attribution: "国土地理院"
+      });
+
+      map.addLayer({
+        id: "gsi-seamlessphoto",
+        type: "raster",
+        source: "gsi-seamlessphoto",
+        layout: {
+          visibility: "none"
+        },
+        paint: {
+          "raster-opacity": 1
+        }
+      });
+
       map.addSource("vehicles", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -1648,11 +1731,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         layout: {
           "icon-image": iconExpression(),
           "icon-size": [
-            "interpolate", ["linear"], ["zoom"],
-            8, 0.35,
-            13, 0.65,
-            16, 0.9,
-            19, 1.15
+            "*",
+            MOBILE_ICON_SCALE,
+            [
+              "interpolate", ["linear"], ["zoom"],
+              8, 0.35,
+              13, 0.65,
+              16, 0.9,
+              19, 1.15
+            ]
           ],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
