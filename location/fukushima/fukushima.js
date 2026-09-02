@@ -12,16 +12,17 @@
     const VEHICLE_POSITION_URL =
       "https://morning-sun-eb88.fujimaru703.workers.dev/";
 
-    // 非営業・回送車両用 GAS Web API
-    const GAS_FALLBACK_URL =
-      "https://fukushima-busvision-fallback.fujimaru703.workers.dev/fallback";
+    // 非営業・回送車両 + 当日充当履歴 Cloudflare Worker
+    const BUSVISION_FALLBACK_BASE =
+      "https://fukushima-busvision-fallback.fujimaru703.workers.dev";
 
-    const CLOUDFLARE_UPDATE_INTERVAL = 5000;
-    const FALLBACK_UPDATE_INTERVAL = 15000;
+    const FALLBACK_URL =
+      BUSVISION_FALLBACK_BASE + "/fallback";
 
-    // スマホではバスアイコンを少し小さくする
-    const MOBILE_ICON_SCALE =
-      window.matchMedia("(max-width: 640px)").matches ? 0.72 : 1.0;
+    const VEHICLE_HISTORY_URL =
+      BUSVISION_FALLBACK_BASE + "/history";
+
+    const UPDATE_INTERVAL = 15000;
 
     // バスロケ表示時間:
     // その日の始発10分前 ～ 終バスの終点到着20分後
@@ -72,58 +73,6 @@
       visualizePitch: true
     }), "bottom-right");
 
-    class BasemapToggleControl {
-      onAdd(mapInstance) {
-        this.map = mapInstance;
-        this.isSatellite = false;
-
-        this.container = document.createElement("div");
-        this.container.className = "maplibregl-ctrl maplibregl-ctrl-group";
-
-        this.button = document.createElement("button");
-        this.button.type = "button";
-        this.button.title = "衛星写真に切り替え";
-        this.button.setAttribute("aria-label", "衛星写真に切り替え");
-        this.button.style.width = "auto";
-        this.button.style.minWidth = "54px";
-        this.button.style.padding = "0 8px";
-        this.button.style.fontSize = "11px";
-        this.button.style.fontWeight = "700";
-        this.button.textContent = "衛星写真";
-
-        this.button.addEventListener("click", () => {
-          this.isSatellite = !this.isSatellite;
-
-          if (this.map.getLayer("gsi-seamlessphoto")) {
-            this.map.setLayoutProperty(
-              "gsi-seamlessphoto",
-              "visibility",
-              this.isSatellite ? "visible" : "none"
-            );
-          }
-
-          this.button.textContent =
-            this.isSatellite ? "地図" : "衛星写真";
-          this.button.title =
-            this.isSatellite ? "通常地図に戻す" : "衛星写真に切り替え";
-          this.button.setAttribute(
-            "aria-label",
-            this.isSatellite ? "通常地図に戻す" : "衛星写真に切り替え"
-          );
-        });
-
-        this.container.appendChild(this.button);
-        return this.container;
-      }
-
-      onRemove() {
-        this.container?.remove();
-        this.map = undefined;
-      }
-    }
-
-    map.addControl(new BasemapToggleControl(), "top-right");
-
     function saveMapCamera() {
       try {
         const center = map.getCenter();
@@ -164,61 +113,24 @@
     let tripDelays = Object.create(null);
     let latestVehicles = [];
     let fallbackVehicles = [];
-
-    // 回送車のブラウザキャッシュ。
-    // 再アクセス時はGAS応答を待たず、前回位置をまず即表示する。
-    const FALLBACK_BROWSER_CACHE_KEY = "fukushima-fallback-vehicles-v1";
-
-    function saveFallbackBrowserCache() {
-      try {
-        localStorage.setItem(
-          FALLBACK_BROWSER_CACHE_KEY,
-          JSON.stringify({
-            dateKey: japanNowParts().dateKey,
-            savedAt: Date.now(),
-            vehicles: fallbackVehicles
-          })
-        );
-      } catch (_) {}
-    }
-
-    function loadFallbackBrowserCache() {
-      try {
-        const raw = localStorage.getItem(FALLBACK_BROWSER_CACHE_KEY);
-        if (!raw) return [];
-
-        const cached = JSON.parse(raw);
-        if (cached?.dateKey !== japanNowParts().dateKey) return [];
-        if (!Array.isArray(cached?.vehicles)) return [];
-
-        return cached.vehicles.filter(v =>
-          v &&
-          Number.isFinite(Number(v.lat)) &&
-          Number.isFinite(Number(v.lon))
-        );
-      } catch (_) {
-        return [];
-      }
-    }
     let staticGtfsLoaded = false;
-    let normalUpdateRunning = false;
-    let fallbackUpdateRunning = false;
+    let updateRunning = false;
     let selectedTripId = null;
-    let normalRealtimeTimer = null;
-    let fallbackRealtimeTimer = null;
+    let realtimeTimer = null;
     let vehicleFeaturesByTrip = new Map();
     let selectedStopNameMarkers = [];
     let vehicleInfoPanel = null;
     const vehicleNumberMarkers = new Map();
 
+    // 車番ごとの当日充当履歴。プルダウンを初めて開いた時だけ取得する。
+    const vehicleHistoryCache = new Map();
+    let expandedHistoryVehicleCd = null;
+
     const labelIconMap = new Map();
     const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290.png'));
 
-const labelergaev = ['7704','7705','7706'];
-labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
-
-const label557 = ['0557','2411','2412','2408'];
+	const label557 = ['0557','2411','2412','2408'];
 label557.forEach(label => labelIconMap.set(label, 'icon/557&2411.png'));
 
 const label600 = ['8181'];
@@ -314,7 +226,7 @@ label7110.forEach(label => labelIconMap.set(label, 'icon/7110.png'));
 const label7701 = ['7701','7702','7703'];
 label7701.forEach(label => labelIconMap.set(label, 'icon/7701.png'));
 
-const label8008 = ['8008','8136'];
+const label8008 = ['8008'];
 label8008.forEach(label => labelIconMap.set(label, 'icon/8008.png'));
 
 const label8014 = ['8014'];
@@ -368,10 +280,10 @@ labelkllt.forEach(label => labelIconMap.set(label, 'icon/kl-lt.png'));
 const labelkwskhr = ['7137','8123','8130'];
 labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr.png'));
 
-const labelliesse = ['1382','1590','1859','0854','8147','0905'];
+const labelliesse = ['1382','1590','1859','0854','8147'];
 labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse.png'));
 
-const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672'];
+const labelmk = ['0044','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202'];
 labelmk.forEach(label => labelIconMap.set(label, 'icon/mk.png'));
 
 const labelmk517 = ['2091','2103'];
@@ -419,7 +331,7 @@ labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f.png'));
 const labelrinkomio = ['1336','1369','1379','5003','5004','1710','1720','2020','1732','1850','1854','1857','2041','8150','8025'];
 labelrinkomio.forEach(label => labelIconMap.set(label, 'icon/rinko-mio.png'));
 
-const labelserega = ['1537','1538',,'8001','8002'];
+const labelserega = ['1537','1538'];
 labelserega.forEach(label => labelIconMap.set(label, 'icon/serega(15~).png'));
 
 const labeltkgmk = ['1472','1473','0879','0510','0878','8045','1660','0878','7133','7134','1833','1834','1926','1927','1928','1929','1930','2004','2005'];
@@ -434,9 +346,8 @@ labelmiharu.forEach(label => labelIconMap.set(label, 'icon/miharu.png'));
 const labelmiharu290 = ['0386'];
 labelmiharu290.forEach(label => labelIconMap.set(label, 'icon/miharu290.png'));
 
-const label234 = ['7146','5002','0430','0431','8039','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133','8185','8167','8168','8200'];
+const label234 = ['5002','0430','0431','8039','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133','8185','8167','8168','8200'];
 label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
-
 
     function cleanId(v) {
       return String(v ?? "").replace(/^"|"$/g, "").trim();
@@ -959,7 +870,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
 
     // =========================================================
-    // GAS fallback
+    // Cloudflare fallback
     // =========================================================
     async function loadFallbackVehicles() {
 
@@ -968,21 +879,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         return;
       }
 
-      // Cloudflareに現在出ている車両はGAS側で除外する。
-      const activeVehicleCds = latestVehicles
-        .map(v => cleanId(v.label))
-        .filter(Boolean);
-
-      const url =
-        GAS_FALLBACK_URL +
-        "?active=" +
-        encodeURIComponent(activeVehicleCds.join(","));
-
-      const data = await fetchJson(url);
+      const data = await fetchJson(FALLBACK_URL);
 
       if (!data?.success) {
-        throw new Error(data?.error || "GAS fallback API error");
+        throw new Error(data?.error || "Cloudflare fallback API error");
       }
+
+      const activeVehicleCds = new Set(
+        latestVehicles
+          .map(v => cleanId(v.label))
+          .filter(Boolean)
+      );
 
       const vehicles = [];
 
@@ -992,14 +899,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         const vehicleCd = cleanId(v?.vehicleCd);
 
         if (!vehicleCd) continue;
+
+        // 念のためPages側でも通常GTFS-RTと重複表示しない。
+        if (activeVehicleCds.has(vehicleCd)) continue;
+
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        if (lat === 0 && lon === 0) continue;
 
         vehicles.push({
           tripId: "",
           routeId: "",
           seq: NaN,
 
-          // vehicleCdをそのまま車番表示に使用
           label: vehicleCd,
 
           lat,
@@ -1008,25 +919,21 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
           isFallback: true,
           fallbackRoute: cleanId(v?.route) || "路線名不明",
+          fallbackRouteName:
+            cleanId(v?.routeName) || cleanId(v?.route) || "路線名不明",
           fallbackDestination: cleanId(v?.destination) || "行先不明",
+          fallbackShihatsuName: cleanId(v?.shihatsuName),
+          fallbackShihatsuTime: cleanId(v?.shihatsuTime),
           fallbackTerminalTime: cleanId(v?.terminalTime),
-
-          // TARGETSの始発情報
-          fallbackFirstStopName: cleanId(v?.firstStopName),
-          fallbackFirstStopCd: cleanId(v?.firstStopCd),
-          fallbackFirstDepartureTime: cleanId(v?.firstDepartureTime),
-
-          // GASのO列 map_url
           fallbackMapUrl: cleanId(v?.mapUrl),
-
+          fallbackPlanForecastResultCd:
+            cleanId(v?.planForecastResultCd),
           positionAge: Number(v?.positionAge)
         });
       }
 
       fallbackVehicles = vehicles;
-      saveFallbackBrowserCache();
     }
-
 
     function displayedVehicles() {
       return [
@@ -1064,7 +971,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const features = displayedVehicles().map((v, idx) => {
         const delay = v.isFallback ? 0 : getDelayForVehicle(v);
         const routeName = v.isFallback
-          ? (v.fallbackRoute || "路線名不明")
+          ? (v.fallbackRouteName || v.fallbackRoute || "路線名不明")
           : (routeNames[v.routeId] || "路線名不明");
         const headsign = v.isFallback
           ? (v.fallbackDestination || "行先不明")
@@ -1088,11 +995,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             iconKey: v.label,
             bearing: Number.isFinite(v.bearing) ? v.bearing : 0,
             isFallback: v.isFallback ? 1 : 0,
+            shihatsuName: v.fallbackShihatsuName || "",
+            shihatsuTime: v.fallbackShihatsuTime || "",
             terminalTime: v.fallbackTerminalTime || "",
-            firstStopName: v.fallbackFirstStopName || "",
-            firstStopCd: v.fallbackFirstStopCd || "",
-            firstDepartureTime: v.fallbackFirstDepartureTime || "",
             mapUrl: v.fallbackMapUrl || "",
+            planForecastResultCd: v.fallbackPlanForecastResultCd || "",
             positionAge: Number.isFinite(v.positionAge) ? v.positionAge : -1
           }
         };
@@ -1271,6 +1178,97 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           color: #d93025;
         }
 
+        #vehicleInfoPanel .vip-actions {
+          margin-top: 8px;
+        }
+
+        #vehicleInfoPanel .vip-track-button,
+        #vehicleInfoPanel .vip-history-toggle {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #d9e4ea;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #21313a;
+          font: inherit;
+          font-size: 10px;
+          font-weight: 850;
+          line-height: 1.2;
+          padding: 7px 9px;
+          cursor: pointer;
+          text-align: left;
+        }
+
+        #vehicleInfoPanel .vip-track-button {
+          display: block;
+          text-decoration: none;
+          background: #eef7ff;
+          border-color: #cfe5f6;
+          margin-bottom: 6px;
+        }
+
+        #vehicleInfoPanel .vip-history-toggle {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        #vehicleInfoPanel .vip-history {
+          margin-top: 6px;
+          max-height: min(280px, 42vh);
+          overflow: auto;
+          border: 1px solid #e3ebef;
+          border-radius: 8px;
+          background: #f8fafb;
+        }
+
+        #vehicleInfoPanel .vip-history-loading,
+        #vehicleInfoPanel .vip-history-empty,
+        #vehicleInfoPanel .vip-history-error {
+          padding: 9px;
+          font-size: 9px;
+          color: #687780;
+        }
+
+        #vehicleInfoPanel .vip-history-item {
+          padding: 8px 9px;
+          border-bottom: 1px solid #e3ebef;
+        }
+
+        #vehicleInfoPanel .vip-history-item:last-child {
+          border-bottom: 0;
+        }
+
+        #vehicleInfoPanel .vip-history-time {
+          font-size: 9px;
+          font-weight: 900;
+          color: #30414a;
+        }
+
+        #vehicleInfoPanel .vip-history-route {
+          margin-top: 2px;
+          font-size: 10px;
+          font-weight: 900;
+          line-height: 1.3;
+        }
+
+        #vehicleInfoPanel .vip-history-path {
+          margin-top: 2px;
+          font-size: 9px;
+          line-height: 1.35;
+          color: #62727b;
+        }
+
+        #vehicleInfoPanel .vip-history-map {
+          display: inline-block;
+          margin-top: 4px;
+          font-size: 8px;
+          font-weight: 800;
+          color: #1769aa;
+          text-decoration: none;
+        }
+
         @media (max-width: 640px) {
           #vehicleInfoPanel {
             left: 8px;
@@ -1327,7 +1325,242 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const panel = ensureVehicleInfoPanel();
       panel.style.display = "none";
       panel.replaceChildren();
+      expandedHistoryVehicleCd = null;
     }
+
+    function formatHistoryClock(value) {
+      const s = cleanId(value);
+      const m = s.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return s || "--:--";
+      return `${String(Number(m[1]) % 24).padStart(2, "0")}:${m[2]}`;
+    }
+
+    function renderVehicleHistoryList(container, history) {
+      container.replaceChildren();
+
+      if (!Array.isArray(history) || !history.length) {
+        const empty = document.createElement("div");
+        empty.className = "vip-history-empty";
+        empty.textContent = "本日の充当履歴はありません";
+        container.appendChild(empty);
+        return;
+      }
+
+      for (const trip of history) {
+        const item = document.createElement("div");
+        item.className = "vip-history-item";
+
+        const time = document.createElement("div");
+        time.className = "vip-history-time";
+        time.textContent =
+          `${formatHistoryClock(trip.shihatsuTime)} → ` +
+          `${formatHistoryClock(trip.terminalTime)}`;
+
+        const route = document.createElement("div");
+        route.className = "vip-history-route";
+        route.textContent =
+          trip.routeName ||
+          trip.route ||
+          "路線名不明";
+
+        const path = document.createElement("div");
+        path.className = "vip-history-path";
+        path.textContent =
+          `${trip.shihatsuName || "始発不明"} → ` +
+          `${trip.destination || "行先不明"}`;
+
+        item.append(time, route, path);
+
+        const mapUrl = cleanId(trip.mapUrl);
+        if (mapUrl) {
+          const link = document.createElement("a");
+          link.className = "vip-history-map";
+          link.href = mapUrl;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "Bus-Visionで見る";
+          item.appendChild(link);
+        }
+
+        container.appendChild(item);
+      }
+    }
+
+    async function loadAndRenderVehicleHistory(vehicleCd, container) {
+      const key = cleanId(vehicleCd);
+      if (!key) return;
+
+      if (vehicleHistoryCache.has(key)) {
+        renderVehicleHistoryList(
+          container,
+          vehicleHistoryCache.get(key)
+        );
+        return;
+      }
+
+      container.replaceChildren();
+      const loading = document.createElement("div");
+      loading.className = "vip-history-loading";
+      loading.textContent = "充当履歴を読み込み中...";
+      container.appendChild(loading);
+
+      try {
+        const data = await fetchJson(
+          VEHICLE_HISTORY_URL +
+          "?vehicleCd=" +
+          encodeURIComponent(key)
+        );
+
+        if (!data?.success) {
+          throw new Error(
+            data?.error ||
+            "履歴APIエラー"
+          );
+        }
+
+        const history =
+          Array.isArray(data.history)
+            ? data.history
+            : [];
+
+        vehicleHistoryCache.set(
+          key,
+          history
+        );
+
+        // パネルを閉じたり別車両へ移動した後に返ってきた場合は
+        // 古いcontainerを更新しない。
+        if (
+          !container.isConnected ||
+          expandedHistoryVehicleCd !== key
+        ) {
+          return;
+        }
+
+        renderVehicleHistoryList(
+          container,
+          history
+        );
+      } catch (e) {
+        console.error("充当履歴取得失敗:", e);
+
+        if (!container.isConnected) return;
+
+        container.replaceChildren();
+        const error = document.createElement("div");
+        error.className = "vip-history-error";
+        error.textContent = "充当履歴を取得できませんでした";
+        container.appendChild(error);
+      }
+    }
+
+    function appendVehicleActions(panel, vehicleProperties) {
+      const vehicleCd =
+        cleanId(vehicleProperties.label);
+
+      if (!vehicleCd) return;
+
+      const actions = document.createElement("div");
+      actions.className = "vip-actions";
+
+      // fallback車両では、その回送を追跡しているBus-Vision地図を開ける。
+      const mapUrl =
+        cleanId(vehicleProperties.mapUrl);
+
+      if (
+        Number(vehicleProperties.isFallback) === 1 &&
+        mapUrl
+      ) {
+        const track = document.createElement("a");
+        track.className = "vip-track-button";
+        track.href = mapUrl;
+        track.target = "_blank";
+        track.rel = "noopener noreferrer";
+        track.textContent = "回送追跡";
+        actions.appendChild(track);
+      }
+
+      const toggle =
+        document.createElement("button");
+      toggle.type = "button";
+      toggle.className =
+        "vip-history-toggle";
+
+      const toggleText =
+        document.createElement("span");
+      toggleText.textContent = "充当履歴";
+
+      const arrow =
+        document.createElement("span");
+
+      const historyBox =
+        document.createElement("div");
+      historyBox.className = "vip-history";
+      historyBox.hidden = true;
+
+      const expanded =
+        expandedHistoryVehicleCd ===
+        vehicleCd;
+
+      arrow.textContent =
+        expanded ? "▲" : "▼";
+
+      historyBox.hidden =
+        !expanded;
+
+      toggle.append(
+        toggleText,
+        arrow
+      );
+
+      toggle.addEventListener(
+        "click",
+        async () => {
+          const willOpen =
+            historyBox.hidden;
+
+          historyBox.hidden =
+            !willOpen;
+
+          arrow.textContent =
+            willOpen ? "▲" : "▼";
+
+          if (!willOpen) {
+            if (
+              expandedHistoryVehicleCd ===
+              vehicleCd
+            ) {
+              expandedHistoryVehicleCd =
+                null;
+            }
+            return;
+          }
+
+          expandedHistoryVehicleCd =
+            vehicleCd;
+
+          await loadAndRenderVehicleHistory(
+            vehicleCd,
+            historyBox
+          );
+        }
+      );
+
+      actions.append(
+        toggle,
+        historyBox
+      );
+
+      panel.appendChild(actions);
+
+      if (expanded) {
+        loadAndRenderVehicleHistory(
+          vehicleCd,
+          historyBox
+        );
+      }
+    }
+
 
     function showVehicleInfoPanel(vehicleProperties, currentSeq) {
       const panel = ensureVehicleInfoPanel();
@@ -1349,25 +1582,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       head.append(img, number);
 
-      /*
-       * fallback（非営業・回送）表示
-       *
-       * 0890
-       * 回送
-       *
-       * 直前の運行
-       * 新白河・石川線
-       * → 石川町役場
-       * 09:40
-       * 非営業・位置 16秒前
-       */
+      const route = document.createElement("div");
+      route.className = "vip-route";
+      route.textContent = vehicleProperties.routeName || "路線名不明";
+
+      const destination = document.createElement("div");
+      destination.className = "vip-destination";
+      destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
+
+      panel.replaceChildren(head, route, destination);
+
       if (Number(vehicleProperties.isFallback) === 1) {
-        const deadhead = document.createElement("div");
-        deadhead.className = "vip-route";
-        deadhead.textContent = "回送";
-
-        panel.replaceChildren(head, deadhead);
-
         const nextBox = document.createElement("div");
         nextBox.className = "vip-next";
 
@@ -1375,28 +1600,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         label.className = "vip-next-label";
         label.textContent = "直前の運行";
 
-        const firstStop = document.createElement("div");
-        firstStop.className = "vip-time";
-        const firstTime = String(vehicleProperties.firstDepartureTime || "").trim();
-        const firstName = String(vehicleProperties.firstStopName || "").trim();
-        firstStop.textContent =
-          [firstTime, firstName].filter(Boolean).join("　") || "始発情報不明";
+        const name = document.createElement("div");
+        name.className = "vip-next-name";
 
-        const route = document.createElement("div");
-        route.className = "vip-next-name";
-        route.textContent =
-          vehicleProperties.routeName || "路線名不明";
-
-        const destination = document.createElement("div");
-        destination.className = "vip-destination";
-        destination.style.marginBottom = "3px";
-        destination.textContent =
-          `→ ${vehicleProperties.headsign || "行先不明"}`;
-
-        const terminalTime = document.createElement("div");
-        terminalTime.className = "vip-time";
-        terminalTime.textContent =
-          vehicleProperties.terminalTime || "終着時刻不明";
+        const terminalTime = vehicleProperties.terminalTime || "";
+        name.textContent = terminalTime
+          ? `終着 ${terminalTime}`
+          : "終着時刻不明";
 
         const status = document.createElement("div");
         status.className = "vip-time";
@@ -1407,54 +1617,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             ? `非営業・位置 ${age}秒前`
             : "非営業";
 
-        nextBox.append(
-          label,
-          firstStop,
-          route,
-          destination,
-          terminalTime,
-          status
-        );
-
+        nextBox.append(label, name, status);
         panel.appendChild(nextBox);
-
-        const mapUrl =
-          String(vehicleProperties.mapUrl || "").trim();
-
-        if (mapUrl) {
-          const trackingLink = document.createElement("a");
-          trackingLink.href = mapUrl;
-          trackingLink.target = "_blank";
-          trackingLink.rel = "noopener noreferrer";
-          trackingLink.textContent = "回送追跡";
-          trackingLink.style.display = "block";
-          trackingLink.style.marginTop = "10px";
-          trackingLink.style.textAlign = "center";
-          trackingLink.style.fontWeight = "700";
-          trackingLink.style.textDecoration = "none";
-          trackingLink.style.padding = "9px 12px";
-          trackingLink.style.border = "1px solid currentColor";
-          trackingLink.style.borderRadius = "8px";
-
-          panel.appendChild(trackingLink);
-        }
-
-        panel.style.display = "block";
-        return;
       }
-
-      /*
-       * 通常運行中
-       */
-      const route = document.createElement("div");
-      route.className = "vip-route";
-      route.textContent = vehicleProperties.routeName || "路線名不明";
-
-      const destination = document.createElement("div");
-      destination.className = "vip-destination";
-      destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
-
-      panel.replaceChildren(head, route, destination);
 
       if (next) {
         const nextBox = document.createElement("div");
@@ -1482,18 +1647,20 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         panel.appendChild(nextBox);
       }
 
+      appendVehicleActions(
+        panel,
+        vehicleProperties
+      );
+
       panel.style.display = "block";
     }
 
     function vehicleIconScaleAtZoom(zoom) {
-      let scale;
-      if (zoom <= 8) scale = 0.35;
-      else if (zoom <= 13) scale = 0.35 + (zoom - 8) * (0.65 - 0.35) / 5;
-      else if (zoom <= 16) scale = 0.65 + (zoom - 13) * (0.90 - 0.65) / 3;
-      else if (zoom <= 19) scale = 0.90 + (zoom - 16) * (1.15 - 0.90) / 3;
-      else scale = 1.15;
-
-      return scale * MOBILE_ICON_SCALE;
+      if (zoom <= 8) return 0.35;
+      if (zoom <= 13) return 0.35 + (zoom - 8) * (0.65 - 0.35) / 5;
+      if (zoom <= 16) return 0.65 + (zoom - 13) * (0.90 - 0.65) / 3;
+      if (zoom <= 19) return 0.90 + (zoom - 16) * (1.15 - 0.90) / 3;
+      return 1.15;
     }
 
     function vehicleNumberMarkerOffset() {
@@ -1682,31 +1849,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // MapLibreレイヤ
     // =========================================================
     function installLayers() {
-      // 国土地理院 全国最新写真（シームレス）
-      // 写真レイヤは通常地図の上、バス・ルート等の下に重ねる。
-      map.addSource("gsi-seamlessphoto", {
-        type: "raster",
-        tiles: [
-          "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg"
-        ],
-        tileSize: 256,
-        minzoom: 14,
-        maxzoom: 18,
-        attribution: "国土地理院"
-      });
-
-      map.addLayer({
-        id: "gsi-seamlessphoto",
-        type: "raster",
-        source: "gsi-seamlessphoto",
-        layout: {
-          visibility: "none"
-        },
-        paint: {
-          "raster-opacity": 1
-        }
-      });
-
       map.addSource("vehicles", {
         type: "geojson",
         data: emptyFeatureCollection()
@@ -1779,6 +1921,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         }
       });
 
+      map.addLayer({
+        id: "selected-vehicle-halo",
+        type: "circle",
+        source: "selected-vehicle",
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            8, 13,
+            13, 18,
+            18, 24
+          ],
+          "circle-color": "rgba(49,168,223,0.14)",
+          "circle-stroke-color": "rgba(23,105,170,0.82)",
+          "circle-stroke-width": 3,
+          "circle-blur": 0.15
+        }
+      });
 
       map.addLayer({
         id: "vehicles",
@@ -1788,10 +1947,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "icon-image": iconExpression(),
           "icon-size": [
             "interpolate", ["linear"], ["zoom"],
-            8, 0.35 * MOBILE_ICON_SCALE,
-            13, 0.65 * MOBILE_ICON_SCALE,
-            16, 0.90 * MOBILE_ICON_SCALE,
-            19, 1.15 * MOBILE_ICON_SCALE
+            8, 0.35,
+            13, 0.65,
+            16, 0.9,
+            19, 1.15
           ],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
@@ -1941,176 +2100,133 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     // =========================================================
     // リアルタイム更新
     // =========================================================
-    async function renderCurrentVehicles() {
-      const allVehicles = displayedVehicles();
-
-      await ensureVehicleIcons(allVehicles);
-
-      map.getSource("vehicles").setData(vehicleGeoJson());
-      updateVehicleNumberMarkers(allVehicles);
-
-      // 選択中の通常便だけルート/停留所を更新
-      if (selectedTripId) {
-        const current = latestVehicles.find(v => v.tripId === selectedTripId);
-
-        if (current) {
-          const selectedFeature = vehicleFeaturesByTrip.get(selectedTripId);
-
-          map.getSource("selected-vehicle").setData(
-            selectedFeature
-              ? { type: "FeatureCollection", features: [selectedFeature] }
-              : emptyFeatureCollection()
-          );
-
-          map.getSource("selected-route").setData(
-            selectedRouteGeoJson(selectedTripId)
-          );
-
-          map.getSource("selected-stops").setData(
-            futureStopsGeoJson(selectedTripId, Number(current.seq))
-          );
-
-          renderSelectedStopNameMarkers(selectedTripId, Number(current.seq));
-
-          const selectedProperties = selectedFeature?.properties;
-          if (selectedProperties) {
-            showVehicleInfoPanel(selectedProperties, Number(current.seq));
-          }
-        } else {
-          hideVehicleInfoPanel();
-          selectedTripId = null;
-          clearSelectedStopNameMarkers();
-          map.getSource("selected-vehicle").setData(emptyFeatureCollection());
-          map.getSource("selected-route").setData(emptyFeatureCollection());
-          map.getSource("selected-stops").setData(emptyFeatureCollection());
-        }
-      }
-
-      const timestamp = document.getElementById("readableTimestamp");
-      if (timestamp) timestamp.textContent = new Date().toLocaleString("ja-JP");
-    }
-
-    function updateStatusText() {
-      const status = document.getElementById("statusDisplay");
-      if (!status) return;
-
-      if (isBusLocationOperating()) {
-        status.textContent =
-          `LIVE  ${latestVehicles.length}台運行中` +
-          (fallbackVehicles.length ? ` / 非営業 ${fallbackVehicles.length}台` : "");
-      } else {
-        status.textContent =
-          fallbackVehicles.length
-            ? `非営業車両 ${fallbackVehicles.length}台`
-            : "現在は営業運行終了後です";
-      }
-    }
-
-    async function updateNormalRealtime() {
-      if (normalUpdateRunning) return;
-      if (!isBusLocationOperating()) return;
-
-      normalUpdateRunning = true;
-
-      try {
-        // Cloudflare 2本だけを取得。GASの完了は待たない。
-        await Promise.all([
-          loadDelays(),
-          loadVehicles()
-        ]);
-
-        // 営業車として復帰した車両は回送一覧から除外して二重表示を防ぐ。
-        const activeVehicleLabels = new Set(
-          latestVehicles.map(v => cleanId(v.label)).filter(Boolean)
-        );
-
-        fallbackVehicles = fallbackVehicles.filter(
-          v => !activeVehicleLabels.has(cleanId(v.label))
-        );
-
-        await renderCurrentVehicles();
-        updateStatusText();
-        setLoading(false);
-      } catch (e) {
-        console.error("Cloudflare取得失敗:", e);
-        const status = document.getElementById("statusDisplay");
-        if (status) status.textContent = "リアルタイムデータ取得失敗";
-        setLoading(false);
-      } finally {
-        normalUpdateRunning = false;
-      }
-    }
-
-    async function updateFallbackRealtime() {
-      if (fallbackUpdateRunning) return;
-      if (!isFallbackLocationOperating()) return;
-
-      fallbackUpdateRunning = true;
-
-      try {
-        await loadFallbackVehicles();
-        await renderCurrentVehicles();
-        updateStatusText();
-      } catch (e) {
-        console.error("fallback取得失敗:", e);
-        // 失敗時も前回の回送位置を消さず、そのまま保持する。
-      } finally {
-        fallbackUpdateRunning = false;
-      }
-    }
-
     async function updateRealtime() {
+      if (updateRunning) return;
+
       const normalOperating = isBusLocationOperating();
       const fallbackOperating = isFallbackLocationOperating();
 
-      // 04:00～始発前など、どちらも不要な時間帯。
+      // 04:00～始発前など、通常位置もfallbackも不要な時間帯。
       if (!normalOperating && !fallbackOperating) {
         showOutOfService();
         return;
       }
 
+      updateRunning = true;
+
+      const status = document.getElementById("statusDisplay");
       setLoading(true, 68);
 
-      if (!normalOperating) {
-        latestVehicles = [];
-        tripDelays = Object.create(null);
+      try {
+
+        if (normalOperating) {
+          // 通常運行時間中:
+          // CloudflareのGTFS-RTを先に取得する。
+          await Promise.all([
+            loadDelays(),
+            loadVehicles()
+          ]);
+        } else {
+          // 最終便終了後～04:00:
+          // Cloudflare Workerは呼ばない。
+          latestVehicles = [];
+          tripDelays = Object.create(null);
+        }
+
+        // Cloudflare fallbackを取得する。
+        // Worker側でもGTFS-RT運行中車両は除外される。
+        if (fallbackOperating) {
+          try {
+            await loadFallbackVehicles();
+          } catch (fallbackError) {
+            // fallbackだけ失敗しても通常の営業車表示は維持する。
+            console.error("fallback取得失敗:", fallbackError);
+            fallbackVehicles = [];
+          }
+        } else {
+          fallbackVehicles = [];
+        }
+
+        const allVehicles = displayedVehicles();
+
+        await ensureVehicleIcons(allVehicles);
+        map.getSource("vehicles").setData(vehicleGeoJson());
+        updateVehicleNumberMarkers(allVehicles);
+
+        // 選択中の通常便だけルート/停留所を更新
+        if (selectedTripId) {
+          const current = latestVehicles.find(v => v.tripId === selectedTripId);
+
+          if (current) {
+            const selectedFeature = vehicleFeaturesByTrip.get(selectedTripId);
+            map.getSource("selected-vehicle").setData(
+              selectedFeature
+                ? { type: "FeatureCollection", features: [selectedFeature] }
+                : emptyFeatureCollection()
+            );
+
+            map.getSource("selected-route")
+              .setData(selectedRouteGeoJson(selectedTripId));
+
+            map.getSource("selected-stops")
+              .setData(futureStopsGeoJson(selectedTripId, Number(current.seq)));
+
+            renderSelectedStopNameMarkers(selectedTripId, Number(current.seq));
+
+            const selectedProperties = selectedFeature?.properties;
+            if (selectedProperties) {
+              showVehicleInfoPanel(selectedProperties, Number(current.seq));
+            }
+          } else {
+            hideVehicleInfoPanel();
+
+            selectedTripId = null;
+            clearSelectedStopNameMarkers();
+            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
+            map.getSource("selected-route").setData(emptyFeatureCollection());
+            map.getSource("selected-stops").setData(emptyFeatureCollection());
+          }
+        }
+
+        document.getElementById("readableTimestamp").textContent =
+          new Date().toLocaleString("ja-JP");
+
+        if (normalOperating) {
+          status.textContent =
+            `LIVE  ${latestVehicles.length}台運行中` +
+            (fallbackVehicles.length
+              ? ` / 非営業 ${fallbackVehicles.length}台`
+              : "");
+        } else {
+          status.textContent =
+            fallbackVehicles.length
+              ? `非営業車両 ${fallbackVehicles.length}台`
+              : "現在は営業運行終了後です";
+        }
+
+      } catch (e) {
+        console.error(e);
+        status.textContent = "リアルタイムデータ取得失敗";
+      } finally {
+        updateRunning = false;
+        setLoading(false);
       }
-
-      // ここではawaitしない。CloudflareとGASを完全に独立させる。
-      if (normalOperating) updateNormalRealtime();
-      if (fallbackOperating) updateFallbackRealtime();
-
-      if (!normalOperating) setLoading(false);
     }
 
     function startRealtimeTimer() {
-      if (normalRealtimeTimer === null) {
-        normalRealtimeTimer = window.setInterval(() => {
-          if (!document.hidden && isBusLocationOperating()) {
-            updateNormalRealtime();
-          }
-        }, CLOUDFLARE_UPDATE_INTERVAL);
-      }
+      if (realtimeTimer !== null) return;
 
-      if (fallbackRealtimeTimer === null) {
-        fallbackRealtimeTimer = window.setInterval(() => {
-          if (!document.hidden && isFallbackLocationOperating()) {
-            updateFallbackRealtime();
-          }
-        }, FALLBACK_UPDATE_INTERVAL);
-      }
+      realtimeTimer = window.setInterval(() => {
+        // 15秒ごとに時刻判定するが、運行時間外はupdateRealtime内で
+        // Workerアクセス前に終了するためCloudflareへのリクエストは発生しない。
+        if (!document.hidden) updateRealtime();
+      }, UPDATE_INTERVAL);
     }
 
     function stopRealtimeTimer() {
-      if (normalRealtimeTimer !== null) {
-        clearInterval(normalRealtimeTimer);
-        normalRealtimeTimer = null;
-      }
-
-      if (fallbackRealtimeTimer !== null) {
-        clearInterval(fallbackRealtimeTimer);
-        fallbackRealtimeTimer = null;
-      }
+      if (realtimeTimer === null) return;
+      clearInterval(realtimeTimer);
+      realtimeTimer = null;
     }
 
     document.addEventListener("visibilitychange", () => {
@@ -2137,16 +2253,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         await loadImageToMap("icon/yokokamo.png");
 
         installLayers();
-
-        // 前回の回送位置がブラウザに残っていれば、
-        // GAS通信を待たずにまず即表示する。
-        if (isFallbackLocationOperating()) {
-          fallbackVehicles = loadFallbackBrowserCache();
-          if (fallbackVehicles.length) {
-            await renderCurrentVehicles();
-            updateStatusText();
-          }
-        }
 
         status.textContent = "リアルタイム情報取得中...";
         setLoading(true, 72);
