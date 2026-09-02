@@ -1182,7 +1182,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           margin-top: 8px;
         }
 
-        #vehicleInfoPanel .vip-track-button,
         #vehicleInfoPanel .vip-history-toggle {
           width: 100%;
           box-sizing: border-box;
@@ -1199,13 +1198,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           text-align: left;
         }
 
-        #vehicleInfoPanel .vip-track-button {
-          display: block;
-          text-decoration: none;
-          background: #eef7ff;
-          border-color: #cfe5f6;
-          margin-bottom: 6px;
-        }
 
         #vehicleInfoPanel .vip-history-toggle {
           display: flex;
@@ -1341,12 +1333,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         const item = document.createElement("div");
         item.className = "vip-history-item";
 
-        const time = document.createElement("div");
-        time.className = "vip-history-time";
-        time.textContent =
-          `${formatHistoryClock(trip.shihatsuTime)} → ` +
-          `${formatHistoryClock(trip.terminalTime)}`;
-
         const route = document.createElement("div");
         route.className = "vip-history-route";
         route.textContent =
@@ -1357,10 +1343,12 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         const path = document.createElement("div");
         path.className = "vip-history-path";
         path.textContent =
-          `${trip.shihatsuName || "始発不明"} → ` +
-          `${trip.destination || "行先不明"}`;
+          `${trip.shihatsuName || "始発不明"} ` +
+          `${formatHistoryClock(trip.shihatsuTime)} → ` +
+          `${trip.destination || "行先不明"} ` +
+          `${formatHistoryClock(trip.terminalTime)}`;
 
-        item.append(time, route, path);
+        item.append(route, path);
 
         container.appendChild(item);
       }
@@ -1452,11 +1440,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         mapUrl
       ) {
         const track = document.createElement("a");
-        track.className = "vip-track-button";
         track.href = mapUrl;
         track.target = "_blank";
         track.rel = "noopener noreferrer";
         track.textContent = "回送追跡";
+        track.style.display = "block";
+        track.style.marginTop = "10px";
+        track.style.textAlign = "center";
+        track.style.fontWeight = "700";
+        track.style.textDecoration = "none";
+        track.style.padding = "9px 12px";
+        track.style.border = "1px solid currentColor";
+        track.style.borderRadius = "8px";
         actions.appendChild(track);
       }
 
@@ -1590,8 +1585,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       if (isFallback) {
         route.textContent = "回送";
-        destination.textContent =
-          "Bus-Visionで位置追跡中";
+
+        panel.replaceChildren(
+          head,
+          route
+        );
       } else {
         route.textContent =
           vehicleProperties.routeName ||
@@ -1602,13 +1600,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             vehicleProperties.headsign ||
             "行先不明"
           }`;
-      }
 
-      panel.replaceChildren(
-        head,
-        route,
-        destination
-      );
+        panel.replaceChildren(
+          head,
+          route,
+          destination
+        );
+      }
 
       if (isFallback) {
         const nextBox =
@@ -1659,26 +1657,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           `${startName} ${startTime} → ` +
           `${endName} ${endTime}`;
 
-        const status =
-          document.createElement("div");
-        status.className = "vip-time";
-
-        const age =
-          Number(
-            vehicleProperties.positionAge
-          );
-
-        status.textContent =
-          Number.isFinite(age) &&
-          age >= 0
-            ? `${age}秒前に更新`
-            : "更新時刻不明";
-
         nextBox.append(
           label,
           lastRoute,
-          path,
-          status
+          path
         );
 
         panel.appendChild(nextBox);
