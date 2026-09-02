@@ -963,7 +963,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (lat === 0 && lon === 0) continue;
 
         vehicles.push({
-          tripId: "",
+          tripId: cleanId(v?.tripId),
           routeId: "",
           seq: NaN,
 
