@@ -1296,7 +1296,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           font-size: 10px;
           font-weight: 850;
           line-height: 1.2;
-          padding: 7px 9px;
+          padding: 6px 7px;
           cursor: pointer;
           text-align: left;
         }
@@ -1804,8 +1804,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           .unyo-flow-card {
             position: absolute;
             z-index: 2;
-            width: 220px;
-            min-height: 62px;
+            width: 180px;
+            min-height: 52px;
             box-sizing: border-box;
             padding: 7px 9px;
             border-radius: 8px;
@@ -1821,8 +1821,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           }
 
           .unyo-flow-card-end {
-            width: 135px;
-            min-height: 48px;
+            width: 110px;
+            min-height: 42px;
             background: #f4f6f7;
           }
 
@@ -1843,8 +1843,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-size: 10px;
-            line-height: 1.3;
+            font-size: 9px;
+            line-height: 1.25;
             font-weight: 900;
           }
 
@@ -1853,8 +1853,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             padding: 1px 5px;
             border-radius: 999px;
             background: #eaf0f3;
-            font-size: 9px;
-            line-height: 1.2;
+            font-size: 8px;
+            line-height: 1.15;
             font-weight: 900;
             color: #435761;
           }
@@ -1866,7 +1866,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
           .unyo-flow-path {
             margin-top: 3px;
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 700;
             line-height: 1.35;
             color: #61717a;
@@ -1877,8 +1877,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
           .unyo-flow-sample {
             margin-top: 2px;
-            font-size: 8.5px;
-            line-height: 1.25;
+            font-size: 7.5px;
+            line-height: 1.2;
             color: #7a8991;
           }
 
@@ -1886,8 +1886,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             display: block;
             margin-top: 3px;
             color: #16834b;
-            font-size: 9px;
-            line-height: 1.3;
+            font-size: 8px;
+            line-height: 1.25;
             font-weight: 900;
           }
 
@@ -1921,6 +1921,44 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             stroke-dasharray: 6 4;
           }
 
+          .unyo-prediction-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
+          }
+
+          .unyo-prediction-toolbar button {
+            min-width: 30px;
+            height: 28px;
+            box-sizing: border-box;
+            padding: 0 7px;
+            border: 1px solid #d7e1e6;
+            border-radius: 7px;
+            background: #f6f9fa;
+            color: #3e515b;
+            font: 800 11px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+            cursor: pointer;
+          }
+
+          .unyo-prediction-toolbar button:hover {
+            background: #edf3f6;
+          }
+
+          .unyo-prediction-zoom-label {
+            min-width: 42px !important;
+            cursor: default !important;
+          }
+
+          .unyo-flow-stage {
+            position: relative;
+            box-sizing: border-box;
+          }
+
+          .unyo-flow-canvas {
+            transform-origin: 0 0;
+          }
+
           @media (max-width: 640px) {
             .unyo-prediction-popup {
               width: calc(100vw - 12px);
@@ -1929,7 +1967,27 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             }
 
             .unyo-prediction-body {
-              max-height: calc(100vh - 70px);
+              max-height: calc(100vh - 78px);
+              padding: 5px 7px 12px 5px;
+            }
+
+            .unyo-prediction-title {
+              font-size: 12px !important;
+            }
+
+            .unyo-prediction-toolbar {
+              gap: 2px;
+            }
+
+            .unyo-prediction-toolbar button {
+              min-width: 27px;
+              height: 26px;
+              padding: 0 5px;
+              font-size: 10px;
+            }
+
+            .unyo-prediction-zoom-label {
+              min-width: 38px !important;
             }
 
           }
@@ -1968,6 +2026,32 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       title.textContent = "この先の運用予測";
       title.style.cssText = "font-size:14px;font-weight:900;";
 
+      const toolbar = document.createElement("div");
+      toolbar.className = "unyo-prediction-toolbar";
+
+      const zoomOut = document.createElement("button");
+      zoomOut.type = "button";
+      zoomOut.textContent = "−";
+      zoomOut.title = "縮小";
+
+      const zoomLabel = document.createElement("button");
+      zoomLabel.type = "button";
+      zoomLabel.className = "unyo-prediction-zoom-label";
+      zoomLabel.textContent = "100%";
+      zoomLabel.title = "100%に戻す";
+
+      const zoomIn = document.createElement("button");
+      zoomIn.type = "button";
+      zoomIn.textContent = "+";
+      zoomIn.title = "拡大";
+
+      const fit = document.createElement("button");
+      fit.type = "button";
+      fit.textContent = "全体";
+      fit.title = "ウィンドウ内に全体表示";
+
+      toolbar.append(zoomOut, zoomLabel, zoomIn, fit);
+
       const close = document.createElement("button");
       close.type = "button";
       close.textContent = "×";
@@ -1985,6 +2069,22 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const body = document.createElement("div");
       body.className = "unyo-prediction-body";
 
+      zoomOut.addEventListener("click", () => {
+        setPredictionZoom(body, getPredictionZoom(body) - 0.1);
+      });
+
+      zoomIn.addEventListener("click", () => {
+        setPredictionZoom(body, getPredictionZoom(body) + 0.1);
+      });
+
+      zoomLabel.addEventListener("click", () => {
+        setPredictionZoom(body, 1);
+      });
+
+      fit.addEventListener("click", () => {
+        fitPredictionTree(body);
+      });
+
       close.addEventListener("click", () => {
         overlay.style.display = "none";
       });
@@ -1993,12 +2093,157 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (e.target === overlay) overlay.style.display = "none";
       });
 
-      head.append(title, close);
+      head.append(title, toolbar, close);
       box.append(head, body);
       overlay.appendChild(box);
       document.body.appendChild(overlay);
 
       return overlay;
+    }
+
+    function getPredictionZoom(body) {
+      const value = Number(body?.dataset?.predictionZoom);
+      return Number.isFinite(value) ? value : 1;
+    }
+
+    function setPredictionZoom(body, zoom, keepCenter = true) {
+      const stage = body?.querySelector(".unyo-flow-stage");
+      const canvas = stage?.querySelector(".unyo-flow-canvas");
+      const overlay = body?.closest("#unyoPredictionOverlay");
+      const label = overlay?.querySelector(".unyo-prediction-zoom-label");
+
+      if (!stage || !canvas) return;
+
+      const oldZoom = getPredictionZoom(body);
+      const nextZoom = Math.max(0.28, Math.min(1.6, Number(zoom) || 1));
+
+      let centerX = 0;
+      let centerY = 0;
+
+      if (keepCenter && oldZoom > 0) {
+        centerX = (body.scrollLeft + body.clientWidth / 2) / oldZoom;
+        centerY = (body.scrollTop + body.clientHeight / 2) / oldZoom;
+      }
+
+      const rawWidth = Number(stage.dataset.rawWidth || 0);
+      const rawHeight = Number(stage.dataset.rawHeight || 0);
+
+      canvas.style.transform = `scale(${nextZoom})`;
+      stage.style.width = `${Math.max(1, rawWidth * nextZoom)}px`;
+      stage.style.height = `${Math.max(1, rawHeight * nextZoom)}px`;
+      body.dataset.predictionZoom = String(nextZoom);
+
+      if (label) {
+        label.textContent = `${Math.round(nextZoom * 100)}%`;
+      }
+
+      if (keepCenter && oldZoom > 0) {
+        body.scrollLeft = Math.max(
+          0,
+          centerX * nextZoom - body.clientWidth / 2
+        );
+        body.scrollTop = Math.max(
+          0,
+          centerY * nextZoom - body.clientHeight / 2
+        );
+      }
+    }
+
+    function fitPredictionTree(body) {
+      const stage = body?.querySelector(".unyo-flow-stage");
+      if (!stage) return;
+
+      const rawWidth = Number(stage.dataset.rawWidth || 0);
+      const rawHeight = Number(stage.dataset.rawHeight || 0);
+
+      if (!rawWidth || !rawHeight) return;
+
+      const availableWidth = Math.max(1, body.clientWidth - 12);
+      const availableHeight = Math.max(1, body.clientHeight - 12);
+
+      const fitZoom = Math.min(
+        availableWidth / rawWidth,
+        availableHeight / rawHeight,
+        1
+      );
+
+      setPredictionZoom(
+        body,
+        Math.max(0.28, fitZoom),
+        false
+      );
+
+      body.scrollLeft = 0;
+      body.scrollTop = 0;
+    }
+
+    function installPredictionZoomGestures(body) {
+      if (body.dataset.zoomGesturesInstalled === "1") return;
+      body.dataset.zoomGesturesInstalled = "1";
+
+      // PC: Ctrl + ホイールでズーム。
+      body.addEventListener(
+        "wheel",
+        e => {
+          if (!e.ctrlKey) return;
+          e.preventDefault();
+
+          const step = e.deltaY < 0 ? 0.08 : -0.08;
+          setPredictionZoom(
+            body,
+            getPredictionZoom(body) + step
+          );
+        },
+        { passive: false }
+      );
+
+      // スマホ: 2本指ピンチでズーム。
+      let pinchStartDistance = 0;
+      let pinchStartZoom = 1;
+
+      const distance = touches => {
+        if (!touches || touches.length < 2) return 0;
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+      };
+
+      body.addEventListener(
+        "touchstart",
+        e => {
+          if (e.touches.length !== 2) return;
+          pinchStartDistance = distance(e.touches);
+          pinchStartZoom = getPredictionZoom(body);
+        },
+        { passive: true }
+      );
+
+      body.addEventListener(
+        "touchmove",
+        e => {
+          if (e.touches.length !== 2 || !pinchStartDistance) return;
+          e.preventDefault();
+
+          const currentDistance = distance(e.touches);
+          const ratio = currentDistance / pinchStartDistance;
+
+          setPredictionZoom(
+            body,
+            pinchStartZoom * ratio
+          );
+        },
+        { passive: false }
+      );
+
+      body.addEventListener(
+        "touchend",
+        e => {
+          if (e.touches.length < 2) {
+            pinchStartDistance = 0;
+          }
+        },
+        { passive: true }
+      );
     }
 
     function buildPredictionFlowLayout(data) {
@@ -2048,14 +2293,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       };
       collect(rootEntry);
 
-      const CARD_W = 220;
-      const CARD_H = 62;
-      const END_W = 135;
-      const END_H = 48;
-      const COL_GAP = 65;
-      const ROW_GAP = 18;
-      const PAD_X = 18;
-      const PAD_Y = 16;
+      const CARD_W = 180;
+      const CARD_H = 52;
+      const END_W = 110;
+      const END_H = 42;
+      const COL_GAP = 45;
+      const ROW_GAP = 12;
+      const PAD_X = 14;
+      const PAD_Y = 12;
 
       const cardWidth = entry =>
         isPredictionServiceEnd(entry.node) ? END_W : CARD_W;
@@ -2325,7 +2570,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         canvas.appendChild(card);
       }
 
-      container.appendChild(canvas);
+      const stage = document.createElement("div");
+      stage.className = "unyo-flow-stage";
+      stage.dataset.rawWidth = String(layout.width);
+      stage.dataset.rawHeight = String(layout.height);
+      stage.style.width = `${layout.width}px`;
+      stage.style.height = `${layout.height}px`;
+      stage.appendChild(canvas);
+
+      container.appendChild(stage);
+      installPredictionZoomGestures(container);
     }
 
     function showPredictionPopup(data) {
@@ -2347,9 +2601,39 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       overlay.style.display = "flex";
 
-      // 詳細を開いた直後は現在便が左端に見える位置から開始。
-      body.scrollLeft = 0;
-      body.scrollTop = 0;
+      if (nodes.length) {
+        requestAnimationFrame(() => {
+          const isMobile = window.matchMedia("(max-width: 640px)").matches;
+          const preferredZoom = isMobile ? 0.58 : 0.72;
+
+          setPredictionZoom(body, preferredZoom, false);
+
+          const stage = body.querySelector(".unyo-flow-stage");
+          if (stage) {
+            const scaledWidth = stage.getBoundingClientRect().width;
+            const scaledHeight = stage.getBoundingClientRect().height;
+
+            // まだ極端に大きい場合だけ、自動でさらに縮める。
+            if (
+              scaledWidth > body.clientWidth * 2.2 ||
+              scaledHeight > body.clientHeight * 2.2
+            ) {
+              const rawWidth = Number(stage.dataset.rawWidth || 0);
+              const rawHeight = Number(stage.dataset.rawHeight || 0);
+              const z = Math.min(
+                preferredZoom,
+                (body.clientWidth * 1.9) / rawWidth,
+                (body.clientHeight * 1.9) / rawHeight
+              );
+
+              setPredictionZoom(body, Math.max(0.32, z), false);
+            }
+          }
+
+          body.scrollLeft = 0;
+          body.scrollTop = 0;
+        });
+      }
     }
 
     async function loadAndShowPredictionTree(tripId, vehicleCd) {
