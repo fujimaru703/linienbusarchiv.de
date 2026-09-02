@@ -1921,35 +1921,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             stroke-dasharray: 6 4;
           }
 
-          .unyo-prediction-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-left: auto;
-          }
-
-          .unyo-prediction-toolbar button {
-            min-width: 30px;
-            height: 28px;
-            box-sizing: border-box;
-            padding: 0 7px;
-            border: 1px solid #d7e1e6;
-            border-radius: 7px;
-            background: #f6f9fa;
-            color: #3e515b;
-            font: 800 11px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
-            cursor: pointer;
-          }
-
-          .unyo-prediction-toolbar button:hover {
-            background: #edf3f6;
-          }
-
-          .unyo-prediction-zoom-label {
-            min-width: 42px !important;
-            cursor: default !important;
-          }
-
           .unyo-flow-stage {
             position: relative;
             box-sizing: border-box;
@@ -1975,22 +1946,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
               font-size: 12px !important;
             }
 
-            .unyo-prediction-toolbar {
-              gap: 2px;
             }
-
-            .unyo-prediction-toolbar button {
-              min-width: 27px;
-              height: 26px;
-              padding: 0 5px;
-              font-size: 10px;
-            }
-
-            .unyo-prediction-zoom-label {
-              min-width: 38px !important;
-            }
-
-          }
         `;
         document.head.appendChild(style);
       }
@@ -2026,32 +1982,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       title.textContent = "この先の運用予測";
       title.style.cssText = "font-size:14px;font-weight:900;";
 
-      const toolbar = document.createElement("div");
-      toolbar.className = "unyo-prediction-toolbar";
-
-      const zoomOut = document.createElement("button");
-      zoomOut.type = "button";
-      zoomOut.textContent = "−";
-      zoomOut.title = "縮小";
-
-      const zoomLabel = document.createElement("button");
-      zoomLabel.type = "button";
-      zoomLabel.className = "unyo-prediction-zoom-label";
-      zoomLabel.textContent = "100%";
-      zoomLabel.title = "100%に戻す";
-
-      const zoomIn = document.createElement("button");
-      zoomIn.type = "button";
-      zoomIn.textContent = "+";
-      zoomIn.title = "拡大";
-
-      const fit = document.createElement("button");
-      fit.type = "button";
-      fit.textContent = "全体";
-      fit.title = "ウィンドウ内に全体表示";
-
-      toolbar.append(zoomOut, zoomLabel, zoomIn, fit);
-
       const close = document.createElement("button");
       close.type = "button";
       close.textContent = "×";
@@ -2069,22 +1999,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const body = document.createElement("div");
       body.className = "unyo-prediction-body";
 
-      zoomOut.addEventListener("click", () => {
-        setPredictionZoom(body, getPredictionZoom(body) - 0.1);
-      });
-
-      zoomIn.addEventListener("click", () => {
-        setPredictionZoom(body, getPredictionZoom(body) + 0.1);
-      });
-
-      zoomLabel.addEventListener("click", () => {
-        setPredictionZoom(body, 1);
-      });
-
-      fit.addEventListener("click", () => {
-        fitPredictionTree(body);
-      });
-
       close.addEventListener("click", () => {
         overlay.style.display = "none";
       });
@@ -2093,7 +2007,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (e.target === overlay) overlay.style.display = "none";
       });
 
-      head.append(title, toolbar, close);
+      head.append(title, close);
       box.append(head, body);
       overlay.appendChild(box);
       document.body.appendChild(overlay);
@@ -2109,9 +2023,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     function setPredictionZoom(body, zoom, keepCenter = true) {
       const stage = body?.querySelector(".unyo-flow-stage");
       const canvas = stage?.querySelector(".unyo-flow-canvas");
-      const overlay = body?.closest("#unyoPredictionOverlay");
-      const label = overlay?.querySelector(".unyo-prediction-zoom-label");
-
       if (!stage || !canvas) return;
 
       const oldZoom = getPredictionZoom(body);
@@ -2132,10 +2043,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       stage.style.width = `${Math.max(1, rawWidth * nextZoom)}px`;
       stage.style.height = `${Math.max(1, rawHeight * nextZoom)}px`;
       body.dataset.predictionZoom = String(nextZoom);
-
-      if (label) {
-        label.textContent = `${Math.round(nextZoom * 100)}%`;
-      }
 
       if (keepCenter && oldZoom > 0) {
         body.scrollLeft = Math.max(
@@ -2434,7 +2341,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
 
       if (isPredictionServiceEnd(node)) {
-        name.textContent = "運行終了";
+        name.textContent = "運用終了";
       } else if (entry.currentNode && node?.virtual_root) {
         name.textContent = "現在便";
       } else if (node?.occupied_by_other) {
@@ -2749,7 +2656,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         name.replaceChildren();
 
         if (isPredictionServiceEnd(best)) {
-          name.textContent = "運行終了";
+          name.textContent = "運用終了";
         } else if (best?.occupied_by_other) {
           const routeText = document.createElement("span");
           routeText.textContent = predictionRouteName(best);
