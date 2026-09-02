@@ -1731,15 +1731,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         layout: {
           "icon-image": iconExpression(),
           "icon-size": [
-            "*",
-            MOBILE_ICON_SCALE,
-            [
-              "interpolate", ["linear"], ["zoom"],
-              8, 0.35,
-              13, 0.65,
-              16, 0.9,
-              19, 1.15
-            ]
+            "interpolate", ["linear"], ["zoom"],
+            8, 0.35 * MOBILE_ICON_SCALE,
+            13, 0.65 * MOBILE_ICON_SCALE,
+            16, 0.90 * MOBILE_ICON_SCALE,
+            19, 1.15 * MOBILE_ICON_SCALE
           ],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
