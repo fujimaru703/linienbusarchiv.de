@@ -1756,18 +1756,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       let overlay = document.getElementById("unyoPredictionOverlay");
       if (overlay) return overlay;
 
+      // 深い運用ツリー用の接続線・横スクロールCSS
       if (!document.getElementById("unyoPredictionTreeStyle")) {
         const style = document.createElement("style");
         style.id = "unyoPredictionTreeStyle";
         style.textContent = `
           .unyo-prediction-popup {
-            width: min(94vw, 1180px);
-            max-height: min(88vh, 820px);
+            width: min(760px, calc(100vw - 28px));
+            max-height: min(760px, calc(100vh - 36px));
             overflow: hidden;
             box-sizing: border-box;
             padding: 13px;
             border: 1px solid rgba(31, 52, 65, .15);
-            border-radius: 14px;
+            border-radius: 13px;
             background: rgba(255,255,255,.98);
             box-shadow: 0 12px 38px rgba(21,42,56,.24);
             font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -1775,167 +1776,109 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           }
 
           .unyo-prediction-body {
-            position: relative;
-            max-height: calc(88vh - 78px);
-            overflow: auto;
+            max-height: min(660px, calc(100vh - 105px));
+            overflow-x: auto;
+            overflow-y: auto;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
-            padding: 8px 12px 18px 8px;
-            background:
-              radial-gradient(circle at 1px 1px, rgba(112,132,144,.15) 1px, transparent 0);
-            background-size: 18px 18px;
-            border-radius: 10px;
+            padding: 2px 10px 12px 2px;
           }
 
-          .unyo-flow-canvas {
-            position: relative;
-            box-sizing: border-box;
+          .unyo-tree-root {
+            width: max-content;
             min-width: 100%;
-          }
-
-          .unyo-flow-svg {
-            position: absolute;
-            inset: 0;
-            overflow: visible;
-            pointer-events: none;
-            z-index: 1;
-          }
-
-          .unyo-flow-card {
-            position: absolute;
-            z-index: 2;
-            width: 270px;
-            min-height: 70px;
             box-sizing: border-box;
-            padding: 9px 11px;
-            border-radius: 10px;
-            border: 1px solid #dbe6eb;
-            background: rgba(255,255,255,.98);
-            box-shadow: 0 2px 7px rgba(37,57,69,.10);
           }
 
-          .unyo-flow-card-current {
-            border-width: 2px;
-            border-color: #526b78;
-            background: #f8fbfc;
+          .unyo-tree-level {
+            position: relative;
+            margin-left: 0;
           }
 
-          .unyo-flow-card-end {
-            width: 170px;
-            min-height: 54px;
-            background: #f4f6f7;
+          .unyo-tree-branch {
+            position: relative;
+            margin-top: 7px;
+            padding-left: 24px;
           }
 
-          .unyo-flow-card-occupied {
-            background: #f7f8f8;
-            border-style: dashed;
+          .unyo-tree-root > .unyo-tree-branch {
+            padding-left: 0;
+            margin-top: 0;
           }
 
-          .unyo-flow-topline {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            min-width: 0;
+          .unyo-tree-children {
+            position: relative;
+            margin-left: 18px;
+            padding-left: 0;
           }
 
-          .unyo-flow-name {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+          .unyo-tree-children::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 15px;
+            border-left: 1.5px solid #b8c7cf;
+          }
+
+          .unyo-tree-children > .unyo-tree-branch::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 18px;
+            width: 24px;
+            border-top: 1.5px solid #b8c7cf;
+          }
+
+          .unyo-tree-card {
+            position: relative;
+            display: inline-block;
+            min-width: 285px;
+            max-width: 430px;
+            box-sizing: border-box;
+            padding: 7px 9px;
+            border-radius: 8px;
+            background: #f4f8fa;
+            border: 1px solid #e3ebef;
+            vertical-align: top;
+          }
+
+          .unyo-tree-name {
             font-size: 11px;
-            line-height: 1.35;
             font-weight: 900;
+            line-height: 1.3;
+            white-space: nowrap;
           }
 
-          .unyo-flow-badge {
-            flex: 0 0 auto;
-            padding: 2px 6px;
-            border-radius: 999px;
-            background: #eaf0f3;
-            font-size: 10px;
-            line-height: 1.25;
-            font-weight: 900;
-            color: #435761;
-          }
-
-          .unyo-flow-current-badge {
-            background: #526b78;
-            color: #fff;
-          }
-
-          .unyo-flow-path {
-            margin-top: 5px;
+          .unyo-tree-path {
+            margin-top: 3px;
             font-size: 10px;
             font-weight: 700;
-            line-height: 1.4;
-            color: #61717a;
+            line-height: 1.35;
+            color: #5e6c74;
             white-space: nowrap;
           }
 
-          .unyo-flow-sample {
-            margin-top: 3px;
-            font-size: 9px;
-            line-height: 1.3;
-            color: #87949b;
-          }
-
-          .unyo-flow-assigned {
-            display: block;
-            margin-top: 4px;
+          .unyo-tree-assigned {
+            margin-left: 6px;
             color: #16834b;
-            font-size: 10px;
-            line-height: 1.3;
             font-weight: 900;
-          }
-
-          .unyo-flow-route-struck {
-            text-decoration: line-through;
-            text-decoration-thickness: 1px;
-            opacity: .62;
-          }
-
-          .unyo-flow-edge {
-            fill: none;
-            stroke: #9badb6;
-            stroke-width: 2;
-            stroke-linecap: round;
-          }
-
-          .unyo-flow-edge-main {
-            stroke: #708792;
-            stroke-width: 3;
-          }
-
-          .unyo-flow-edge-rare {
-            stroke: #b4c0c6;
-            stroke-width: 1.5;
-            stroke-dasharray: 5 5;
-          }
-
-          .unyo-flow-edge-occupied {
-            stroke: #86aa96;
-            stroke-width: 2;
-            stroke-dasharray: 6 4;
+            text-decoration: none;
           }
 
           @media (max-width: 640px) {
             .unyo-prediction-popup {
-              width: calc(100vw - 12px);
-              max-height: calc(100vh - 12px);
-              padding: 9px;
+              width: calc(100vw - 16px);
+              max-height: calc(100vh - 16px);
+              padding: 10px;
             }
 
             .unyo-prediction-body {
-              max-height: calc(100vh - 70px);
+              max-height: calc(100vh - 88px);
             }
 
-            .unyo-flow-card {
-              width: 245px;
-            }
-
-            .unyo-flow-card-end {
-              width: 150px;
+            .unyo-tree-card {
+              min-width: 255px;
             }
           }
         `;
@@ -1951,7 +1894,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 8px;
+        padding: 18px;
         box-sizing: border-box;
         background: rgba(15, 27, 35, .34);
       `;
@@ -1971,7 +1914,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const title = document.createElement("div");
       title.className = "unyo-prediction-title";
       title.textContent = "この先の運用予測";
-      title.style.cssText = "font-size:14px;font-weight:900;";
+      title.style.cssText = `font-size:14px;font-weight:900;`;
 
       const close = document.createElement("button");
       close.type = "button";
@@ -2006,310 +1949,249 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return overlay;
     }
 
-    function buildPredictionFlowLayout(data) {
-      const roots = getPredictionRootNodes(data);
-      const current = data?.current || null;
+    function renderPredictionTreeNodes(nodes, container, depth = 0) {
+      const level = document.createElement("div");
+      level.className =
+        depth === 0
+          ? "unyo-tree-root"
+          : "unyo-tree-children";
 
-      let idSeq = 0;
-      const makeEntry = (node, depth, parentId = null, currentNode = false) => ({
-        id: `unyo-flow-${++idSeq}`,
-        node,
-        depth,
-        parentId,
-        currentNode,
-        children: [],
-        x: 0,
-        y: 0
-      });
+      for (const node of nodes || []) {
+        const branch = document.createElement("div");
+        branch.className = "unyo-tree-branch";
 
-      let rootEntry;
+        const item = document.createElement("div");
+        item.className = "unyo-tree-card";
 
-      if (current) {
-        rootEntry = makeEntry(current, 0, null, true);
-        rootEntry.children = roots.map(node =>
-          buildPredictionFlowBranch(node, 1, rootEntry.id, makeEntry)
-        );
-      } else {
-        rootEntry = makeEntry(
-          { route_name: "現在便", virtual_root: true },
-          0,
-          null,
-          true
-        );
-        rootEntry.children = roots.map(node =>
-          buildPredictionFlowBranch(node, 1, rootEntry.id, makeEntry)
-        );
-      }
+        const name = document.createElement("div");
+        name.className = "unyo-tree-name";
 
-      const entries = [];
-      const edges = [];
+        if (isPredictionServiceEnd(node)) {
+          name.textContent = "運用終了";
+        } else if (node?.occupied_by_other) {
+          const routeText = document.createElement("span");
+          routeText.textContent = predictionRouteName(node);
+          routeText.style.textDecoration = "line-through";
+          routeText.style.textDecorationThickness = "1px";
+          routeText.style.opacity = ".72";
 
-      const collect = entry => {
-        entries.push(entry);
-        for (const child of entry.children) {
-          edges.push({ from: entry, to: child });
-          collect(child);
-        }
-      };
-      collect(rootEntry);
+          const assignedText = document.createElement("span");
+          assignedText.className = "unyo-tree-assigned";
+          assignedText.textContent =
+            `${cleanId(node?.assigned_vehicle) || "?"}号車が充当`;
 
-      const CARD_W = 270;
-      const CARD_H = 70;
-      const END_W = 170;
-      const END_H = 54;
-      const COL_GAP = 105;
-      const ROW_GAP = 28;
-      const PAD_X = 24;
-      const PAD_Y = 22;
-
-      const cardWidth = entry =>
-        isPredictionServiceEnd(entry.node) ? END_W : CARD_W;
-
-      const cardHeight = entry =>
-        isPredictionServiceEnd(entry.node) ? END_H : CARD_H;
-
-      let nextLeafY = PAD_Y;
-
-      const placeY = entry => {
-        if (!entry.children.length) {
-          entry.y = nextLeafY;
-          nextLeafY += cardHeight(entry) + ROW_GAP;
-          return entry.y;
+          name.append(routeText, assignedText);
+        } else {
+          name.textContent = predictionRouteName(node);
         }
 
-        entry.children.forEach(placeY);
-
-        const first = entry.children[0];
-        const last = entry.children[entry.children.length - 1];
-
-        const firstCenter =
-          first.y + cardHeight(first) / 2;
-        const lastCenter =
-          last.y + cardHeight(last) / 2;
-
-        entry.y =
-          (firstCenter + lastCenter) / 2 -
-          cardHeight(entry) / 2;
-
-        return entry.y;
-      };
-
-      placeY(rootEntry);
-
-      let maxDepth = 0;
-      for (const entry of entries) {
-        maxDepth = Math.max(maxDepth, entry.depth);
-        entry.x =
-          PAD_X +
-          entry.depth * (CARD_W + COL_GAP);
-      }
-
-      const width =
-        PAD_X * 2 +
-        maxDepth * (CARD_W + COL_GAP) +
-        CARD_W;
-
-      const height = Math.max(
-        nextLeafY + PAD_Y,
-        rootEntry.y + cardHeight(rootEntry) + PAD_Y
-      );
-
-      return {
-        rootEntry,
-        entries,
-        edges,
-        width,
-        height,
-        cardWidth,
-        cardHeight
-      };
-    }
-
-    function buildPredictionFlowBranch(
-      node,
-      depth,
-      parentId,
-      makeEntry
-    ) {
-      const entry = makeEntry(node, depth, parentId, false);
-
-      // 他車充当枝はその便で終了。API側でprune済みでも二重に防ぐ。
-      if (!node?.occupied_by_other) {
-        entry.children =
-          getPredictionChildren(node).map(child =>
-            buildPredictionFlowBranch(
-              child,
-              depth + 1,
-              entry.id,
-              makeEntry
-            )
-          );
-      }
-
-      return entry;
-    }
-
-    function createPredictionFlowCard(entry) {
-      const node = entry.node;
-      const item = document.createElement("div");
-      item.className = "unyo-flow-card";
-      item.dataset.flowId = entry.id;
-
-      if (entry.currentNode) {
-        item.classList.add("unyo-flow-card-current");
-      }
-
-      if (isPredictionServiceEnd(node)) {
-        item.classList.add("unyo-flow-card-end");
-      }
-
-      if (node?.occupied_by_other) {
-        item.classList.add("unyo-flow-card-occupied");
-      }
-
-      const top = document.createElement("div");
-      top.className = "unyo-flow-topline";
-
-      const name = document.createElement("div");
-      name.className = "unyo-flow-name";
-
-      const badge = document.createElement("span");
-      badge.className = "unyo-flow-badge";
-
-      if (entry.currentNode) {
-        badge.classList.add("unyo-flow-current-badge");
-        badge.textContent = "現在便";
-      } else {
-        badge.textContent = formatPredictionProbability(node);
-      }
-
-      if (isPredictionServiceEnd(node)) {
-        name.textContent = "運用終了";
-      } else if (entry.currentNode && node?.virtual_root) {
-        name.textContent = "現在便";
-      } else if (node?.occupied_by_other) {
-        const struck = document.createElement("span");
-        struck.className = "unyo-flow-route-struck";
-        struck.textContent = predictionRouteName(node);
-        name.appendChild(struck);
-      } else {
-        name.textContent = predictionRouteName(node);
-      }
-
-      top.append(name, badge);
-      item.appendChild(top);
-
-      if (!isPredictionServiceEnd(node) && !node?.virtual_root) {
         const path = document.createElement("div");
-        path.className = "unyo-flow-path";
-        path.textContent =
-          `${predictionFromStop(node)} ${predictionFromTime(node)} → ` +
-          `${predictionToStop(node)} ${predictionToTime(node)}`;
-        item.appendChild(path);
+        path.className = "unyo-tree-path";
+        path.textContent = predictionPathText(node);
+
+        item.append(name, path);
+        branch.appendChild(item);
+
+        const children = getPredictionChildren(node);
+
+        // 他車充当の枝はこの便まで表示し、その先は表示しない。
+        if (!node?.occupied_by_other && children.length) {
+          renderPredictionTreeNodes(
+            children,
+            branch,
+            depth + 1
+          );
+        }
+
+        level.appendChild(branch);
       }
 
-      if (!entry.currentNode && !node?.virtual_root) {
-        const sample = document.createElement("div");
-        sample.className = "unyo-flow-sample";
-        sample.textContent = formatPredictionN(node);
-        item.appendChild(sample);
-      }
-
-      if (node?.occupied_by_other) {
-        const assigned = document.createElement("span");
-        assigned.className = "unyo-flow-assigned";
-        assigned.textContent =
-          `${cleanId(node?.assigned_vehicle) || "?"}号車が充当`;
-        item.appendChild(assigned);
-      }
-
-      return item;
+      container.appendChild(level);
     }
 
-    function predictionEdgeClass(node) {
-      if (node?.occupied_by_other) {
-        return "unyo-flow-edge unyo-flow-edge-occupied";
-      }
+    // =========================================================
+    // 詳細運用ツリーのバックグラウンド先読み
+    //
+    // ・通常カードは /predict で1段だけ先に表示
+    // ・表示できた直後から /predict-tree を裏で生成開始
+    // ・クリック時、生成済みなら即表示
+    // ・生成中なら同じPromiseを待つため二重リクエストしない
+    // ・実充当は変化するためキャッシュは60秒で期限切れ
+    // =========================================================
 
-      const p = predictionProbability(node);
+    const PREDICTION_TREE_CACHE_TTL_MS = 60 * 1000;
+    const predictionTreeCache = new Map();
+    const predictionTreePending = new Map();
 
-      if (p >= 80) {
-        return "unyo-flow-edge unyo-flow-edge-main";
-      }
-
-      if (p > 0 && p < 10) {
-        return "unyo-flow-edge unyo-flow-edge-rare";
-      }
-
-      return "unyo-flow-edge";
+    function predictionTreeKey(tripId, vehicleCd) {
+      return (
+        cleanId(tripId) +
+        "|" +
+        cleanId(vehicleCd)
+      );
     }
 
-    function renderPredictionFlowTree(data, container) {
-      const layout = buildPredictionFlowLayout(data);
-
-      const canvas = document.createElement("div");
-      canvas.className = "unyo-flow-canvas";
-      canvas.style.width = `${layout.width}px`;
-      canvas.style.height = `${layout.height}px`;
-
-      const svg = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "svg"
-      );
-      svg.classList.add("unyo-flow-svg");
-      svg.setAttribute("width", layout.width);
-      svg.setAttribute("height", layout.height);
-      svg.setAttribute(
-        "viewBox",
-        `0 0 ${layout.width} ${layout.height}`
-      );
-
-      for (const edge of layout.edges) {
-        const from = edge.from;
-        const to = edge.to;
-
-        const x1 =
-          from.x + layout.cardWidth(from);
-        const y1 =
-          from.y + layout.cardHeight(from) / 2;
-        const x2 = to.x;
-        const y2 =
-          to.y + layout.cardHeight(to) / 2;
-
-        const bend =
-          Math.max(38, (x2 - x1) * 0.48);
-
-        const path = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "path"
+    function getCachedPredictionTree(tripId, vehicleCd) {
+      const key =
+        predictionTreeKey(
+          tripId,
+          vehicleCd
         );
 
-        path.setAttribute(
-          "d",
-          `M ${x1} ${y1} ` +
-          `C ${x1 + bend} ${y1}, ` +
-          `${x2 - bend} ${y2}, ` +
-          `${x2} ${y2}`
-        );
+      const cached =
+        predictionTreeCache.get(key);
 
-        path.setAttribute(
-          "class",
-          predictionEdgeClass(to.node)
-        );
+      if (!cached) return null;
 
-        svg.appendChild(path);
+      if (
+        Date.now() -
+          Number(cached.savedAt || 0) >
+        PREDICTION_TREE_CACHE_TTL_MS
+      ) {
+        predictionTreeCache.delete(key);
+        return null;
       }
 
-      canvas.appendChild(svg);
+      return cached.data || null;
+    }
 
-      for (const entry of layout.entries) {
-        const card = createPredictionFlowCard(entry);
-        card.style.left = `${entry.x}px`;
-        card.style.top = `${entry.y}px`;
-        canvas.appendChild(card);
+    function preloadPredictionTree(tripId, vehicleCd) {
+      tripId = cleanId(tripId);
+      vehicleCd = cleanId(vehicleCd);
+
+      if (!tripId) {
+        return Promise.resolve(null);
       }
 
-      container.appendChild(canvas);
+      const cached =
+        getCachedPredictionTree(
+          tripId,
+          vehicleCd
+        );
+
+      if (cached) {
+        return Promise.resolve(cached);
+      }
+
+      const key =
+        predictionTreeKey(
+          tripId,
+          vehicleCd
+        );
+
+      // すでに裏で生成中なら、その同じ処理を使う。
+      if (predictionTreePending.has(key)) {
+        return predictionTreePending.get(key);
+      }
+
+      const promise =
+        fetch(
+          UNYO_PREDICT_TREE_URL +
+          "?trip_id=" +
+          encodeURIComponent(tripId) +
+          (
+            vehicleCd
+              ? "&vehicle=" +
+                encodeURIComponent(vehicleCd)
+              : ""
+          ),
+          {
+            cache: "no-store"
+          }
+        )
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(
+                `predict-tree HTTP ${response.status}`
+              );
+            }
+
+            return response.json();
+          })
+          .then(data => {
+            if (!data?.ok) {
+              throw new Error(
+                data?.error ||
+                "predict-tree API error"
+              );
+            }
+
+            predictionTreeCache.set(
+              key,
+              {
+                savedAt: Date.now(),
+                data
+              }
+            );
+
+            return data;
+          })
+          .catch(e => {
+            console.error(
+              "詳細運用予測の事前生成失敗:",
+              e
+            );
+
+            throw e;
+          })
+          .finally(() => {
+            predictionTreePending.delete(key);
+          });
+
+      predictionTreePending.set(
+        key,
+        promise
+      );
+
+      return promise;
+    }
+
+    function showPredictionPopupLoading() {
+      const overlay =
+        ensurePredictionPopup();
+
+      const body =
+        overlay.querySelector(
+          ".unyo-prediction-body"
+        );
+
+      body.replaceChildren();
+
+      const loading =
+        document.createElement("div");
+
+      loading.textContent =
+        "この先の予測を読み込み中...";
+
+      loading.style.cssText =
+        "font-size:11px;color:#687780;padding:8px 2px;";
+
+      body.appendChild(loading);
+      overlay.style.display = "flex";
+    }
+
+    function showPredictionPopupError() {
+      const overlay =
+        ensurePredictionPopup();
+
+      const body =
+        overlay.querySelector(
+          ".unyo-prediction-body"
+        );
+
+      body.replaceChildren();
+
+      const error =
+        document.createElement("div");
+
+      error.textContent =
+        "この先の予測を取得できませんでした";
+
+      error.style.cssText =
+        "font-size:11px;color:#687780;padding:8px 2px;";
+
+      body.appendChild(error);
+      overlay.style.display = "flex";
     }
 
     function showPredictionPopup(data) {
@@ -2322,69 +2204,58 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       if (!nodes.length) {
         const empty = document.createElement("div");
         empty.textContent = "この先の予測データはありません";
-        empty.style.cssText =
-          "font-size:11px;color:#687780;padding:8px 2px;";
+        empty.style.cssText = `font-size:11px;color:#687780;padding:8px 2px;`;
         body.appendChild(empty);
       } else {
-        renderPredictionFlowTree(data, body);
+        renderPredictionTreeNodes(nodes, body, 0);
       }
 
       overlay.style.display = "flex";
-
-      // 詳細を開いた直後は現在便が左端に見える位置から開始。
-      body.scrollLeft = 0;
-      body.scrollTop = 0;
     }
 
     async function loadAndShowPredictionTree(tripId, vehicleCd) {
-      const overlay = ensurePredictionPopup();
-      const body = overlay.querySelector(".unyo-prediction-body");
+      tripId = cleanId(tripId);
+      vehicleCd = cleanId(vehicleCd);
 
-      body.replaceChildren();
+      if (!tripId) return;
 
-      const loading = document.createElement("div");
-      loading.textContent = "この先の予測を読み込み中...";
-      loading.style.cssText =
-        "font-size:11px;color:#687780;padding:8px 2px;";
-      body.appendChild(loading);
-
-      overlay.style.display = "flex";
-
-      try {
-        const response = await fetch(
-          UNYO_PREDICT_TREE_URL +
-          "?trip_id=" +
-          encodeURIComponent(tripId) +
-          (vehicleCd
-            ? "&vehicle=" + encodeURIComponent(vehicleCd)
-            : ""),
-          { cache: "no-store" }
+      // 事前生成済みなら通信待ちなしで即表示。
+      const cached =
+        getCachedPredictionTree(
+          tripId,
+          vehicleCd
         );
 
-        if (!response.ok) {
-          throw new Error(`predict-tree HTTP ${response.status}`);
-        }
+      if (cached) {
+        showPredictionPopup(cached);
+        return;
+      }
 
-        const data = await response.json();
+      // 事前生成中、または未生成の場合は
+      // 同じPromiseを待って表示する。
+      showPredictionPopupLoading();
 
-        if (!data?.ok) {
+      try {
+        const data =
+          await preloadPredictionTree(
+            tripId,
+            vehicleCd
+          );
+
+        if (!data) {
           throw new Error(
-            data?.error || "predict-tree API error"
+            "predict-tree returned no data"
           );
         }
 
         showPredictionPopup(data);
       } catch (e) {
-        console.error("詳細運用予測取得失敗:", e);
+        console.error(
+          "詳細運用予測取得失敗:",
+          e
+        );
 
-        body.replaceChildren();
-
-        const error = document.createElement("div");
-        error.textContent =
-          "この先の予測を取得できませんでした";
-        error.style.cssText =
-          "font-size:11px;color:#687780;padding:8px 2px;";
-        body.appendChild(error);
+        showPredictionPopupError();
       }
     }
 
@@ -2472,8 +2343,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         path.textContent = predictionPathText(best);
 
-        // 通常表示では /predict の1段分しか取得していない。
-        // さらに先はクリックされた時だけ /predict-tree を取得する。
+        // 1段予測を画面へ出せた時点で、
+        // 詳細ツリーはバックグラウンドで生成開始する。
+        // ここではawaitしないので通常カードの表示は待たされない。
+        preloadPredictionTree(
+          tripId,
+          vehicleCd
+        ).catch(() => {
+          // エラーはpreloadPredictionTree内でconsoleへ出す。
+          // 通常の次便予測カードはそのまま利用できる。
+        });
+
+        // クリック時は、先読み済みなら即表示。
+        // まだ生成中なら同じPromiseの完了だけ待つ。
         box.style.cursor = "pointer";
         box.title = "クリックしてさらに先の予測を表示";
         box.tabIndex = 0;
