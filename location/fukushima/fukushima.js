@@ -164,6 +164,42 @@
     let tripDelays = Object.create(null);
     let latestVehicles = [];
     let fallbackVehicles = [];
+
+    // 回送車のブラウザキャッシュ。
+    // 再アクセス時はGAS応答を待たず、前回位置をまず即表示する。
+    const FALLBACK_BROWSER_CACHE_KEY = "fukushima-fallback-vehicles-v1";
+
+    function saveFallbackBrowserCache() {
+      try {
+        localStorage.setItem(
+          FALLBACK_BROWSER_CACHE_KEY,
+          JSON.stringify({
+            dateKey: japanNowParts().dateKey,
+            savedAt: Date.now(),
+            vehicles: fallbackVehicles
+          })
+        );
+      } catch (_) {}
+    }
+
+    function loadFallbackBrowserCache() {
+      try {
+        const raw = localStorage.getItem(FALLBACK_BROWSER_CACHE_KEY);
+        if (!raw) return [];
+
+        const cached = JSON.parse(raw);
+        if (cached?.dateKey !== japanNowParts().dateKey) return [];
+        if (!Array.isArray(cached?.vehicles)) return [];
+
+        return cached.vehicles.filter(v =>
+          v &&
+          Number.isFinite(Number(v.lat)) &&
+          Number.isFinite(Number(v.lon))
+        );
+      } catch (_) {
+        return [];
+      }
+    }
     let staticGtfsLoaded = false;
     let normalUpdateRunning = false;
     let fallbackUpdateRunning = false;
@@ -975,6 +1011,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           fallbackDestination: cleanId(v?.destination) || "行先不明",
           fallbackTerminalTime: cleanId(v?.terminalTime),
 
+          // TARGETSの始発情報
+          fallbackFirstStopName: cleanId(v?.firstStopName),
+          fallbackFirstStopCd: cleanId(v?.firstStopCd),
+          fallbackFirstDepartureTime: cleanId(v?.firstDepartureTime),
+
           // GASのO列 map_url
           fallbackMapUrl: cleanId(v?.mapUrl),
 
@@ -983,6 +1024,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
 
       fallbackVehicles = vehicles;
+      saveFallbackBrowserCache();
     }
 
 
@@ -1047,6 +1089,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             bearing: Number.isFinite(v.bearing) ? v.bearing : 0,
             isFallback: v.isFallback ? 1 : 0,
             terminalTime: v.fallbackTerminalTime || "",
+            firstStopName: v.fallbackFirstStopName || "",
+            firstStopCd: v.fallbackFirstStopCd || "",
+            firstDepartureTime: v.fallbackFirstDepartureTime || "",
             mapUrl: v.fallbackMapUrl || "",
             positionAge: Number.isFinite(v.positionAge) ? v.positionAge : -1
           }
@@ -1330,6 +1375,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         label.className = "vip-next-label";
         label.textContent = "直前の運行";
 
+        const firstStop = document.createElement("div");
+        firstStop.className = "vip-time";
+        const firstTime = String(vehicleProperties.firstDepartureTime || "").trim();
+        const firstName = String(vehicleProperties.firstStopName || "").trim();
+        firstStop.textContent =
+          [firstTime, firstName].filter(Boolean).join("　") || "始発情報不明";
+
         const route = document.createElement("div");
         route.className = "vip-next-name";
         route.textContent =
@@ -1351,12 +1403,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         const age = Number(vehicleProperties.positionAge);
         status.textContent =
-  Number.isFinite(age) && age >= 0
-    ? `${age}秒前`
-    : "";
+          Number.isFinite(age) && age >= 0
+            ? `非営業・位置 ${age}秒前`
+            : "非営業";
 
         nextBox.append(
           label,
+          firstStop,
           route,
           destination,
           terminalTime,
@@ -2084,6 +2137,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         await loadImageToMap("icon/yokokamo.png");
 
         installLayers();
+
+        // 前回の回送位置がブラウザに残っていれば、
+        // GAS通信を待たずにまず即表示する。
+        if (isFallbackLocationOperating()) {
+          fallbackVehicles = loadFallbackBrowserCache();
+          if (fallbackVehicles.length) {
+            await renderCurrentVehicles();
+            updateStatusText();
+          }
+        }
 
         status.textContent = "リアルタイム情報取得中...";
         setLoading(true, 72);
