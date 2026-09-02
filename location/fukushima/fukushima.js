@@ -1239,17 +1239,25 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       head.append(img, number);
 
-      const route = document.createElement("div");
-      route.className = "vip-route";
-      route.textContent = vehicleProperties.routeName || "路線名不明";
-
-      const destination = document.createElement("div");
-      destination.className = "vip-destination";
-      destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
-
-      panel.replaceChildren(head, route, destination);
-
+      /*
+       * fallback（非営業・回送）表示
+       *
+       * 0890
+       * 回送
+       *
+       * 直前の運行
+       * 新白河・石川線
+       * → 石川町役場
+       * 09:40
+       * 非営業・位置 16秒前
+       */
       if (Number(vehicleProperties.isFallback) === 1) {
+        const deadhead = document.createElement("div");
+        deadhead.className = "vip-route";
+        deadhead.textContent = "回送";
+
+        panel.replaceChildren(head, deadhead);
+
         const nextBox = document.createElement("div");
         nextBox.className = "vip-next";
 
@@ -1257,13 +1265,21 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         label.className = "vip-next-label";
         label.textContent = "直前の運行";
 
-        const name = document.createElement("div");
-        name.className = "vip-next-name";
+        const route = document.createElement("div");
+        route.className = "vip-next-name";
+        route.textContent =
+          vehicleProperties.routeName || "路線名不明";
 
-        const terminalTime = vehicleProperties.terminalTime || "";
-        name.textContent = terminalTime
-          ? `終着 ${terminalTime}`
-          : "終着時刻不明";
+        const destination = document.createElement("div");
+        destination.className = "vip-destination";
+        destination.style.marginBottom = "3px";
+        destination.textContent =
+          `→ ${vehicleProperties.headsign || "行先不明"}`;
+
+        const terminalTime = document.createElement("div");
+        terminalTime.className = "vip-time";
+        terminalTime.textContent =
+          vehicleProperties.terminalTime || "終着時刻不明";
 
         const status = document.createElement("div");
         status.className = "vip-time";
@@ -1274,9 +1290,31 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             ? `非営業・位置 ${age}秒前`
             : "非営業";
 
-        nextBox.append(label, name, status);
+        nextBox.append(
+          label,
+          route,
+          destination,
+          terminalTime,
+          status
+        );
+
         panel.appendChild(nextBox);
+        panel.style.display = "block";
+        return;
       }
+
+      /*
+       * 通常運行中
+       */
+      const route = document.createElement("div");
+      route.className = "vip-route";
+      route.textContent = vehicleProperties.routeName || "路線名不明";
+
+      const destination = document.createElement("div");
+      destination.className = "vip-destination";
+      destination.textContent = `→ ${vehicleProperties.headsign || "行先不明"}`;
+
+      panel.replaceChildren(head, route, destination);
 
       if (next) {
         const nextBox = document.createElement("div");
