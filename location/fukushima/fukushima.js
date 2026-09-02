@@ -273,7 +273,7 @@ labelkllt.forEach(label => labelIconMap.set(label, 'icon/kl-lt.png'));
 const labelkwskhr = ['7137','8123','8130'];
 labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr.png'));
 
-const labelliesse = ['1382','1590','1859','0854','8147'];
+const labelliesse = ['1382','1590','1859','0854','8147','0905'];
 labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse.png'));
 
 const labelmk = ['0044','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202'];
