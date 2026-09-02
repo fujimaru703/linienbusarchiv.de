@@ -314,7 +314,7 @@ label7110.forEach(label => labelIconMap.set(label, 'icon/7110.png'));
 const label7701 = ['7701','7702','7703'];
 label7701.forEach(label => labelIconMap.set(label, 'icon/7701.png'));
 
-const label8008 = ['8008'];
+const label8008 = ['8008','8136'];
 label8008.forEach(label => labelIconMap.set(label, 'icon/8008.png'));
 
 const label8014 = ['8014'];
@@ -419,7 +419,7 @@ labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f.png'));
 const labelrinkomio = ['1336','1369','1379','5003','5004','1710','1720','2020','1732','1850','1854','1857','2041','8150','8025'];
 labelrinkomio.forEach(label => labelIconMap.set(label, 'icon/rinko-mio.png'));
 
-const labelserega = ['1537','1538','8002'];
+const labelserega = ['1537','1538',,'8001','8002'];
 labelserega.forEach(label => labelIconMap.set(label, 'icon/serega(15~).png'));
 
 const labeltkgmk = ['1472','1473','0879','0510','0878','8045','1660','0878','7133','7134','1833','1834','1926','1927','1928','1929','1930','2004','2005'];
