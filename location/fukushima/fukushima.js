@@ -1351,9 +1351,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         const age = Number(vehicleProperties.positionAge);
         status.textContent =
-          Number.isFinite(age) && age >= 0
-            ? `非営業・位置 ${age}秒前`
-            : "非営業";
+  Number.isFinite(age) && age >= 0
+    ? `${age}秒前`
+    : "";
 
         nextBox.append(
           label,
