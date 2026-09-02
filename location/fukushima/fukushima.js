@@ -2434,7 +2434,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
 
       if (isPredictionServiceEnd(node)) {
-        name.textContent = "運用終了";
+        name.textContent = "運行終了";
       } else if (entry.currentNode && node?.virtual_root) {
         name.textContent = "現在便";
       } else if (node?.occupied_by_other) {
@@ -2749,7 +2749,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         name.replaceChildren();
 
         if (isPredictionServiceEnd(best)) {
-          name.textContent = "運用終了";
+          name.textContent = "運行終了";
         } else if (best?.occupied_by_other) {
           const routeText = document.createElement("span");
           routeText.textContent = predictionRouteName(best);
