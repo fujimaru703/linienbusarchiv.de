@@ -1729,7 +1729,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         label.className =
           "vip-next-label";
         label.textContent =
-          "直前の運行";
+          "前便";
 
         const lastRoute =
           document.createElement("div");
