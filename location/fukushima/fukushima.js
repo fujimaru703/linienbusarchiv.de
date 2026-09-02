@@ -57,6 +57,7 @@
 
       minZoom: 6,
       maxZoom: 19,
+      maxPitch: 85,  
       attributionControl: true,
 
       // 背景地図
