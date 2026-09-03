@@ -148,7 +148,7 @@
 {
   id: "higashiguchi",
   name: "東口",
-  type: "standby"
+  type: "standby",
   labelPosition: [140.460815, 37.754755],
   coordinates: [
     [140.4607295285751, 37.75485468241704],   // 左上
