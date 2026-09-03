@@ -170,7 +170,7 @@
     [140.4621987755721, 37.693583795389515]
   ]
 },
-　{
+{
   id: "kawamata_shucchojo",
   name: "川俣出張所",
   type: "depot",
@@ -184,7 +184,7 @@
     [140.61340459072827, 37.666153636674686]
   ]
 },
-　{
+{
   id: "idai_taikijo",
   name: "医大待機場",
   type: "standby",
@@ -195,7 +195,7 @@
     [140.46541320220476, 37.688013688840186]
   ]
 },
-  {
+{
   id: "kamihama_standby",
   name: "上浜車庫",
   type: "standby",
@@ -3836,6 +3836,57 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             box-shadow: 0 1px 3px rgba(0,0,0,.16);
           }
 
+          .unyo-flow-card-place-entry {
+            border-color: #686f88;
+            background: #f5f5fa;
+            box-shadow:
+              inset 4px 0 0 #686f88,
+              0 3px 9px rgba(37,57,69,.12);
+          }
+
+          .unyo-flow-card-place-entry .unyo-flow-place-badge {
+            background: #686f88;
+          }
+
+          .unyo-flow-card-place-no-operation {
+            border-color: #8b8f93;
+            background: #f7f7f7;
+            box-shadow:
+              inset 4px 0 0 #8b8f93,
+              0 3px 9px rgba(37,57,69,.10);
+          }
+
+          .unyo-flow-card-place-no-operation .unyo-flow-name {
+            font-size: 10px;
+            color: #555f65;
+          }
+
+          .unyo-flow-card-place-unknown {
+            min-height: 72px;
+            border-color: #9a6d56;
+            background: #fbf5f1;
+            box-shadow:
+              inset 4px 0 0 #9a6d56,
+              0 3px 9px rgba(37,57,69,.11);
+          }
+
+          .unyo-flow-place-message {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.35;
+            font-size: 8.5px;
+            color: #624b40;
+          }
+
+          .unyo-flow-place-unknown-label {
+            margin-top: 5px;
+            font-size: 10px;
+            line-height: 1.2;
+            font-weight: 900;
+            color: #8a442a;
+          }
+
           .unyo-flow-place-time {
             margin-top: 5px;
             font-size: 9px;
@@ -4423,17 +4474,27 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             : CARD_W;
 
       const cardHeight =
-        entry =>
-          (
+        entry => {
+          if (
             isPredictionServiceEnd(
               entry.node
             ) ||
             isPredictionStopped(
               entry.node
             )
-          )
-            ? END_H
-            : CARD_H;
+          ) {
+            return END_H;
+          }
+
+          if (
+            entry?.node?.event_type ===
+              "unknown_place"
+          ) {
+            return 72;
+          }
+
+          return CARD_H;
+        };
 
       let nextLeafY =
         PAD_Y;
@@ -4926,6 +4987,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           : "出発";
       }
 
+      if (eventType === "entry") {
+        return "入庫";
+      }
+
+      if (eventType === "no_operation") {
+        return "前日運用なし";
+      }
+
+      if (eventType === "unknown_place") {
+        return "入庫場所不明";
+      }
+
       const label =
         cleanId(node?.event_label);
 
@@ -4960,6 +5033,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       ) {
         item.classList.add(
           "unyo-flow-card-place-departure"
+        );
+      } else if (
+        eventType === "entry"
+      ) {
+        item.classList.add(
+          "unyo-flow-card-place-entry"
+        );
+      } else if (
+        eventType === "no_operation"
+      ) {
+        item.classList.add(
+          "unyo-flow-card-place-no-operation"
+        );
+      } else if (
+        eventType === "unknown_place"
+      ) {
+        item.classList.add(
+          "unyo-flow-card-place-unknown"
         );
       }
 
@@ -4996,10 +5087,43 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           node
         );
 
-      top.append(
-        name,
-        badge
-      );
+      if (
+        eventType === "no_operation"
+      ) {
+        name.textContent =
+          "前日運用なし";
+
+        top.append(name);
+      } else if (
+        eventType === "unknown_place"
+      ) {
+        name.classList.add(
+          "unyo-flow-place-message"
+        );
+
+        top.append(name);
+        item.appendChild(top);
+
+        const unknown =
+          document.createElement("div");
+
+        unknown.className =
+          "unyo-flow-place-unknown-label";
+
+        unknown.textContent =
+          "入庫場所不明";
+
+        item.appendChild(
+          unknown
+        );
+
+        return item;
+      } else {
+        top.append(
+          name,
+          badge
+        );
+      }
 
       item.appendChild(top);
 
