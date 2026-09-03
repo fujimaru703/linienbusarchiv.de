@@ -1865,85 +1865,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         actions.appendChild(track);
       }
 
-      const toggle =
-        document.createElement("button");
-      toggle.type = "button";
-      toggle.className =
-        "vip-history-toggle";
-
-      const toggleText =
-        document.createElement("span");
-      toggleText.textContent = "充当履歴";
-
-      const arrow =
-        document.createElement("span");
-
-      const historyBox =
-        document.createElement("div");
-      historyBox.className = "vip-history";
-      historyBox.hidden = true;
-
-      const expanded =
-        expandedHistoryVehicleCd ===
-        vehicleCd;
-
-      arrow.textContent =
-        expanded ? "▲" : "▼";
-
-      historyBox.hidden =
-        !expanded;
-
-      toggle.append(
-        toggleText,
-        arrow
-      );
-
-      toggle.addEventListener(
-        "click",
-        async () => {
-          const willOpen =
-            historyBox.hidden;
-
-          historyBox.hidden =
-            !willOpen;
-
-          arrow.textContent =
-            willOpen ? "▲" : "▼";
-
-          if (!willOpen) {
-            if (
-              expandedHistoryVehicleCd ===
-              vehicleCd
-            ) {
-              expandedHistoryVehicleCd =
-                null;
-            }
-            return;
-          }
-
-          expandedHistoryVehicleCd =
-            vehicleCd;
-
-          await loadAndRenderVehicleHistory(
-            vehicleCd,
-            historyBox
-          );
-        }
-      );
-
-      actions.append(
-        toggle,
-        historyBox
-      );
+      // 充当履歴プルダウンは廃止。
+      // 過去便は運用予測ツリー側で確認できるため、
+      // 車両ポップアップはシンプルに保つ。
+      if (!actions.childElementCount) {
+        return;
+      }
 
       panel.appendChild(actions);
-
-      if (expanded) {
-        loadAndRenderVehicleHistory(
-          vehicleCd,
-          historyBox
-        );
-      }
     }
 
 
@@ -2138,6 +2067,304 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       );
     }
 
+
+    function buildPredictionPopupTitle(vehicleCd) {
+      const id = cleanId(vehicleCd);
+      return id
+        ? `${id}号車 次便予測`
+        : "次便予測";
+    }
+
+    function setPredictionPopupTitle(overlay, vehicleCd) {
+      const title = buildPredictionPopupTitle(vehicleCd);
+      overlay.dataset.vehicleCd = cleanId(vehicleCd);
+      overlay.dataset.predictionTitle = title;
+
+      const titleEl =
+        overlay.querySelector(".unyo-prediction-title");
+
+      if (titleEl) {
+        titleEl.textContent = title;
+      }
+    }
+
+    async function ensureHtml2Canvas() {
+      if (window.html2canvas) {
+        return window.html2canvas;
+      }
+
+      if (window.__html2canvasPromise) {
+        return await window.__html2canvasPromise;
+      }
+
+      window.__html2canvasPromise =
+        new Promise((resolve, reject) => {
+          const script =
+            document.createElement("script");
+
+          script.src =
+            "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js";
+          script.async = true;
+
+          script.onload = () => {
+            if (window.html2canvas) {
+              resolve(window.html2canvas);
+            } else {
+              reject(new Error("html2canvasの読み込みに失敗しました"));
+            }
+          };
+
+          script.onerror = () => {
+            reject(new Error("html2canvasの読み込みに失敗しました"));
+          };
+
+          document.head.appendChild(script);
+        });
+
+      return await window.__html2canvasPromise;
+    }
+
+    function predictionShareToast(message) {
+      let toast =
+        document.getElementById("predictionShareToast");
+
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "predictionShareToast";
+        toast.style.cssText = `
+          position: fixed;
+          left: 50%;
+          bottom: 18px;
+          transform: translateX(-50%);
+          z-index: 2000;
+          max-width: min(92vw, 520px);
+          padding: 10px 14px;
+          border-radius: 12px;
+          background: rgba(20, 31, 39, .92);
+          color: #fff;
+          font-size: 12px;
+          line-height: 1.45;
+          font-weight: 700;
+          box-shadow: 0 8px 24px rgba(0,0,0,.25);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity .18s ease;
+          text-align: center;
+        `;
+        document.body.appendChild(toast);
+      }
+
+      toast.textContent = message;
+      toast.style.opacity = "1";
+
+      clearTimeout(window.__predictionShareToastTimer);
+      window.__predictionShareToastTimer =
+        setTimeout(() => {
+          toast.style.opacity = "0";
+        }, 2400);
+    }
+
+    function predictionShareFilename(vehicleCd) {
+      const id =
+        cleanId(vehicleCd) || "bus";
+      const now =
+        new Date();
+
+      const pad =
+        n => String(n).padStart(2, "0");
+
+      const stamp =
+        `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_` +
+        `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+      return `${id}_next_prediction_${stamp}.png`;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || "prediction.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
+
+    async function copyImageBlobToClipboard(blob) {
+      try {
+        if (
+          !navigator.clipboard ||
+          typeof window.ClipboardItem === "undefined"
+        ) {
+          return false;
+        }
+
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "image/png": blob
+          })
+        ]);
+
+        return true;
+      } catch (e) {
+        console.warn("画像コピー失敗:", e);
+        return false;
+      }
+    }
+
+    async function capturePredictionPopupBlob() {
+      const overlay =
+        ensurePredictionPopup();
+
+      const popup =
+        overlay.querySelector(".unyo-prediction-popup");
+
+      if (!popup) {
+        throw new Error("共有対象が見つかりません");
+      }
+
+      const html2canvas =
+        await ensureHtml2Canvas();
+
+      const canvas =
+        await html2canvas(
+          popup,
+          {
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            scale: Math.min(window.devicePixelRatio || 1, 2),
+            onclone: clonedDoc => {
+              for (const el of clonedDoc.querySelectorAll("[data-export-hide='1']")) {
+                el.remove();
+              }
+            }
+          }
+        );
+
+      const blob =
+        await new Promise((resolve, reject) => {
+          canvas.toBlob(
+            value => {
+              if (value) {
+                resolve(value);
+              } else {
+                reject(new Error("画像化に失敗しました"));
+              }
+            },
+            "image/png"
+          );
+        });
+
+      return blob;
+    }
+
+    async function sharePredictionImage(kind) {
+      const overlay =
+        ensurePredictionPopup();
+
+      const vehicleCd =
+        cleanId(overlay.dataset.vehicleCd);
+      const title =
+        cleanId(overlay.dataset.predictionTitle) ||
+        buildPredictionPopupTitle(vehicleCd);
+
+      try {
+        const blob =
+          await capturePredictionPopupBlob();
+
+        const filename =
+          predictionShareFilename(vehicleCd);
+
+        const file =
+          new File(
+            [blob],
+            filename,
+            { type: "image/png" }
+          );
+
+        if (kind === "save") {
+          downloadBlob(blob, filename);
+          predictionShareToast("画像を保存しました");
+          return;
+        }
+
+        if (kind === "line") {
+          if (
+            navigator.share &&
+            navigator.canShare &&
+            navigator.canShare({ files: [file] })
+          ) {
+            await navigator.share({
+              files: [file],
+              title,
+              text: title
+            });
+            return;
+          }
+
+          const copied =
+            await copyImageBlobToClipboard(blob);
+
+          window.open(
+            "https://line.me/R/msg/text/?" +
+              encodeURIComponent(title),
+            "_blank",
+            "noopener,noreferrer"
+          );
+
+          predictionShareToast(
+            copied
+              ? "画像をコピーしました。LINEで貼り付けて共有してください"
+              : "LINE共有を開きました。必要なら保存画像を添付してください"
+          );
+          return;
+        }
+
+        const copied =
+          await copyImageBlobToClipboard(blob);
+
+        if (kind === "x") {
+          window.open(
+            "https://twitter.com/intent/tweet?text=" +
+              encodeURIComponent(title),
+            "_blank",
+            "noopener,noreferrer"
+          );
+
+          if (copied) {
+            predictionShareToast("画像をコピーしました。Xの投稿画面に貼り付けてください");
+          } else {
+            downloadBlob(blob, filename);
+            predictionShareToast("X投稿用に画像を保存しました");
+          }
+          return;
+        }
+
+        if (kind === "discord") {
+          window.open(
+            "https://discord.com/app",
+            "_blank",
+            "noopener,noreferrer"
+          );
+
+          if (copied) {
+            predictionShareToast("画像をコピーしました。Discordで貼り付けて共有してください");
+          } else {
+            downloadBlob(blob, filename);
+            predictionShareToast("Discord共有用に画像を保存しました");
+          }
+          return;
+        }
+      } catch (e) {
+        console.error("予測画像共有失敗:", e);
+        predictionShareToast("画像共有に失敗しました");
+      }
+    }
+
     function ensurePredictionPopup() {
       let overlay = document.getElementById("unyoPredictionOverlay");
       if (overlay) return overlay;
@@ -2158,6 +2385,40 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             box-shadow: 0 12px 38px rgba(21,42,56,.24);
             font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
             color: #17232b;
+          }
+
+          .unyo-prediction-head-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 6px;
+          }
+
+          .unyo-prediction-share {
+            border: 1px solid #d7e3e9;
+            background: #f7fbfc;
+            color: #35505c;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 11px;
+            line-height: 1.2;
+            font-weight: 800;
+            cursor: pointer;
+          }
+
+          .unyo-prediction-share:hover {
+            background: #eef5f7;
+          }
+
+          .unyo-prediction-close {
+            border: 0;
+            background: transparent;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 5px;
+            color: #52616a;
           }
 
           .unyo-prediction-body {
@@ -2394,7 +2655,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
               font-size: 12px !important;
             }
 
+            .unyo-prediction-head-actions {
+              gap: 4px;
             }
+
+            .unyo-prediction-share {
+              padding: 4px 8px;
+              font-size: 10px;
+            }
+          }
         `;
         document.head.appendChild(style);
       }
@@ -2430,19 +2699,56 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       title.textContent = "次便予測";
       title.style.cssText = "font-size:14px;font-weight:900;";
 
+      const headActions = document.createElement("div");
+      headActions.className = "unyo-prediction-head-actions";
+      headActions.setAttribute("data-export-hide", "1");
+
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "unyo-prediction-share";
+      saveBtn.textContent = "画像保存";
+      saveBtn.addEventListener("click", () => {
+        sharePredictionImage("save");
+      });
+
+      const xBtn = document.createElement("button");
+      xBtn.type = "button";
+      xBtn.className = "unyo-prediction-share";
+      xBtn.textContent = "X";
+      xBtn.addEventListener("click", () => {
+        sharePredictionImage("x");
+      });
+
+      const discordBtn = document.createElement("button");
+      discordBtn.type = "button";
+      discordBtn.className = "unyo-prediction-share";
+      discordBtn.textContent = "Discord";
+      discordBtn.addEventListener("click", () => {
+        sharePredictionImage("discord");
+      });
+
+      const lineBtn = document.createElement("button");
+      lineBtn.type = "button";
+      lineBtn.className = "unyo-prediction-share";
+      lineBtn.textContent = "LINE";
+      lineBtn.addEventListener("click", () => {
+        sharePredictionImage("line");
+      });
+
       const close = document.createElement("button");
       close.type = "button";
+      close.className = "unyo-prediction-close";
       close.textContent = "×";
       close.setAttribute("aria-label", "閉じる");
-      close.style.cssText = `
-        border: 0;
-        background: transparent;
-        font-size: 22px;
-        line-height: 1;
-        cursor: pointer;
-        padding: 2px 5px;
-        color: #52616a;
-      `;
+      close.setAttribute("data-export-hide", "1");
+
+      headActions.append(
+        saveBtn,
+        xBtn,
+        discordBtn,
+        lineBtn,
+        close
+      );
 
       const body = document.createElement("div");
       body.className = "unyo-prediction-body";
@@ -2455,7 +2761,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         if (e.target === overlay) overlay.style.display = "none";
       });
 
-      head.append(title, close);
+      head.append(title, headActions);
       box.append(head, body);
       overlay.appendChild(box);
       document.body.appendChild(overlay);
@@ -3683,8 +3989,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       installPredictionZoomGestures(container);
     }
 
-    function showPredictionPopup(data) {
+    function showPredictionPopup(data, vehicleCd = "") {
       const overlay = ensurePredictionPopup();
+      setPredictionPopupTitle(
+        overlay,
+        vehicleCd
+      );
+
       const body = overlay.querySelector(".unyo-prediction-body");
       body.replaceChildren();
 
@@ -3692,7 +4003,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       if (!nodes.length) {
         const empty = document.createElement("div");
-        empty.textContent = "この先の予測データはありません";
+        empty.textContent = "運用予測データはありません";
         empty.style.cssText =
           "font-size:11px;color:#687780;padding:8px 2px;";
         body.appendChild(empty);
@@ -3927,7 +4238,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           vehicleCd
         );
 
-        showPredictionPopup(data);
+        showPredictionPopup(
+          data,
+          vehicleCd
+        );
       } catch (e) {
         console.error("詳細運用予測取得失敗:", e);
 
