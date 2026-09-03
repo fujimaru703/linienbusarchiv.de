@@ -2004,14 +2004,25 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           Number.isFinite(Number(node?.n))
             ? Number(node.n)
             : null,
+        // 現在便の直後を画面側で「運行終了」と補う場合は、
+        // 現在便まで実際に辿った累積実績を最優先で引き継ぐ。
+        //
+        // 例:
+        //   現在便 n=77/77
+        //   → 運行終了 100% n=77/77
+        //
+        // cumulative_count が 0/0 で入っていても、
+        // actual_cumulative_* がある場合はこちらを優先する。
         cumulative_count:
           Number.isFinite(
             Number(
+              node?.actual_cumulative_count ??
               node?.cumulative_count ??
               node?.count
             )
           )
             ? Number(
+                node?.actual_cumulative_count ??
                 node?.cumulative_count ??
                 node?.count
               )
@@ -2019,11 +2030,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         cumulative_n:
           Number.isFinite(
             Number(
+              node?.actual_cumulative_n ??
               node?.cumulative_n ??
               node?.n
             )
           )
             ? Number(
+                node?.actual_cumulative_n ??
                 node?.cumulative_n ??
                 node?.n
               )
