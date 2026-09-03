@@ -205,7 +205,7 @@
     let expandedHistoryVehicleCd = null;
 
     const labelIconMap = new Map();
-    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8138','8139','8141','8143','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290-v2.png'));
 
 const labelergaev = ['7704','7705','7706'];
@@ -213,6 +213,15 @@ labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev-v2.png'));
 
 const label557 = ['0557','2411','2412','2408'];
 label557.forEach(label => labelIconMap.set(label, 'icon/557&2411-v2.png'));
+
+const label8137 = ['8137'];
+label8137.forEach(label => labelIconMap.set(label, 'icon/8137miura.png'));
+
+const label8140 = ['8140'];
+label8140.forEach(label => labelIconMap.set(label, 'icon/8140hgakuin.png'));
+
+const label8144 = ['8144'];
+label8144.forEach(label => labelIconMap.set(label, 'icon/8144fdaigaku.png'));
 
 const label8181 = ['8181'];
 label8181.forEach(label => labelIconMap.set(label, 'icon/8181-v2.png'));
@@ -1705,10 +1714,76 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
     function getPredictionChildren(node) {
-      if (Array.isArray(node?.children)) return node.children;
-      if (Array.isArray(node?.predictions)) return node.predictions;
-      if (Array.isArray(node?.next)) return node.next;
-      return [];
+      let children = [];
+
+      if (Array.isArray(node?.children)) {
+        children = node.children;
+      } else if (Array.isArray(node?.predictions)) {
+        children = node.predictions;
+      } else if (Array.isArray(node?.next)) {
+        children = node.next;
+      }
+
+      // 明示的な終端・取得打切りノードには、その先を足さない。
+      if (
+        isPredictionServiceEnd(node) ||
+        isPredictionStopped(node)
+      ) {
+        return children;
+      }
+
+      if (children.length) {
+        return children;
+      }
+
+      // Workerから子が1件も返らなかった通常ノードは、
+      // 画面上で枝が突然消えないよう「運行終了」を明示する。
+      //
+      // stopped=true の場合は上で除外されるため、
+      // 取得失敗/上限打切りを運行終了と誤表示しない。
+      return [{
+        service_end: true,
+        ui_synthetic_end: true,
+        probability: 100,
+        cumulative_probability:
+          Number.isFinite(
+            Number(node?.cumulative_probability)
+          )
+            ? Number(node.cumulative_probability)
+            : 100,
+        count:
+          Number.isFinite(Number(node?.count))
+            ? Number(node.count)
+            : null,
+        n:
+          Number.isFinite(Number(node?.n))
+            ? Number(node.n)
+            : null,
+        cumulative_count:
+          Number.isFinite(
+            Number(
+              node?.cumulative_count ??
+              node?.count
+            )
+          )
+            ? Number(
+                node?.cumulative_count ??
+                node?.count
+              )
+            : null,
+        cumulative_n:
+          Number.isFinite(
+            Number(
+              node?.cumulative_n ??
+              node?.n
+            )
+          )
+            ? Number(
+                node?.cumulative_n ??
+                node?.n
+              )
+            : null
+      }];
     }
 
     function isPredictionServiceEnd(node) {
@@ -1718,6 +1793,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       if (node.status === "service_end") return true;
       if (node.end === true) return true;
       return false;
+    }
+
+    function isPredictionStopped(node) {
+      return Boolean(
+        node?.stopped === true ||
+        node?.type === "prediction_stopped"
+      );
+    }
+
+    function predictionStoppedLabel(node) {
+      const reason = String(node?.reason || "");
+
+      if (reason === "max_depth") return "予測取得打切り";
+      if (reason === "max_nodes") return "予測取得打切り";
+      if (reason === "history_gap") return "予測取得打切り";
+
+      return "予測取得打切り";
     }
 
     function predictionProbability(node) {
@@ -2461,16 +2553,26 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       const cardWidth =
         entry =>
-          isPredictionServiceEnd(
-            entry.node
+          (
+            isPredictionServiceEnd(
+              entry.node
+            ) ||
+            isPredictionStopped(
+              entry.node
+            )
           )
             ? END_W
             : CARD_W;
 
       const cardHeight =
         entry =>
-          isPredictionServiceEnd(
-            entry.node
+          (
+            isPredictionServiceEnd(
+              entry.node
+            ) ||
+            isPredictionStopped(
+              entry.node
+            )
           )
             ? END_H
             : CARD_H;
@@ -2710,16 +2812,26 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       const cardWidth =
         entry =>
-          isPredictionServiceEnd(
-            entry.node
+          (
+            isPredictionServiceEnd(
+              entry.node
+            ) ||
+            isPredictionStopped(
+              entry.node
+            )
           )
             ? END_W
             : CARD_W;
 
       const cardHeight =
         entry =>
-          isPredictionServiceEnd(
-            entry.node
+          (
+            isPredictionServiceEnd(
+              entry.node
+            ) ||
+            isPredictionStopped(
+              entry.node
+            )
           )
             ? END_H
             : CARD_H;
@@ -2942,7 +3054,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         item.classList.add("unyo-flow-card-actual");
       }
 
-      if (isPredictionServiceEnd(node)) {
+      if (
+        isPredictionServiceEnd(node) ||
+        isPredictionStopped(node)
+      ) {
         item.classList.add("unyo-flow-card-end");
       }
 
@@ -3037,6 +3152,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       if (isPredictionServiceEnd(node)) {
         name.textContent = "運行終了";
+      } else if (isPredictionStopped(node)) {
+        name.textContent =
+          predictionStoppedLabel(node);
+        name.style.color = "#b35a00";
       } else if (entry.currentNode && node?.virtual_root) {
         name.textContent = "現在便";
       } else if (node?.occupied_by_other) {
@@ -3076,7 +3195,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         );
       }
 
-      if (!isPredictionServiceEnd(node) && !node?.virtual_root) {
+      if (
+        !isPredictionServiceEnd(node) &&
+        !isPredictionStopped(node) &&
+        !node?.virtual_root
+      ) {
         const path = document.createElement("div");
         path.className = "unyo-flow-path";
         path.textContent =
