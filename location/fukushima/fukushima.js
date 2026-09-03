@@ -239,21 +239,7 @@
 
           // 検索欄を空にしたら、検索で付けたフォーカスも解除する。
           if (!value) {
-            clearVehicleSearchResultMarker();
-
-            selectedTripId = null;
-            clearSelectedStopNameMarkers();
-
-            map.getSource("selected-vehicle")
-              ?.setData(emptyFeatureCollection());
-
-            map.getSource("selected-route")
-              ?.setData(emptyFeatureCollection());
-
-            map.getSource("selected-stops")
-              ?.setData(emptyFeatureCollection());
-
-            hideVehicleInfoPanel();
+            clearVehicleSearchFocus();
           }
 
           renderVehicleSearchDropdown(
@@ -309,6 +295,32 @@
       new VehicleSearchControl(),
       "top-left"
     );
+
+
+    // 検索バー/候補以外をクリックしたら検索フォーカス解除。
+    document.addEventListener("click", e => {
+      const control =
+        document.querySelector(".vehicle-search-control");
+
+      if (
+        control &&
+        control.contains(e.target)
+      ) {
+        return;
+      }
+
+      // 検索中の目印や詳細表示がある時だけ解除する。
+      if (
+        vehicleSearchResultMarker ||
+        selectedTripId ||
+        (
+          vehicleInfoPanel &&
+          vehicleInfoPanel.style.display !== "none"
+        )
+      ) {
+        clearVehicleSearchFocus();
+      }
+    });
 
     function saveMapCamera() {
       try {
@@ -4834,6 +4846,29 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         p,
         seq
       );
+    }
+
+
+    function clearVehicleSearchFocus() {
+      clearVehicleSearchResultMarker();
+
+      selectedTripId = null;
+      clearSelectedStopNameMarkers();
+
+      map.getSource("selected-vehicle")
+        ?.setData(emptyFeatureCollection());
+
+      map.getSource("selected-route")
+        ?.setData(emptyFeatureCollection());
+
+      map.getSource("selected-stops")
+        ?.setData(emptyFeatureCollection());
+
+      hideVehicleInfoPanel();
+
+      if (vehicleSearchDropdown) {
+        vehicleSearchDropdown.style.display = "none";
+      }
     }
 
 
