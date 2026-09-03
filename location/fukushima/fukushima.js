@@ -159,7 +159,7 @@
 },
 {
   id: "nishiguchi_standby",
-  name: "西口待機場",
+  name: "西口",
   type: "standby",
   coordinates: [
     [140.45792803199166, 37.75556108247229],
