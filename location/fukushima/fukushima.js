@@ -554,9 +554,7 @@
           source:
             "vehicle-place-label-points",
 
-          // 広域～中距離で表示し、拡大しすぎたら消す。
-          // zoom 15.5以上では非表示。
-          maxzoom: 17,
+          // ズームレベルによる非表示制限なし。
 
           layout: {
             visibility,
@@ -617,10 +615,10 @@
 
       // 2Dでは中央、3Dになるほど上へ浮かせる。
       const y =
-        pitch >= 55 ? -1.35 :
-        pitch >= 40 ? -0.95 :
-        pitch >= 25 ? -0.55 :
-        pitch >= 10 ? -0.25 :
+        pitch >= 55 ? -2.6 :
+        pitch >= 40 ? -1.9 :
+        pitch >= 25 ? -1.2 :
+        pitch >= 10 ? -0.55 :
         0;
 
       map.setLayoutProperty(
