@@ -3999,6 +3999,50 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             box-shadow: 0 1px 3px rgba(0,0,0,.16);
           }
 
+          .unyo-flow-card-place-arrival-departure {
+            min-height: 72px;
+            border-color: #687667;
+            background: #f5f8f4;
+            box-shadow:
+              inset 4px 0 0 #687667,
+              0 3px 9px rgba(37,57,69,.12);
+          }
+
+          .unyo-flow-place-combined-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            line-height: 1.2;
+          }
+
+          .unyo-flow-place-combined-badge {
+            min-width: 30px;
+            box-sizing: border-box;
+            padding: 2px 6px;
+            border-radius: 999px;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 900;
+            text-align: center;
+          }
+
+          .unyo-flow-place-combined-arrival
+          .unyo-flow-place-combined-badge {
+            background: #557d69;
+          }
+
+          .unyo-flow-place-combined-departure
+          .unyo-flow-place-combined-badge {
+            background: #806d54;
+          }
+
+          .unyo-flow-place-combined-time {
+            font-size: 9px;
+            font-weight: 900;
+            color: #53636b;
+          }
+
           .unyo-flow-card-place-entry {
             border-color: #686f88;
             background: #f5f5fa;
@@ -4527,6 +4571,97 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       );
     }
 
+    function mergeConsecutivePlaceArrivalDeparture(
+      node
+    ) {
+      if (
+        !node ||
+        typeof node !== "object"
+      ) {
+        return node;
+      }
+
+      const copy = {
+        ...node
+      };
+
+      const children =
+        getPredictionChildren(
+          node
+        );
+
+      if (
+        cleanId(node?.event_type) ===
+          "arrival" &&
+        children.length === 1
+      ) {
+        const departure =
+          children[0];
+
+        const samePlace =
+          (
+            cleanId(node?.place_id) &&
+            cleanId(departure?.place_id) &&
+            cleanId(node?.place_id) ===
+              cleanId(departure?.place_id)
+          ) ||
+          (
+            cleanId(node?.place_name) &&
+            cleanId(departure?.place_name) &&
+            cleanId(node?.place_name) ===
+              cleanId(departure?.place_name)
+          );
+
+        if (
+          cleanId(
+            departure?.event_type
+          ) === "departure" &&
+          samePlace
+        ) {
+          copy.event_type =
+            "arrival_departure";
+
+          copy.arrival_display_time =
+            cleanId(
+              node?.display_time
+            ) || null;
+
+          copy.departure_display_time =
+            cleanId(
+              departure?.display_time
+            ) || null;
+
+          copy.departure_inferred =
+            Boolean(
+              departure?.inferred
+            );
+
+          copy.children =
+            getPredictionChildren(
+              departure
+            ).map(
+              child =>
+                mergeConsecutivePlaceArrivalDeparture(
+                  child
+                )
+            );
+
+          return copy;
+        }
+      }
+
+      copy.children =
+        children.map(
+          child =>
+            mergeConsecutivePlaceArrivalDeparture(
+              child
+            )
+        );
+
+      return copy;
+    }
+
+
     function buildDayPredictionFlowLayout(
       data
     ) {
@@ -4579,9 +4714,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           return entry;
         };
 
+      const mergedDayTree =
+        mergeConsecutivePlaceArrivalDeparture(
+          data.day_tree
+        );
+
       const rootEntry =
         build(
-          data.day_tree,
+          mergedDayTree,
           0,
           null
         );
@@ -4663,6 +4803,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
               "unknown_place"
           ) {
             return 96;
+          }
+
+          if (
+            entry?.node?.event_type ===
+              "arrival_departure"
+          ) {
+            return 72;
           }
 
           return CARD_H;
@@ -5159,6 +5306,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           : "出発";
       }
 
+      if (
+        eventType ===
+          "arrival_departure"
+      ) {
+        return "到着・出発";
+      }
+
       if (eventType === "entry") {
         return "入庫";
       }
@@ -5196,7 +5350,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         "unyo-flow-card-place"
       );
 
-      if (eventType === "arrival") {
+      if (
+        eventType ===
+          "arrival_departure"
+      ) {
+        item.classList.add(
+          "unyo-flow-card-place-arrival-departure"
+        );
+      } else if (
+        eventType === "arrival"
+      ) {
         item.classList.add(
           "unyo-flow-card-place-arrival"
         );
@@ -5247,6 +5410,99 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       name.textContent =
         cleanId(node?.place_name) ||
         "施設";
+
+      if (
+        eventType ===
+          "arrival_departure"
+      ) {
+        top.append(name);
+        item.appendChild(top);
+
+        const arrivalRow =
+          document.createElement("div");
+
+        arrivalRow.className =
+          "unyo-flow-place-combined-row unyo-flow-place-combined-arrival";
+
+        const arrivalLabel =
+          document.createElement("span");
+
+        arrivalLabel.className =
+          "unyo-flow-place-combined-badge";
+
+        arrivalLabel.textContent =
+          "到着";
+
+        const arrivalTime =
+          document.createElement("span");
+
+        arrivalTime.className =
+          "unyo-flow-place-combined-time";
+
+        arrivalTime.textContent =
+          cleanId(
+            node?.arrival_display_time
+          );
+
+        arrivalRow.append(
+          arrivalLabel
+        );
+
+        if (
+          arrivalTime.textContent
+        ) {
+          arrivalRow.append(
+            arrivalTime
+          );
+        }
+
+        const departureRow =
+          document.createElement("div");
+
+        departureRow.className =
+          "unyo-flow-place-combined-row unyo-flow-place-combined-departure";
+
+        const departureLabel =
+          document.createElement("span");
+
+        departureLabel.className =
+          "unyo-flow-place-combined-badge";
+
+        departureLabel.textContent =
+          node?.departure_inferred
+            ? "出庫"
+            : "出発";
+
+        const departureTime =
+          document.createElement("span");
+
+        departureTime.className =
+          "unyo-flow-place-combined-time";
+
+        departureTime.textContent =
+          cleanId(
+            node?.departure_display_time
+          );
+
+        departureRow.append(
+          departureLabel
+        );
+
+        if (
+          departureTime.textContent
+        ) {
+          departureRow.append(
+            departureTime
+          );
+        }
+
+        item.append(
+          arrivalRow,
+          departureRow
+        );
+
+        return item;
+      }
 
       const badge =
         document.createElement("span");
