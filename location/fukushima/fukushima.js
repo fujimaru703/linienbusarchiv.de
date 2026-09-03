@@ -3020,7 +3020,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         name.textContent = predictionRouteName(node);
       }
 
-      top.append(name, badge);
+      // 初便など、表示する確率文字が無い場合は
+      // 空のbadge自体をDOMに出さない。
+      // CSSの背景だけが「—」のように残るのを防ぐ。
+      if (badge.textContent) {
+        top.append(name, badge);
+      } else {
+        top.append(name);
+      }
+
       item.appendChild(top);
 
       if (entry.actualNode) {
