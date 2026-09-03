@@ -2230,36 +2230,139 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const html2canvas =
         await ensureHtml2Canvas();
 
-      const canvas =
-        await html2canvas(
-          popup,
-          {
-            backgroundColor: "#ffffff",
-            useCORS: true,
-            scale: Math.min(window.devicePixelRatio || 1, 2),
-            onclone: clonedDoc => {
-              for (const el of clonedDoc.querySelectorAll("[data-export-hide='1']")) {
-                el.remove();
+      // 画面表示中のポップアップは max-height / overflow により
+      // 途中で切れるため、保存用に一時クローンを作って
+      // スクロール内の全内容を展開した状態で画像化する。
+      const exportHost =
+        document.createElement("div");
+
+      exportHost.style.cssText = `
+        position: fixed;
+        left: -99999px;
+        top: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0;
+      `;
+
+      const clone =
+        popup.cloneNode(true);
+
+      const cloneBody =
+        clone.querySelector(".unyo-prediction-body");
+
+      const cloneStage =
+        clone.querySelector(".unyo-flow-stage");
+
+      // 元の実寸を保存用クローンへ反映する。
+      const sourceBody =
+        popup.querySelector(".unyo-prediction-body");
+
+      const sourceStage =
+        popup.querySelector(".unyo-flow-stage");
+
+      if (cloneBody && sourceBody) {
+        cloneBody.scrollTop = 0;
+        cloneBody.scrollLeft = 0;
+
+        cloneBody.style.maxHeight = "none";
+        cloneBody.style.height = "auto";
+        cloneBody.style.overflow = "visible";
+        cloneBody.style.overflowX = "visible";
+        cloneBody.style.overflowY = "visible";
+      }
+
+      if (cloneStage && sourceStage) {
+        const exportWidth =
+          Math.max(
+            sourceStage.scrollWidth || 0,
+            sourceStage.offsetWidth || 0,
+            Number(sourceStage.dataset.rawWidth || 0)
+          );
+
+        const exportHeight =
+          Math.max(
+            sourceStage.scrollHeight || 0,
+            sourceStage.offsetHeight || 0,
+            Number(sourceStage.dataset.rawHeight || 0)
+          );
+
+        cloneStage.style.width =
+          `${exportWidth}px`;
+        cloneStage.style.height =
+          `${exportHeight}px`;
+
+        cloneStage.dataset.rawWidth =
+          String(exportWidth);
+        cloneStage.dataset.rawHeight =
+          String(exportHeight);
+
+        const cloneCanvas =
+          cloneStage.querySelector(".unyo-flow-canvas");
+
+        if (cloneCanvas) {
+          cloneCanvas.style.transform = "scale(1)";
+          cloneCanvas.style.transformOrigin = "0 0";
+          cloneCanvas.style.width =
+            `${exportWidth}px`;
+          cloneCanvas.style.height =
+            `${exportHeight}px`;
+          cloneCanvas.style.minWidth =
+            `${exportWidth}px`;
+        }
+      }
+
+      clone.style.width = "auto";
+      clone.style.maxHeight = "none";
+      clone.style.overflow = "visible";
+
+      exportHost.appendChild(clone);
+      document.body.appendChild(exportHost);
+
+      try {
+        const rect =
+          clone.getBoundingClientRect();
+
+        const canvas =
+          await html2canvas(
+            clone,
+            {
+              backgroundColor: "#ffffff",
+              useCORS: true,
+              scale: Math.min(
+                Math.max(window.devicePixelRatio || 1, 2),
+                3
+              ),
+              width: Math.ceil(rect.width),
+              height: Math.ceil(rect.height),
+              windowWidth: Math.ceil(rect.width),
+              windowHeight: Math.ceil(rect.height),
+              onclone: clonedDoc => {
+                for (const el of clonedDoc.querySelectorAll("[data-export-hide='1']")) {
+                  el.remove();
+                }
               }
             }
-          }
-        );
-
-      const blob =
-        await new Promise((resolve, reject) => {
-          canvas.toBlob(
-            value => {
-              if (value) {
-                resolve(value);
-              } else {
-                reject(new Error("画像化に失敗しました"));
-              }
-            },
-            "image/png"
           );
-        });
 
-      return blob;
+        const blob =
+          await new Promise((resolve, reject) => {
+            canvas.toBlob(
+              value => {
+                if (value) {
+                  resolve(value);
+                } else {
+                  reject(new Error("画像化に失敗しました"));
+                }
+              },
+              "image/png"
+            );
+          });
+
+        return blob;
+      } finally {
+        exportHost.remove();
+      }
     }
 
     async function sharePredictionImage(kind) {
@@ -2268,9 +2371,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       const vehicleCd =
         cleanId(overlay.dataset.vehicleCd);
-      const title =
-        cleanId(overlay.dataset.predictionTitle) ||
-        buildPredictionPopupTitle(vehicleCd);
 
       try {
         const blob =
@@ -2279,89 +2379,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         const filename =
           predictionShareFilename(vehicleCd);
 
-        const file =
-          new File(
-            [blob],
-            filename,
-            { type: "image/png" }
-          );
-
-        if (kind === "save") {
-          downloadBlob(blob, filename);
-          predictionShareToast("画像を保存しました");
-          return;
-        }
-
-        if (kind === "line") {
-          if (
-            navigator.share &&
-            navigator.canShare &&
-            navigator.canShare({ files: [file] })
-          ) {
-            await navigator.share({
-              files: [file],
-              title,
-              text: title
-            });
-            return;
-          }
-
-          const copied =
-            await copyImageBlobToClipboard(blob);
-
-          window.open(
-            "https://line.me/R/msg/text/?" +
-              encodeURIComponent(title),
-            "_blank",
-            "noopener,noreferrer"
-          );
-
-          predictionShareToast(
-            copied
-              ? "画像をコピーしました。LINEで貼り付けて共有してください"
-              : "LINE共有を開きました。必要なら保存画像を添付してください"
-          );
-          return;
-        }
-
-        const copied =
-          await copyImageBlobToClipboard(blob);
-
-        if (kind === "x") {
-          window.open(
-            "https://twitter.com/intent/tweet?text=" +
-              encodeURIComponent(title),
-            "_blank",
-            "noopener,noreferrer"
-          );
-
-          if (copied) {
-            predictionShareToast("画像をコピーしました。Xの投稿画面に貼り付けてください");
-          } else {
-            downloadBlob(blob, filename);
-            predictionShareToast("X投稿用に画像を保存しました");
-          }
-          return;
-        }
-
-        if (kind === "discord") {
-          window.open(
-            "https://discord.com/app",
-            "_blank",
-            "noopener,noreferrer"
-          );
-
-          if (copied) {
-            predictionShareToast("画像をコピーしました。Discordで貼り付けて共有してください");
-          } else {
-            downloadBlob(blob, filename);
-            predictionShareToast("Discord共有用に画像を保存しました");
-          }
-          return;
-        }
+        downloadBlob(blob, filename);
+        predictionShareToast("画像を保存しました");
       } catch (e) {
-        console.error("予測画像共有失敗:", e);
-        predictionShareToast("画像共有に失敗しました");
+        console.error("予測画像保存失敗:", e);
+        predictionShareToast("画像保存に失敗しました");
       }
     }
 
@@ -2711,30 +2733,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         sharePredictionImage("save");
       });
 
-      const xBtn = document.createElement("button");
-      xBtn.type = "button";
-      xBtn.className = "unyo-prediction-share";
-      xBtn.textContent = "X";
-      xBtn.addEventListener("click", () => {
-        sharePredictionImage("x");
-      });
-
-      const discordBtn = document.createElement("button");
-      discordBtn.type = "button";
-      discordBtn.className = "unyo-prediction-share";
-      discordBtn.textContent = "Discord";
-      discordBtn.addEventListener("click", () => {
-        sharePredictionImage("discord");
-      });
-
-      const lineBtn = document.createElement("button");
-      lineBtn.type = "button";
-      lineBtn.className = "unyo-prediction-share";
-      lineBtn.textContent = "LINE";
-      lineBtn.addEventListener("click", () => {
-        sharePredictionImage("line");
-      });
-
       const close = document.createElement("button");
       close.type = "button";
       close.className = "unyo-prediction-close";
@@ -2744,9 +2742,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       headActions.append(
         saveBtn,
-        xBtn,
-        discordBtn,
-        lineBtn,
         close
       );
 
