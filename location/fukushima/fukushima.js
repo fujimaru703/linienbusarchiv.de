@@ -4691,10 +4691,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const wrap =
         document.createElement("div");
 
+      // アイコン本体の62x62だけをMarkerの基準ボックスにする。
+      // 車番ラベルはボックス外へ出すことで、元のMapLibreアイコンと
+      // 緯度経度の中心位置を完全に一致させる。
       wrap.style.cssText = `
         position:relative;
-        width:72px;
-        height:78px;
+        width:62px;
+        height:62px;
         pointer-events:none;
         z-index:9999;
       `;
@@ -4713,11 +4716,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       img.draggable = false;
       img.style.cssText = `
         position:absolute;
-        left:50%;
+        left:0;
         top:0;
         width:62px;
         height:62px;
-        transform:translateX(-50%);
         object-fit:contain;
         filter:drop-shadow(0 3px 7px rgba(0,0,0,.32));
         user-select:none;
@@ -4731,7 +4733,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       badge.style.cssText = `
         position:absolute;
         left:50%;
-        bottom:0;
+        top:64px;
         transform:translateX(-50%);
         padding:2px 6px;
         border:1px solid rgba(38,52,60,.18);
@@ -4854,7 +4856,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             createVehicleSearchResultElement(
               p.label
             ),
-          anchor: "bottom"
+          anchor: "center"
         })
           .setLngLat([
             Number(v.lon),
