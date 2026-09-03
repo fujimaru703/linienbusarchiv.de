@@ -2698,7 +2698,66 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         }
       }
 
-      clone.style.width = "auto";
+      for (
+        const svg of
+          clone.querySelectorAll(
+            ".unyo-flow-svg"
+          )
+      ) {
+        svg.style.overflow = "visible";
+      }
+
+      // 保存時は画面幅の制限を完全に外し、
+      // ツリー全体の横幅・縦幅に合わせてポップアップ自体を拡張する。
+      const exportBody =
+        clone.querySelector(".unyo-prediction-body");
+
+      const exportStage =
+        clone.querySelector(".unyo-flow-stage");
+
+      const exportRawWidth =
+        exportStage
+          ? Math.max(
+              Number(exportStage.dataset.rawWidth || 0),
+              exportStage.scrollWidth || 0,
+              exportStage.offsetWidth || 0
+            )
+          : 0;
+
+      const exportRawHeight =
+        exportStage
+          ? Math.max(
+              Number(exportStage.dataset.rawHeight || 0),
+              exportStage.scrollHeight || 0,
+              exportStage.offsetHeight || 0
+            )
+          : 0;
+
+      // bodyのpadding分を含めて余裕を確保。
+      const exportHorizontalPadding = 48;
+      const exportVerticalPadding = 48;
+
+      if (exportBody) {
+        exportBody.style.width =
+          `${Math.ceil(exportRawWidth + exportHorizontalPadding)}px`;
+
+        exportBody.style.maxWidth = "none";
+        exportBody.style.minWidth = "0";
+        exportBody.style.height =
+          `${Math.ceil(exportRawHeight + exportVerticalPadding)}px`;
+
+        exportBody.style.maxHeight = "none";
+        exportBody.style.overflow = "visible";
+        exportBody.style.overflowX = "visible";
+        exportBody.style.overflowY = "visible";
+      }
+
+      clone.style.width =
+        `${Math.ceil(exportRawWidth + exportHorizontalPadding + 26)}px`;
+
+      clone.style.maxWidth = "none";
+      clone.style.minWidth = "0";
+      clone.style.height = "auto";
       clone.style.maxHeight = "none";
       clone.style.overflow = "visible";
 
@@ -2710,12 +2769,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             ".unyo-flow-card-actual"
           )
       ) {
+        // html2canvas は inset box-shadow を全面塗りとして
+        // 誤描画することがあるため、保存時だけ border-left で再現。
         card.style.borderWidth = "2px";
         card.style.borderStyle = "solid";
         card.style.borderColor = "#4f8a69";
+        card.style.borderLeftWidth = "6px";
+        card.style.borderLeftColor = "#4f8a69";
         card.style.background = "#f2f8f4";
+        card.style.backgroundColor = "#f2f8f4";
         card.style.boxShadow =
-          "inset 4px 0 0 #4f8a69, 0 3px 9px rgba(37,57,69,.13)";
+          "0 3px 9px rgba(37,57,69,.13)";
         card.style.opacity = "1";
       }
 
@@ -2728,9 +2792,12 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         card.style.borderWidth = "2px";
         card.style.borderStyle = "solid";
         card.style.borderColor = "#365a6b";
+        card.style.borderLeftWidth = "6px";
+        card.style.borderLeftColor = "#365a6b";
         card.style.background = "#eef7fa";
+        card.style.backgroundColor = "#eef7fa";
         card.style.boxShadow =
-          "inset 4px 0 0 #365a6b, 0 0 0 2px rgba(54,90,107,.20), 0 5px 14px rgba(37,57,69,.18)";
+          "0 0 0 2px rgba(54,90,107,.20), 0 5px 14px rgba(37,57,69,.18)";
       }
 
       exportHost.appendChild(clone);
@@ -2739,6 +2806,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       try {
         const rect =
           clone.getBoundingClientRect();
+
+        const captureWidth =
+          Math.ceil(
+            Math.max(
+              rect.width,
+              clone.scrollWidth,
+              clone.offsetWidth
+            )
+          );
+
+        const captureHeight =
+          Math.ceil(
+            Math.max(
+              rect.height,
+              clone.scrollHeight,
+              clone.offsetHeight
+            )
+          );
 
         const canvas =
           await html2canvas(
@@ -2750,10 +2835,12 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
                 Math.max(window.devicePixelRatio || 1, 2),
                 3
               ),
-              width: Math.ceil(rect.width),
-              height: Math.ceil(rect.height),
-              windowWidth: Math.ceil(rect.width),
-              windowHeight: Math.ceil(rect.height),
+              width: captureWidth,
+              height: captureHeight,
+              windowWidth: captureWidth,
+              windowHeight: captureHeight,
+              scrollX: 0,
+              scrollY: 0,
               onclone: clonedDoc => {
                 for (const el of clonedDoc.querySelectorAll("[data-export-hide='1']")) {
                   el.remove();
