@@ -1362,7 +1362,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const nowParts = japanNowParts();
       const hour = Math.floor(nowParts.seconds / 3600);
 
-      // 前日残留車を06:00～17:59も取得できるようfallback APIを維持する。
+      // 前日最終位置を04:00～17:59も取得できるようfallback APIを維持する。
       if (hour < 18) return true;
 
       const window = getTodayServiceWindow();
@@ -1599,7 +1599,12 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           lon,
           bearing: 0,
           isFallback: false,
-          isRetained: true
+          isRetained: true,
+
+          // 04:00～05:59は通常色、
+          // 06:00～17:59はグレー表示。
+          isRetainedGray:
+            v?.grayOut === true
         });
       }
 
@@ -1689,6 +1694,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             bearing: Number.isFinite(v.bearing) ? v.bearing : 0,
             isFallback: v.isFallback ? 1 : 0,
             isRetained: v.isRetained ? 1 : 0,
+            isRetainedGray:
+              v.isRetainedGray ? 1 : 0,
             shihatsuName: v.fallbackShihatsuName || "",
             shihatsuTime: v.fallbackShihatsuTime || "",
             terminalTime: v.fallbackTerminalTime || "",
@@ -5813,6 +5820,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             v.isFallback ? 1 : 0,
           isRetained:
             v.isRetained ? 1 : 0,
+          isRetainedGray:
+            v.isRetainedGray ? 1 : 0,
           shihatsuName:
             v.fallbackShihatsuName || "",
           shihatsuTime:
@@ -6043,6 +6052,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         const isRetained =
           v?.isRetained === true;
 
+        const isRetainedGray =
+          v?.isRetainedGray === true;
+
         const isRare =
           !isRetained &&
           !!vehicleCd &&
@@ -6054,7 +6066,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           const element = createVehicleNumberElement(
             v.label,
             isRare,
-            isRetained
+            isRetainedGray
           );
 
           const marker = new maplibregl.Marker({
@@ -6083,7 +6095,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           applyVehicleNumberStyle(
             item.element,
             isRare,
-            isRetained
+            isRetainedGray
           );
         }
       }
@@ -6326,7 +6338,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         paint: {
           "icon-opacity": [
             "case",
-            ["==", ["get", "isRetained"], 1],
+            ["==", ["get", "isRetainedGray"], 1],
             0.38,
             1
           ]
