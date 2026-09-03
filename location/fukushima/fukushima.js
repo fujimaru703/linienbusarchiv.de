@@ -301,9 +301,17 @@
 
       for (const place of VEHICLE_PLACE_AREAS) {
         const center =
-          vehiclePlacePolygonCentroid(
-            place?.coordinates
-          );
+  Array.isArray(place?.labelPosition) &&
+  place.labelPosition.length >= 2 &&
+  Number.isFinite(Number(place.labelPosition[0])) &&
+  Number.isFinite(Number(place.labelPosition[1]))
+    ? [
+        Number(place.labelPosition[0]),
+        Number(place.labelPosition[1])
+      ]
+    : vehiclePlacePolygonCentroid(
+        place?.coordinates
+      );
 
         if (!center) continue;
 
