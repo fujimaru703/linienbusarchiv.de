@@ -472,6 +472,9 @@ label8155.forEach(label => labelIconMap.set(label, 'icon/8155-v2.png'));
 const label8186 = ['8186'];
 label8186.forEach(label => labelIconMap.set(label, 'icon/8186.png'));
 
+const label8171 = ['8171'];
+label8171.forEach(label => labelIconMap.set(label, 'icon/8171.png'));
+
 const label7097 = ['7097'];
 label7097.forEach(label => labelIconMap.set(label, 'icon/7097-v2.png'));
 
