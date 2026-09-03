@@ -1035,6 +1035,30 @@
         return;
       }
 
+      // 車両ポップアップ内の操作では車両選択を解除しない。
+      // 「次便予測」をクリックして詳細ツリーを開いた時も、
+      // 元の車両ポップアップをそのまま残す。
+      if (
+        vehicleInfoPanel &&
+        vehicleInfoPanel.contains(e.target)
+      ) {
+        return;
+      }
+
+      // 詳細予測ツリー内を操作している間も、
+      // 背後の車両ポップアップ/選択状態を維持する。
+      const predictionOverlay =
+        document.getElementById(
+          "unyoPredictionOverlay"
+        );
+
+      if (
+        predictionOverlay &&
+        predictionOverlay.contains(e.target)
+      ) {
+        return;
+      }
+
       // 検索中の目印や詳細表示がある時だけ解除する。
       if (
         vehicleSearchResultMarker ||
@@ -3766,7 +3790,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           }
 
           .unyo-flow-card-place-inferred .unyo-flow-place-badge {
-            background: #8a7659;
+            background: #6f5738;
+            color: #fff;
+            border: 1px solid #58442c;
+            padding: 2px 8px;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: .06em;
+            box-shadow: 0 1px 3px rgba(0,0,0,.16);
           }
 
           .unyo-flow-place-time {
