@@ -1,4 +1,3 @@
-
 "use strict";
 
     // =========================================================
@@ -143,6 +142,111 @@
 
     map.addControl(new BasemapToggleControl(), "top-right");
 
+
+    class VehicleSearchControl {
+      onAdd(mapInstance) {
+        this.map = mapInstance;
+
+        const container = document.createElement("div");
+        container.className =
+          "maplibregl-ctrl vehicle-search-control";
+        container.style.cssText = `
+          display:flex;
+          align-items:center;
+          gap:4px;
+          padding:5px;
+          border-radius:8px;
+          background:rgba(255,255,255,.96);
+          box-shadow:0 1px 5px rgba(0,0,0,.18);
+          font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+        `;
+
+        const input = document.createElement("input");
+        input.type = "search";
+        input.placeholder = "車番検索";
+        input.setAttribute("aria-label", "車番検索");
+        input.setAttribute("list", "vehicleSearchSuggestions");
+        input.autocomplete = "off";
+        input.inputMode = "numeric";
+        input.style.cssText = `
+          width:96px;
+          height:28px;
+          box-sizing:border-box;
+          border:1px solid #cfd9df;
+          border-radius:6px;
+          padding:0 7px;
+          outline:none;
+          font-size:11px;
+          font-weight:800;
+          color:#26343c;
+          background:#fff;
+        `;
+
+        const list = document.createElement("datalist");
+        list.id = "vehicleSearchSuggestions";
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "検索";
+        button.title = "車番を検索";
+        button.style.cssText = `
+          height:28px;
+          border:1px solid #cbd8df;
+          border-radius:6px;
+          padding:0 8px;
+          background:#f6f9fa;
+          color:#26343c;
+          font-size:10px;
+          font-weight:900;
+          cursor:pointer;
+        `;
+
+        const runSearch = () => {
+          searchVehicleByNumber(input.value);
+        };
+
+        button.addEventListener("click", runSearch);
+
+        input.addEventListener("keydown", e => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          runSearch();
+        });
+
+        // 地図のドラッグ等へイベントが漏れないようにする。
+        for (const type of [
+          "mousedown",
+          "dblclick",
+          "touchstart",
+          "wheel"
+        ]) {
+          container.addEventListener(
+            type,
+            e => e.stopPropagation()
+          );
+        }
+
+        container.append(input, button, list);
+
+        vehicleSearchInput = input;
+        vehicleSearchList = list;
+
+        return container;
+      }
+
+      onRemove() {
+        vehicleSearchInput = null;
+        vehicleSearchList = null;
+        this.map = undefined;
+      }
+    }
+
+
+    map.addControl(
+      new VehicleSearchControl(),
+      "top-left"
+    );
+
     function saveMapCamera() {
       try {
         const center = map.getCenter();
@@ -193,6 +297,11 @@
     let selectedStopNameMarkers = [];
     let vehicleInfoPanel = null;
     const vehicleNumberMarkers = new Map();
+
+    // 車番検索UI
+    let vehicleSearchInput = null;
+    let vehicleSearchList = null;
+    let vehicleSearchResultMarker = null;
     const rareVehicleMarkers = new Map();
 
     let rareVehicleSet =
@@ -206,7 +315,7 @@
     let expandedHistoryVehicleCd = null;
 
     const labelIconMap = new Map();
-    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8138','8139','8141','8143','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290-v2.png'));
 
 const labelergaev = ['7704','7705','7706'];
@@ -214,18 +323,6 @@ labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev-v2.png'));
 
 const label557 = ['0557','2411','2412','2408'];
 label557.forEach(label => labelIconMap.set(label, 'icon/557&2411-v2.png'));
-
-const label8137 = ['8137'];
-label8137.forEach(label => labelIconMap.set(label, 'icon/8137miura.png'));
-
-const label8140 = ['8140'];
-label8140.forEach(label => labelIconMap.set(label, 'icon/8140hgakuin.png'));
-
-const label8144 = ['8144'];
-label8144.forEach(label => labelIconMap.set(label, 'icon/8144fdaigaku.png'));
-
-const label8145 = ['8145'];
-label8145.forEach(label => labelIconMap.set(label, 'icon/8145oyama.png'));
 
 const label8181 = ['8181'];
 label8181.forEach(label => labelIconMap.set(label, 'icon/8181-v2.png'));
@@ -853,6 +950,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       selectedTripId = null;
 
       updateVehicleNumberMarkers([]);
+      clearVehicleSearchResultMarker();
       clearSelectedStopNameMarkers();
 
       if (vehicleInfoPanel) {
@@ -4317,6 +4415,334 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       return el;
     }
 
+
+    function updateVehicleSearchSuggestions(
+      vehicles
+    ) {
+      if (!vehicleSearchList) return;
+
+      const labels =
+        [...new Set(
+          (vehicles || [])
+            .map(v => cleanId(v?.label))
+            .filter(Boolean)
+        )]
+          .sort((a, b) =>
+            a.localeCompare(
+              b,
+              "ja",
+              { numeric: true }
+            )
+          );
+
+      vehicleSearchList.replaceChildren();
+
+      for (const label of labels) {
+        const option =
+          document.createElement("option");
+
+        option.value = label;
+        vehicleSearchList.appendChild(option);
+      }
+    }
+
+
+    function clearVehicleSearchResultMarker() {
+      if (!vehicleSearchResultMarker) return;
+
+      vehicleSearchResultMarker.remove();
+      vehicleSearchResultMarker = null;
+    }
+
+
+    function createVehicleSearchResultElement(
+      label
+    ) {
+      const wrap =
+        document.createElement("div");
+
+      wrap.style.cssText = `
+        position:relative;
+        width:62px;
+        height:62px;
+        pointer-events:none;
+      `;
+
+      const ring =
+        document.createElement("div");
+
+      ring.style.cssText = `
+        position:absolute;
+        left:50%;
+        top:50%;
+        width:48px;
+        height:48px;
+        transform:translate(-50%,-50%);
+        box-sizing:border-box;
+        border:3px solid #1677d2;
+        border-radius:50%;
+        background:rgba(255,255,255,.08);
+        box-shadow:
+          0 0 0 3px rgba(255,255,255,.90),
+          0 2px 10px rgba(0,0,0,.28);
+      `;
+
+      const badge =
+        document.createElement("div");
+
+      badge.textContent = label || "?";
+      badge.style.cssText = `
+        position:absolute;
+        left:50%;
+        bottom:-7px;
+        transform:translateX(-50%);
+        padding:2px 6px;
+        border:2px solid #1677d2;
+        border-radius:6px;
+        background:#fff;
+        color:#125a9c;
+        box-shadow:0 2px 7px rgba(0,0,0,.20);
+        font:900 11px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;
+        white-space:nowrap;
+      `;
+
+      wrap.append(ring, badge);
+      return wrap;
+    }
+
+
+    function featureForVehicle(v) {
+      if (!v) return null;
+
+      const delay =
+        v.isFallback
+          ? 0
+          : getDelayForVehicle(v);
+
+      const routeName =
+        v.isFallback
+          ? (
+              v.fallbackRouteName ||
+              v.fallbackRoute ||
+              "路線名不明"
+            )
+          : (
+              routeNames[v.routeId] ||
+              "路線名不明"
+            );
+
+      const headsign =
+        v.isFallback
+          ? (
+              v.fallbackDestination ||
+              "行先不明"
+            )
+          : (
+              tripHeadsigns[v.tripId] ||
+              "行先不明"
+            );
+
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [
+            Number(v.lon),
+            Number(v.lat)
+          ]
+        },
+        properties: {
+          tripId: v.tripId || "",
+          routeId: v.routeId || "",
+          routeName,
+          headsign,
+          label: v.label || "?",
+          delay,
+          delayText:
+            v.isFallback
+              ? "非営業"
+              : formatDelay(delay),
+          iconKey: v.label || "",
+          bearing:
+            Number.isFinite(v.bearing)
+              ? v.bearing
+              : 0,
+          isFallback:
+            v.isFallback ? 1 : 0,
+          shihatsuName:
+            v.fallbackShihatsuName || "",
+          shihatsuTime:
+            v.fallbackShihatsuTime || "",
+          terminalTime:
+            v.fallbackTerminalTime || "",
+          mapUrl:
+            v.fallbackMapUrl || "",
+          planForecastResultCd:
+            v.fallbackPlanForecastResultCd || "",
+          positionAge:
+            Number.isFinite(v.positionAge)
+              ? v.positionAge
+              : -1
+        }
+      };
+    }
+
+
+    function selectVehicleFromSearch(v) {
+      if (!v) return;
+
+      const feature =
+        featureForVehicle(v);
+
+      if (!feature) return;
+
+      const p =
+        feature.properties || {};
+
+      clearVehicleSearchResultMarker();
+
+      vehicleSearchResultMarker =
+        new maplibregl.Marker({
+          element:
+            createVehicleSearchResultElement(
+              p.label
+            ),
+          anchor: "center"
+        })
+          .setLngLat([
+            Number(v.lon),
+            Number(v.lat)
+          ])
+          .addTo(map);
+
+      // 検索対象の場所へ移動。
+      // 既に十分拡大している場合は現在ズームを維持。
+      map.easeTo({
+        center: [
+          Number(v.lon),
+          Number(v.lat)
+        ],
+        zoom:
+          Math.max(
+            map.getZoom(),
+            16
+          ),
+        duration: 650
+      });
+
+      const selectedSource =
+        map.getSource("selected-vehicle");
+
+      if (selectedSource) {
+        selectedSource.setData({
+          type: "FeatureCollection",
+          features: [feature]
+        });
+      }
+
+      if (Number(p.isFallback) === 1) {
+        selectedTripId = null;
+        clearSelectedStopNameMarkers();
+
+        map.getSource("selected-route")
+          ?.setData(emptyFeatureCollection());
+
+        map.getSource("selected-stops")
+          ?.setData(emptyFeatureCollection());
+
+        showVehicleInfoPanel(
+          p,
+          NaN
+        );
+        return;
+      }
+
+      selectedTripId =
+        p.tripId || null;
+
+      const seq =
+        Number(v.seq);
+
+      map.getSource("selected-route")
+        ?.setData(
+          selectedRouteGeoJson(
+            selectedTripId
+          )
+        );
+
+      map.getSource("selected-stops")
+        ?.setData(
+          futureStopsGeoJson(
+            selectedTripId,
+            seq
+          )
+        );
+
+      renderSelectedStopNameMarkers(
+        selectedTripId,
+        seq
+      );
+
+      showVehicleInfoPanel(
+        p,
+        seq
+      );
+    }
+
+
+    function searchVehicleByNumber(rawValue) {
+      const query =
+        cleanId(rawValue);
+
+      if (!query) return;
+
+      const vehicles =
+        displayedVehicles();
+
+      // まず完全一致。
+      let target =
+        vehicles.find(
+          v =>
+            cleanId(v?.label) ===
+            query
+        );
+
+      // 完全一致しない場合は前方一致1件を採用。
+      if (!target) {
+        target =
+          vehicles.find(
+            v =>
+              cleanId(v?.label)
+                .startsWith(query)
+          );
+      }
+
+      if (!target) {
+        if (vehicleSearchInput) {
+          vehicleSearchInput.setCustomValidity(
+            "現在表示中の車両に該当する車番がありません"
+          );
+          vehicleSearchInput.reportValidity();
+
+          setTimeout(() => {
+            vehicleSearchInput?.setCustomValidity("");
+          }, 1200);
+        }
+        return;
+      }
+
+      if (vehicleSearchInput) {
+        vehicleSearchInput.setCustomValidity("");
+        vehicleSearchInput.value =
+          cleanId(target.label);
+      }
+
+      selectVehicleFromSearch(
+        target
+      );
+    }
+
+
     function vehicleMarkerKey(v) {
       // 車番が基本的に一意なので車番優先。無い場合のみtrip_idを使う。
       return cleanId(v?.label) || cleanId(v?.tripId) || `${v?.lat},${v?.lon}`;
@@ -4818,6 +5244,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         }
 
         const allVehicles = displayedVehicles();
+
+        updateVehicleSearchSuggestions(
+          allVehicles
+        );
 
         await ensureVehicleIcons(allVehicles);
         map.getSource("vehicles").setData(vehicleGeoJson());
