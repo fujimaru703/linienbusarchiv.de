@@ -172,7 +172,7 @@
 
         // 初回は表示ON。
         return saved === null
-          ? true
+          ? false
           : saved === "1";
       } catch (_) {
         return true;
