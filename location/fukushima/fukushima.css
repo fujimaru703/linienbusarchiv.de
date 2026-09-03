@@ -736,3 +736,15 @@ html, body {
 .maplibregl-popup.bus-popup-draggable.is-dragging .bus-popup__hero {
   cursor: grabbing !important;
 }
+
+
+/* ===== vehicle search: prevent mobile auto zoom ===== */
+.vehicle-search-control input {
+  font-size: 16px !important;
+}
+
+@media (max-width: 640px) {
+  .vehicle-search-control input {
+    font-size: 16px !important;
+  }
+}
