@@ -145,7 +145,7 @@
 
     // 車番検索UI
     let vehicleSearchInput = null;
-    let vehicleSearchList = null;
+    let vehicleSearchDropdown = null;
     let vehicleSearchResultMarker = null;
 
     class VehicleSearchControl {
@@ -156,6 +156,7 @@
         container.className =
           "maplibregl-ctrl vehicle-search-control";
         container.style.cssText = `
+          position:relative;
           display:flex;
           align-items:center;
           gap:4px;
@@ -170,7 +171,6 @@
         input.type = "search";
         input.placeholder = "車番検索";
         input.setAttribute("aria-label", "車番検索");
-        input.setAttribute("list", "vehicleSearchSuggestions");
         input.autocomplete = "off";
         input.inputMode = "numeric";
         input.style.cssText = `
@@ -187,8 +187,23 @@
           background:#fff;
         `;
 
-        const list = document.createElement("datalist");
-        list.id = "vehicleSearchSuggestions";
+        const dropdown = document.createElement("div");
+        dropdown.style.cssText = `
+          position:absolute;
+          left:5px;
+          top:38px;
+          width:96px;
+          max-height:190px;
+          overflow-y:auto;
+          display:none;
+          box-sizing:border-box;
+          border:1px solid #cfd9df;
+          border-radius:7px;
+          background:rgba(255,255,255,.98);
+          box-shadow:0 6px 18px rgba(0,0,0,.16);
+          z-index:20;
+          padding:3px;
+        `;
 
         const button = document.createElement("button");
         button.type = "button";
@@ -218,6 +233,49 @@
           runSearch();
         });
 
+        input.addEventListener("input", () => {
+          const value =
+            cleanId(input.value);
+
+          // 検索欄を空にしたら、検索で付けたフォーカスも解除する。
+          if (!value) {
+            clearVehicleSearchResultMarker();
+
+            selectedTripId = null;
+            clearSelectedStopNameMarkers();
+
+            map.getSource("selected-vehicle")
+              ?.setData(emptyFeatureCollection());
+
+            map.getSource("selected-route")
+              ?.setData(emptyFeatureCollection());
+
+            map.getSource("selected-stops")
+              ?.setData(emptyFeatureCollection());
+
+            hideVehicleInfoPanel();
+          }
+
+          renderVehicleSearchDropdown(
+            input.value
+          );
+        });
+
+        input.addEventListener("focus", () => {
+          renderVehicleSearchDropdown(
+            input.value
+          );
+        });
+
+        input.addEventListener("blur", () => {
+          // 候補クリックを先に通す。
+          setTimeout(() => {
+            if (vehicleSearchDropdown) {
+              vehicleSearchDropdown.style.display = "none";
+            }
+          }, 120);
+        });
+
         // 地図のドラッグ等へイベントが漏れないようにする。
         for (const type of [
           "mousedown",
@@ -231,17 +289,17 @@
           );
         }
 
-        container.append(input, button, list);
+        container.append(input, button, dropdown);
 
         vehicleSearchInput = input;
-        vehicleSearchList = list;
+        vehicleSearchDropdown = dropdown;
 
         return container;
       }
 
       onRemove() {
         vehicleSearchInput = null;
-        vehicleSearchList = null;
+        vehicleSearchDropdown = null;
         this.map = undefined;
       }
     }
@@ -316,7 +374,7 @@
     let expandedHistoryVehicleCd = null;
 
     const labelIconMap = new Map();
-    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8138','8141','8143','8145','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8138','8141','8143','8145','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290-v2.png'));
 
 const labelergaev = ['7704','7705','7706'];
@@ -579,7 +637,6 @@ labelmiharu290.forEach(label => labelIconMap.set(label, 'icon/miharu290-v2.png')
 
 const label234 = ['7146','5002','0430','0431','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133','8185','8167','8168','8200'];
 label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
-
 
     function cleanId(v) {
       return String(v ?? "").replace(/^"|"$/g, "").trim();
@@ -4438,33 +4495,101 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
 
+    function getVehicleSearchLabels() {
+      return [...new Set(
+        displayedVehicles()
+          .map(v => cleanId(v?.label))
+          .filter(Boolean)
+      )]
+        .sort((a, b) =>
+          a.localeCompare(
+            b,
+            "ja",
+            { numeric: true }
+          )
+        );
+    }
+
+
+    function renderVehicleSearchDropdown(rawQuery = "") {
+      if (!vehicleSearchDropdown) return;
+
+      const query =
+        cleanId(rawQuery).toLowerCase();
+
+      const labels =
+        getVehicleSearchLabels()
+          .filter(label =>
+            !query ||
+            label.toLowerCase().includes(query)
+          )
+          .slice(0, 30);
+
+      vehicleSearchDropdown.replaceChildren();
+
+      if (!labels.length) {
+        vehicleSearchDropdown.style.display = "none";
+        return;
+      }
+
+      for (const label of labels) {
+        const item =
+          document.createElement("button");
+
+        item.type = "button";
+        item.textContent = label;
+        item.style.cssText = `
+          display:block;
+          width:100%;
+          box-sizing:border-box;
+          border:0;
+          border-radius:5px;
+          background:transparent;
+          color:#26343c;
+          padding:6px 7px;
+          text-align:left;
+          font:800 11px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;
+          cursor:pointer;
+        `;
+
+        item.addEventListener("mouseenter", () => {
+          item.style.background = "#eef4f7";
+        });
+
+        item.addEventListener("mouseleave", () => {
+          item.style.background = "transparent";
+        });
+
+        item.addEventListener("mousedown", e => {
+          e.preventDefault();
+
+          if (vehicleSearchInput) {
+            vehicleSearchInput.value = label;
+          }
+
+          vehicleSearchDropdown.style.display = "none";
+          searchVehicleByNumber(label);
+        });
+
+        vehicleSearchDropdown.appendChild(item);
+      }
+
+      vehicleSearchDropdown.style.display = "block";
+    }
+
+
     function updateVehicleSearchSuggestions(
       vehicles
     ) {
-      if (!vehicleSearchList) return;
-
-      const labels =
-        [...new Set(
-          (vehicles || [])
-            .map(v => cleanId(v?.label))
-            .filter(Boolean)
-        )]
-          .sort((a, b) =>
-            a.localeCompare(
-              b,
-              "ja",
-              { numeric: true }
-            )
-          );
-
-      vehicleSearchList.replaceChildren();
-
-      for (const label of labels) {
-        const option =
-          document.createElement("option");
-
-        option.value = label;
-        vehicleSearchList.appendChild(option);
+      // 自前プルダウンは displayedVehicles() から都度生成する。
+      // 表示中ならリアルタイム更新に合わせて候補も更新する。
+      if (
+        vehicleSearchDropdown &&
+        vehicleSearchDropdown.style.display === "block"
+      ) {
+        renderVehicleSearchDropdown(
+          vehicleSearchInput?.value || ""
+        );
       }
     }
 
