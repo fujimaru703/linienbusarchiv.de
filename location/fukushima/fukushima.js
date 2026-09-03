@@ -114,7 +114,7 @@
     ]
   },
   {
-  id: "uehama_standby",
+  id: "kamihama_standby",
   name: "上浜車庫",
   type: "standby",
   coordinates: [
