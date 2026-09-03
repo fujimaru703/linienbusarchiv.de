@@ -1781,6 +1781,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             overflow-x: scroll;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
+            cursor: grab;
             padding: 8px 12px 18px 8px;
             background:
               radial-gradient(circle at 1px 1px, rgba(112,132,144,.15) 1px, transparent 0);
@@ -2059,8 +2060,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const rawHeight = Number(stage.dataset.rawHeight || 0);
 
       canvas.style.transform = `scale(${nextZoom})`;
-      stage.style.width = `${Math.max(1, rawWidth * nextZoom)}px`;
-      stage.style.height = `${Math.max(1, rawHeight * nextZoom)}px`;
+      // 縮小してツリー幅が画面内に収まっても、
+      // PCの横スクロールバーを消さない。
+      // 見た目のツリーは縮小するが、スクロール領域は最低でも
+      // body幅より少し広く維持する。
+      const scaledWidth =
+        Math.max(1, rawWidth * nextZoom);
+
+      const minScrollableWidth =
+        Math.max(
+          1,
+          body.clientWidth + 80
+        );
+
+      stage.style.width =
+        `${Math.max(scaledWidth, minScrollableWidth)}px`;
+
+      stage.style.height =
+        `${Math.max(1, rawHeight * nextZoom)}px`;
       body.dataset.predictionZoom = String(nextZoom);
 
       if (keepCenter && oldZoom > 0) {
@@ -2125,6 +2142,77 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           );
         },
         { passive: false }
+      );
+
+      // PC: 左クリックを押したままドラッグでパン移動。
+      let isMousePanning = false;
+      let panStartX = 0;
+      let panStartY = 0;
+      let panStartScrollLeft = 0;
+      let panStartScrollTop = 0;
+
+      body.addEventListener(
+        "mousedown",
+        e => {
+          // 左クリックのみ。
+          if (e.button !== 0) return;
+
+          isMousePanning = true;
+          panStartX = e.clientX;
+          panStartY = e.clientY;
+          panStartScrollLeft = body.scrollLeft;
+          panStartScrollTop = body.scrollTop;
+
+          body.style.cursor = "grabbing";
+          body.style.userSelect = "none";
+
+          e.preventDefault();
+        }
+      );
+
+      window.addEventListener(
+        "mousemove",
+        e => {
+          if (!isMousePanning) return;
+
+          const dx =
+            e.clientX - panStartX;
+
+          const dy =
+            e.clientY - panStartY;
+
+          body.scrollLeft =
+            panStartScrollLeft - dx;
+
+          body.scrollTop =
+            panStartScrollTop - dy;
+
+          e.preventDefault();
+        },
+        { passive: false }
+      );
+
+      window.addEventListener(
+        "mouseup",
+        () => {
+          if (!isMousePanning) return;
+
+          isMousePanning = false;
+          body.style.cursor = "grab";
+          body.style.userSelect = "";
+        }
+      );
+
+      // ウィンドウ外へマウスが出ても掴みっぱなしにしない。
+      window.addEventListener(
+        "blur",
+        () => {
+          if (!isMousePanning) return;
+
+          isMousePanning = false;
+          body.style.cursor = "grab";
+          body.style.userSelect = "";
+        }
       );
 
       // スマホ: 2本指ピンチでズーム。
