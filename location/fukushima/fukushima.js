@@ -1834,6 +1834,36 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             border-color: #75858d !important;
           }
 
+          .unyo-flow-actual-state {
+            margin-top: 2px;
+            font-size: 9px;
+            line-height: 1.15;
+            font-weight: 800;
+            color: #75858d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .unyo-flow-actual-state-rare {
+            font-weight: 900;
+          }
+
+          .unyo-flow-other-actual {
+            margin-top: 2px;
+            font-size: 9px;
+            line-height: 1.15;
+            font-weight: 800;
+            color: #478462;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .unyo-flow-other-actual-rare {
+            font-weight: 900;
+          }
+
           .unyo-flow-card-end {
             width: 110px;
             min-height: 42px;
@@ -1999,7 +2029,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       const title = document.createElement("div");
       title.className = "unyo-prediction-title";
-      title.textContent = "この先の運用予測";
+      title.textContent = "運用予測";
       title.style.cssText = "font-size:14px;font-weight:900;";
 
       const close = document.createElement("button");
@@ -2546,16 +2576,38 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     ) {
       const entry = makeEntry(node, depth, parentId, false);
 
-      // 他車充当枝はその便で終了。API側でprune済みでも二重に防ぐ。
-      if (!node?.occupied_by_other) {
+      // 他車充当枝は「確定実績」だけ先へ伸ばす。
+      // API側でも未確定予測は除外済みだが、Pages側でも二重に防ぐ。
+      const children =
+        getPredictionChildren(node);
+
+      if (node?.occupied_by_other) {
         entry.children =
-          getPredictionChildren(node).map(child =>
-            buildPredictionFlowBranch(
-              child,
-              depth + 1,
-              entry.id,
-              makeEntry
+          children
+            .filter(
+              child =>
+                child?.confirmed_actual ||
+                child?.other_vehicle_actual
             )
+            .map(
+              child =>
+                buildPredictionFlowBranch(
+                  child,
+                  depth + 1,
+                  entry.id,
+                  makeEntry
+                )
+            );
+      } else {
+        entry.children =
+          children.map(
+            child =>
+              buildPredictionFlowBranch(
+                child,
+                depth + 1,
+                entry.id,
+                makeEntry
+              )
           );
       }
 
@@ -2624,8 +2676,29 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         badge.classList.add("unyo-flow-current-badge");
         badge.textContent = "現在便";
       } else if (entry.actualNode) {
-        badge.classList.add("unyo-flow-actual-badge");
-        badge.textContent = "実績";
+        badge.classList.add(
+          "unyo-flow-actual-badge"
+        );
+
+        const actualCumulative =
+          Number(
+            node
+              ?.actual_cumulative_probability
+          );
+
+        badge.textContent =
+          Number.isFinite(
+            actualCumulative
+          )
+            ? `${
+                Number.isInteger(
+                  actualCumulative
+                )
+                  ? actualCumulative
+                  : actualCumulative
+                      .toFixed(1)
+              }%`
+            : "実績";
       } else {
         const cumulative =
           Number(node?.cumulative_probability);
@@ -2651,6 +2724,68 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       top.append(name, badge);
       item.appendChild(top);
+
+      if (entry.actualNode) {
+        const actualState =
+          document.createElement(
+            "div"
+          );
+
+        actualState.className =
+          "unyo-flow-actual-state";
+
+        if (node?.rare_pattern) {
+          actualState.classList.add(
+            "unyo-flow-actual-state-rare"
+          );
+
+          actualState.textContent =
+            "実績・レアパターン";
+        } else {
+          actualState.textContent =
+            "実績";
+        }
+
+        item.appendChild(
+          actualState
+        );
+
+        const actualCount =
+          Number(
+            node
+              ?.actual_cumulative_count
+          );
+
+        const actualN =
+          Number(
+            node
+              ?.actual_cumulative_n
+          );
+
+        if (
+          Number.isFinite(
+            actualCount
+          ) &&
+          Number.isFinite(
+            actualN
+          )
+        ) {
+          const actualSample =
+            document.createElement(
+              "div"
+            );
+
+          actualSample.className =
+            "unyo-flow-sample";
+
+          actualSample.textContent =
+            `n=${actualCount}/${actualN}`;
+
+          item.appendChild(
+            actualSample
+          );
+        }
+      }
 
       if (!isPredictionServiceEnd(node) && !node?.virtual_root) {
         const path = document.createElement("div");
@@ -2680,11 +2815,56 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
 
       if (node?.occupied_by_other) {
-        const assigned = document.createElement("span");
-        assigned.className = "unyo-flow-assigned";
+        const assigned =
+          document.createElement(
+            "span"
+          );
+
+        assigned.className =
+          "unyo-flow-assigned";
+
         assigned.textContent =
           `${cleanId(node?.assigned_vehicle) || "?"}号車が充当`;
-        item.appendChild(assigned);
+
+        item.appendChild(
+          assigned
+        );
+
+        if (
+          node?.confirmed_actual ||
+          node?.other_vehicle_actual
+        ) {
+          const confirmed =
+            document.createElement(
+              "div"
+            );
+
+          const cumulative =
+            Number(
+              node
+                ?.cumulative_probability
+            );
+
+          const rare =
+            Number.isFinite(
+              cumulative
+            ) &&
+            cumulative < 5;
+
+          confirmed.className =
+            rare
+              ? "unyo-flow-other-actual unyo-flow-other-actual-rare"
+              : "unyo-flow-other-actual";
+
+          confirmed.textContent =
+            rare
+              ? "他車充当実績・レアパターン"
+              : "他車充当実績";
+
+          item.appendChild(
+            confirmed
+          );
+        }
       }
 
       return item;
