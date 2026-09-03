@@ -79,6 +79,7 @@
     const VEHICLE_PLACE_AREAS = [
   {
     id: "fukushima_branch_1",
+    groupId: "fukushima_branch",
     name: "福島支社",
     type: "depot",
     coordinates: [
@@ -92,6 +93,7 @@
   },
   {
     id: "fukushima_branch_2",
+    groupId: "fukushima_branch",
     name: "福島支社",
     type: "depot",
     coordinates: [
@@ -196,6 +198,8 @@
                 properties: {
                   id:
                     String(place?.id || ""),
+                  groupId:
+                    String(place?.groupId || place?.id || ""),
                   name:
                     String(place?.name || "名称未設定"),
                   placeType:
@@ -208,6 +212,123 @@
               };
             })
             .filter(Boolean)
+      };
+    }
+
+
+    function vehiclePlacePolygonCentroid(coordinates) {
+      const ring = normalizeVehiclePlaceRing(coordinates);
+      if (ring.length < 4) return null;
+
+      let twiceArea = 0;
+      let cx = 0;
+      let cy = 0;
+
+      for (let i = 0; i < ring.length - 1; i++) {
+        const [x1, y1] = ring[i];
+        const [x2, y2] = ring[i + 1];
+        const cross = x1 * y2 - x2 * y1;
+
+        twiceArea += cross;
+        cx += (x1 + x2) * cross;
+        cy += (y1 + y2) * cross;
+      }
+
+      if (Math.abs(twiceArea) < 1e-12) {
+        const pts = ring.slice(0, -1);
+        if (!pts.length) return null;
+
+        return [
+          pts.reduce((sum, p) => sum + p[0], 0) / pts.length,
+          pts.reduce((sum, p) => sum + p[1], 0) / pts.length
+        ];
+      }
+
+      const factor = 1 / (3 * twiceArea);
+      return [
+        cx * factor,
+        cy * factor
+      ];
+    }
+
+    function vehiclePlaceLabelsGeoJson() {
+      const groups = new Map();
+
+      for (const place of VEHICLE_PLACE_AREAS) {
+        const center =
+          vehiclePlacePolygonCentroid(
+            place?.coordinates
+          );
+
+        if (!center) continue;
+
+        const groupId =
+          String(
+            place?.groupId ||
+            place?.id ||
+            ""
+          );
+
+        if (!groupId) continue;
+
+        if (!groups.has(groupId)) {
+          groups.set(groupId, {
+            id: groupId,
+            name:
+              String(
+                place?.name ||
+                "名称未設定"
+              ),
+            placeType:
+              String(
+                place?.type ||
+                "standby"
+              ),
+            centers: []
+          });
+        }
+
+        groups.get(groupId).centers.push(center);
+      }
+
+      return {
+        type: "FeatureCollection",
+        features:
+          [...groups.values()]
+            .map(group => {
+              const lng =
+                group.centers
+                  .reduce(
+                    (sum, p) =>
+                      sum + p[0],
+                    0
+                  ) /
+                group.centers.length;
+
+              const lat =
+                group.centers
+                  .reduce(
+                    (sum, p) =>
+                      sum + p[1],
+                    0
+                  ) /
+                group.centers.length;
+
+              return {
+                type: "Feature",
+                properties: {
+                  id: group.id,
+                  name: group.name,
+                  placeType:
+                    group.placeType
+                },
+                geometry: {
+                  type: "Point",
+                  coordinates:
+                    [lng, lat]
+                }
+              };
+            })
       };
     }
 
@@ -333,6 +454,12 @@
               vehiclePlaceAreasGeoJson()
           }
         );
+      } else {
+        map.getSource(
+          "vehicle-place-areas"
+        )?.setData(
+          vehiclePlaceAreasGeoJson()
+        );
       }
 
       const visibility =
@@ -396,6 +523,27 @@
       }
 
       if (
+        !map.getSource(
+          "vehicle-place-label-points"
+        )
+      ) {
+        map.addSource(
+          "vehicle-place-label-points",
+          {
+            type: "geojson",
+            data:
+              vehiclePlaceLabelsGeoJson()
+          }
+        );
+      } else {
+        map.getSource(
+          "vehicle-place-label-points"
+        )?.setData(
+          vehiclePlaceLabelsGeoJson()
+        );
+      }
+
+      if (
         !map.getLayer(
           "vehicle-place-label"
         )
@@ -403,20 +551,65 @@
         map.addLayer({
           id: "vehicle-place-label",
           type: "symbol",
-          source: "vehicle-place-areas",
+          source:
+            "vehicle-place-label-points",
+
+          // 広域表示では場所名を消す。
+          minzoom: 14,
+
           layout: {
             visibility,
-            "text-field": ["get", "name"],
-            "text-size": 11,
+            "text-field":
+              ["get", "name"],
+
+            // 拡大するほど少し大きくする。
+            "text-size": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              14, 13,
+              16, 15,
+              18, 16
+            ],
+
             "text-font": [
               "Noto Sans Regular"
             ],
-            "text-allow-overlap": false
+
+            "text-allow-overlap":
+              false,
+            "text-ignore-placement":
+              false,
+
+            // 3D表示でも文字は画面正面を向く。
+            "text-pitch-alignment":
+              "viewport",
+            "text-rotation-alignment":
+              "viewport",
+
+            // pitchが大きいほど上へ浮かせる。
+            "text-offset": [
+              "interpolate",
+              ["linear"],
+              ["pitch"],
+              0,
+              ["literal", [0, 0]],
+              30,
+              ["literal", [0, -0.55]],
+              60,
+              ["literal", [0, -1.2]]
+            ]
           },
+
           paint: {
-            "text-color": "#34454f",
-            "text-halo-color": "rgba(255,255,255,.96)",
-            "text-halo-width": 1.5
+            "text-color":
+              "#24343d",
+            "text-halo-color":
+              "rgba(255,255,255,.98)",
+            "text-halo-width":
+              2.8,
+            "text-halo-blur":
+              0.35
           }
         });
       }
