@@ -30,6 +30,12 @@
     const UNYO_PREDICT_TREE_URL =
       "https://unyo-predict.fujimaru703.workers.dev/predict-tree";
 
+    const RARE_VEHICLES_URL =
+      "https://unyo-predict.fujimaru703.workers.dev/rare-vehicles";
+
+    const RARE_VEHICLES_REFRESH_MS =
+      2 * 60 * 1000;
+
     const UPDATE_INTERVAL = 15000;
 
     // バスロケ表示時間:
@@ -152,7 +158,10 @@
     map.on("zoomend", saveMapCamera);
     map.on("rotateend", saveMapCamera);
     map.on("pitchend", saveMapCamera);
-    map.on("zoom", updateVehicleNumberMarkerOffsets);
+    map.on("zoom", () => {
+      updateVehicleNumberMarkerOffsets();
+      updateRareVehicleMarkerOffsets();
+    });
 
     // =========================================================
     // データ
@@ -181,6 +190,10 @@
     let selectedStopNameMarkers = [];
     let vehicleInfoPanel = null;
     const vehicleNumberMarkers = new Map();
+    const rareVehicleMarkers = new Map();
+
+    let rareVehicleSet = new Set();
+    let rareVehiclesLastFetch = 0;
 
     // 車番ごとの当日充当履歴。プルダウンを初めて開いた時だけ取得する。
     const vehicleHistoryCache = new Map();
@@ -804,6 +817,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       selectedTripId = null;
 
       updateVehicleNumberMarkers([]);
+      rareVehicleSet = new Set();
+      updateRareVehicleMarkers([]);
       clearSelectedStopNameMarkers();
 
       if (vehicleInfoPanel) {
@@ -3610,6 +3625,120 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return [0, Math.round(halfIcon + 3)];
     }
 
+    function rareVehicleMarkerOffset() {
+      const halfIcon =
+        25 * vehicleIconScaleAtZoom(map.getZoom());
+
+      return [
+        Math.round(halfIcon * 0.72),
+        -Math.round(halfIcon * 0.72)
+      ];
+    }
+
+    function createRareVehicleElement() {
+      const el = document.createElement("div");
+      el.textContent = "✨";
+      el.style.pointerEvents = "none";
+      el.style.fontSize = "16px";
+      el.style.lineHeight = "1";
+      el.style.filter =
+        "drop-shadow(0 1px 2px rgba(0,0,0,.35))";
+      el.style.userSelect = "none";
+      el.style.webkitUserSelect = "none";
+      return el;
+    }
+
+    function updateRareVehicleMarkers(vehicles) {
+      const alive = new Set();
+      const offset = rareVehicleMarkerOffset();
+
+      for (const v of vehicles || []) {
+        if (!Number.isFinite(v.lat) || !Number.isFinite(v.lon)) continue;
+
+        const vehicleCd = cleanId(v.label);
+        if (!vehicleCd || !rareVehicleSet.has(vehicleCd)) continue;
+
+        const key = vehicleMarkerKey(v);
+        alive.add(key);
+
+        let item = rareVehicleMarkers.get(key);
+
+        if (!item) {
+          const element = createRareVehicleElement();
+
+          const marker = new maplibregl.Marker({
+            element,
+            anchor: "center",
+            offset,
+            pitchAlignment: "viewport",
+            rotationAlignment: "viewport"
+          })
+            .setLngLat([v.lon, v.lat])
+            .addTo(map);
+
+          item = { marker, element };
+          rareVehicleMarkers.set(key, item);
+        } else {
+          item.marker.setLngLat([v.lon, v.lat]);
+          item.marker.setOffset(offset);
+        }
+      }
+
+      for (const [key, item] of rareVehicleMarkers) {
+        if (alive.has(key)) continue;
+        item.marker.remove();
+        rareVehicleMarkers.delete(key);
+      }
+    }
+
+    function updateRareVehicleMarkerOffsets() {
+      const offset = rareVehicleMarkerOffset();
+
+      for (const { marker } of rareVehicleMarkers.values()) {
+        marker.setOffset(offset);
+      }
+    }
+
+    async function refreshRareVehicles(force = false) {
+      const now = Date.now();
+
+      if (
+        !force &&
+        now - rareVehiclesLastFetch < RARE_VEHICLES_REFRESH_MS
+      ) {
+        return;
+      }
+
+      rareVehiclesLastFetch = now;
+
+      try {
+        const response = await fetch(
+          RARE_VEHICLES_URL,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error(`rare vehicles HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        rareVehicleSet = new Set(
+          (data?.vehicles || [])
+            .map(row => cleanId(row?.vehicle_cd))
+            .filter(Boolean)
+        );
+
+        updateRareVehicleMarkers([
+          ...latestVehicles,
+          ...fallbackVehicles
+        ]);
+      } catch (e) {
+        console.warn("rare vehicles load failed", e);
+      }
+    }
+
+
     function createVehicleNumberElement(label) {
       const el = document.createElement("div");
 
@@ -4125,6 +4254,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         await ensureVehicleIcons(allVehicles);
         map.getSource("vehicles").setData(vehicleGeoJson());
         updateVehicleNumberMarkers(allVehicles);
+        updateRareVehicleMarkers(allVehicles);
+
+        // レア運用一覧だけは2分ごとに一括更新。
+        // 15秒の位置更新自体は待たせない。
+        refreshRareVehicles();
 
         // 選択中の通常便だけルート/停留所を更新
         if (selectedTripId) {
