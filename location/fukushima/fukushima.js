@@ -3040,30 +3040,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         );
       }
 
-      if (entry.actualNode) {
-        const actualState =
-          document.createElement(
-            "div"
-          );
-
-        actualState.className =
-          "unyo-flow-actual-state";
-
-        if (node?.rare_pattern) {
-          actualState.classList.add(
-            "unyo-flow-actual-state-rare"
-          );
-
-          actualState.textContent =
-            "レアパターン";
-
-          item.appendChild(
-            actualState
-          );
-        }
-
-      }
-
       if (!isPredictionServiceEnd(node) && !node?.virtual_root) {
         const path = document.createElement("div");
         path.className = "unyo-flow-path";
