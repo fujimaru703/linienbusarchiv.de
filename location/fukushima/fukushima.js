@@ -207,247 +207,247 @@
 
     const labelIconMap = new Map();
     const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8137','8138','8139','8140','8141','8143','8144','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
-    label290.forEach(label => labelIconMap.set(label, 'icon/290.png'));
+    label290.forEach(label => labelIconMap.set(label, 'icon/290-v2.png'));
 
 const labelergaev = ['7704','7705','7706'];
-labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev.png'));
+labelergaev.forEach(label => labelIconMap.set(label, 'icon/ergaev-v2.png'));
 
 const label557 = ['0557','2411','2412','2408'];
-label557.forEach(label => labelIconMap.set(label, 'icon/557&2411.png'));
+label557.forEach(label => labelIconMap.set(label, 'icon/557&2411-v2.png'));
 
 const label8181 = ['8181'];
-label8181.forEach(label => labelIconMap.set(label, 'icon/8181.png'));
+label8181.forEach(label => labelIconMap.set(label, 'icon/8181-v2.png'));
 
 const label875 = ['0875','8125'];
-label875.forEach(label => labelIconMap.set(label, 'icon/875.png'));
+label875.forEach(label => labelIconMap.set(label, 'icon/875-v2.png'));
 
 const label1183 = ['1183'];
-label1183.forEach(label => labelIconMap.set(label, 'icon/1183.png'));
+label1183.forEach(label => labelIconMap.set(label, 'icon/1183-v2.png'));
 
 const label1240 = ['1240'];
-label1240.forEach(label => labelIconMap.set(label, 'icon/1240.png'));
+label1240.forEach(label => labelIconMap.set(label, 'icon/1240-v2.png'));
 
 const label1311 = ['1304','1311','1241'];
-label1311.forEach(label => labelIconMap.set(label, 'icon/1311.png'));
+label1311.forEach(label => labelIconMap.set(label, 'icon/1311-v2.png'));
 
 const label1322 = ['1322'];
-label1322.forEach(label => labelIconMap.set(label, 'icon/1322.png'));
+label1322.forEach(label => labelIconMap.set(label, 'icon/1322-v2.png'));
 
 const label1360 = ['1360'];
-label1360.forEach(label => labelIconMap.set(label, 'icon/1360.png'));
+label1360.forEach(label => labelIconMap.set(label, 'icon/1360-v2.png'));
 
 const label1388 = ['1388'];
-label1388.forEach(label => labelIconMap.set(label, 'icon/1388.png'));
+label1388.forEach(label => labelIconMap.set(label, 'icon/1388-v2.png'));
 
 const label1411 = ['1411'];
-label1411.forEach(label => labelIconMap.set(label, 'icon/1411.png'));
+label1411.forEach(label => labelIconMap.set(label, 'icon/1411-v2.png'));
 
 const label1471 = ['1471'];
-label1471.forEach(label => labelIconMap.set(label, 'icon/1471.png'));
+label1471.forEach(label => labelIconMap.set(label, 'icon/1471-v2.png'));
 
 const label1516 = ['0890','1527'];
-label1516.forEach(label => labelIconMap.set(label, 'icon/1516&1527.png'));
+label1516.forEach(label => labelIconMap.set(label, 'icon/1516&1527-v2.png'));
 
 const label1520 = ['1520'];
-label1520.forEach(label => labelIconMap.set(label, 'icon/1520.png'));
+label1520.forEach(label => labelIconMap.set(label, 'icon/1520-v2.png'));
 
 const label1613 = ['1613'];
-label1613.forEach(label => labelIconMap.set(label, 'icon/1613.png'));
+label1613.forEach(label => labelIconMap.set(label, 'icon/1613-v2.png'));
 
 const label1735 = ['1735'];
-label1735.forEach(label => labelIconMap.set(label, 'icon/1735.png'));
+label1735.forEach(label => labelIconMap.set(label, 'icon/1735-v2.png'));
 
 const label1936 = ['1936','1944'];
-label1936.forEach(label => labelIconMap.set(label, 'icon/1936&1944.png'));
+label1936.forEach(label => labelIconMap.set(label, 'icon/1936&1944-v2.png'));
 
 const label2008 = ['2008'];
-label2008.forEach(label => labelIconMap.set(label, 'icon/2008.png'));
+label2008.forEach(label => labelIconMap.set(label, 'icon/2008-v2.png'));
 
 const label2417 = ['2417'];
-label2417.forEach(label => labelIconMap.set(label, 'icon/2417.png'));
+label2417.forEach(label => labelIconMap.set(label, 'icon/2417-v2.png'));
 
 const label2420 = ['2420'];
-label2420.forEach(label => labelIconMap.set(label, 'icon/2420.png'));
+label2420.forEach(label => labelIconMap.set(label, 'icon/2420-v2.png'));
 
 const label2236 = ['2236'];
-label2236.forEach(label => labelIconMap.set(label, 'icon/2236.png'));
+label2236.forEach(label => labelIconMap.set(label, 'icon/2236-v2.png'));
 
 const label2329 = ['0893','2328','2329','7128','2386'];
-label2329.forEach(label => labelIconMap.set(label, 'icon/2329&7128.png'));
+label2329.forEach(label => labelIconMap.set(label, 'icon/2329&7128-v2.png'));
 
 const label2339 = ['2339'];
-label2339.forEach(label => labelIconMap.set(label, 'icon/2331&2339.png'));
+label2339.forEach(label => labelIconMap.set(label, 'icon/2331&2339-v2.png'));
 
 const label2383 = ['2383'];
-label2383.forEach(label => labelIconMap.set(label, 'icon/2383.png'));
+label2383.forEach(label => labelIconMap.set(label, 'icon/2383-v2.png'));
 
 const label2465 = ['2465'];
-label2465.forEach(label => labelIconMap.set(label, 'icon/2465.png'));
+label2465.forEach(label => labelIconMap.set(label, 'icon/2465-v2.png'));
 
 const label2467 = ['2467'];
-label2467.forEach(label => labelIconMap.set(label, 'icon/2467.png'));
+label2467.forEach(label => labelIconMap.set(label, 'icon/2467-v2.png'));
 
 const label2468 = ['2468','2469'];
-label2468.forEach(label => labelIconMap.set(label, 'icon/2468&2469.png'));
+label2468.forEach(label => labelIconMap.set(label, 'icon/2468&2469-v2.png'));
 
 const label2489 = ['2551','5005'];
-label2489.forEach(label => labelIconMap.set(label, 'icon/2489.png'));
+label2489.forEach(label => labelIconMap.set(label, 'icon/2489-v2.png'));
 
 const label2594 = ['2594'];
-label2594.forEach(label => labelIconMap.set(label, 'icon/2594.png'));
+label2594.forEach(label => labelIconMap.set(label, 'icon/2594-v2.png'));
 
 const label2940 = ['2940'];
-label2940.forEach(label => labelIconMap.set(label, 'icon/2940.png'));
+label2940.forEach(label => labelIconMap.set(label, 'icon/2940-v2.png'));
 
 const label2941 = ['2941'];
-label2941.forEach(label => labelIconMap.set(label, 'icon/2941.png'));
+label2941.forEach(label => labelIconMap.set(label, 'icon/2941-v2.png'));
 
 const label7077 = ['7077'];
-label7077.forEach(label => labelIconMap.set(label, 'icon/7077.png'));
+label7077.forEach(label => labelIconMap.set(label, 'icon/7077-v2.png'));
 
 const label7079 = ['7079'];
-label7079.forEach(label => labelIconMap.set(label, 'icon/7079.png'));
+label7079.forEach(label => labelIconMap.set(label, 'icon/7079-v2.png'));
 
 const label7085 = ['7085'];
-label7085.forEach(label => labelIconMap.set(label, 'icon/7085.png'));
+label7085.forEach(label => labelIconMap.set(label, 'icon/7085-v2.png'));
 
 const label7110 = ['7110'];
-label7110.forEach(label => labelIconMap.set(label, 'icon/7110.png'));
+label7110.forEach(label => labelIconMap.set(label, 'icon/7110-v2.png'));
 
 const label7701 = ['7701','7702','7703'];
-label7701.forEach(label => labelIconMap.set(label, 'icon/7701.png'));
+label7701.forEach(label => labelIconMap.set(label, 'icon/7701-v2.png'));
 
 const label8008 = ['8008','8136'];
-label8008.forEach(label => labelIconMap.set(label, 'icon/8008.png'));
+label8008.forEach(label => labelIconMap.set(label, 'icon/8008-v2.png'));
 
 const label8014 = ['8014'];
-label8014.forEach(label => labelIconMap.set(label, 'icon/8014.png'));
+label8014.forEach(label => labelIconMap.set(label, 'icon/8014-v2.png'));
 
 const label8075 = ['8075'];
-label8075.forEach(label => labelIconMap.set(label, 'icon/8075.png'));
+label8075.forEach(label => labelIconMap.set(label, 'icon/8075-v2.png'));
 
 const label8109 = ['8109','8148','8160'];
-label8109.forEach(label => labelIconMap.set(label, 'icon/8109.png'));
+label8109.forEach(label => labelIconMap.set(label, 'icon/8109-v2.png'));
 
 const label8122 = ['8122','8124'];
-label8122.forEach(label => labelIconMap.set(label, 'icon/8122&8124.png'));
+label8122.forEach(label => labelIconMap.set(label, 'icon/8122&8124-v2.png'));
 
 const label1706 = ['1706','1769'];
-label1706.forEach(label => labelIconMap.set(label, 'icon/1706.png'));
+label1706.forEach(label => labelIconMap.set(label, 'icon/1706-v2.png'));
 
 const label8150 = ['8150'];
-label8150.forEach(label => labelIconMap.set(label, 'icon/8150.png'));
+label8150.forEach(label => labelIconMap.set(label, 'icon/8150-v2.png'));
 
 const label8155 = ['8155'];
-label8155.forEach(label => labelIconMap.set(label, 'icon/8155.png'));
+label8155.forEach(label => labelIconMap.set(label, 'icon/8155-v2.png'));
 
 const label7097 = ['7097'];
-label7097.forEach(label => labelIconMap.set(label, 'icon/7097.png'));
+label7097.forEach(label => labelIconMap.set(label, 'icon/7097-v2.png'));
 
 const labelkanachan = ['7113','7115','7116'];
-labelkanachan.forEach(label => labelIconMap.set(label, 'icon/kanachan.png'));
+labelkanachan.forEach(label => labelIconMap.set(label, 'icon/kanachan-v2.png'));
 
 const labelkanachumio = ['8083','0865','8095'];
-labelkanachumio.forEach(label => labelIconMap.set(label, 'icon/kanachu-mio.png'));
+labelkanachumio.forEach(label => labelIconMap.set(label, 'icon/kanachu-mio-v2.png'));
 
 const labelkanachumk = ['1623','1625','1668','1771','0562','1860','1863','0580','0581'];
-labelkanachumk.forEach(label => labelIconMap.set(label, 'icon/kanachu-mk.png'));
+labelkanachumk.forEach(label => labelIconMap.set(label, 'icon/kanachu-mk-v2.png'));
 
 const labelkanachump35 = ['1920','7032','1924','7034','1945','7118','7157','8066','8068'];
-labelkanachump35.forEach(label => labelIconMap.set(label, 'icon/kanachu-mp35.png'));
+labelkanachump35.forEach(label => labelIconMap.set(label, 'icon/kanachu-mp35-v2.png'));
 
 const labelkanachump37 = ['7024','7028','1891','2001'];
-labelkanachump37.forEach(label => labelIconMap.set(label, 'icon/kanachu-mp37.png'));
+labelkanachump37.forEach(label => labelIconMap.set(label, 'icon/kanachu-mp37-v2.png'));
 
 const labelkanehachi = ['0550','0660'];
-labelkanehachi.forEach(label => labelIconMap.set(label, 'icon/kanehachi.png'));
+labelkanehachi.forEach(label => labelIconMap.set(label, 'icon/kanehachi-v2.png'));
 
 const labelkantomidi = ['0672','2009','2022','8022'];
-labelkantomidi.forEach(label => labelIconMap.set(label, 'icon/kanto-midi.png'));
+labelkantomidi.forEach(label => labelIconMap.set(label, 'icon/kanto-midi-v2.png'));
 
 const labelkeiohr = ['1544','1638','1641','1645','1646','1657','1698','1740','1764','7198'];
-labelkeiohr.forEach(label => labelIconMap.set(label, 'icon/keio-hr.png'));
+labelkeiohr.forEach(label => labelIconMap.set(label, 'icon/keio-hr-v2.png'));
 
 const labelkeiomklong = ['7047','7050','7052','7061','7064'];
-labelkeiomklong.forEach(label => labelIconMap.set(label, 'icon/keio-mk-long.png'));
+labelkeiomklong.forEach(label => labelIconMap.set(label, 'icon/keio-mk-long-v2.png'));
 
 const labelklhr = ['7030','7033','1943','7036','7045','1974','2027','7213','0575'];
-labelklhr.forEach(label => labelIconMap.set(label, 'icon/kl-hr.png'));
+labelklhr.forEach(label => labelIconMap.set(label, 'icon/kl-hr-v2.png'));
 
 const labelkllt = ['1723','7072','1812','1822','1828','1843','8020','8032','8043'];
-labelkllt.forEach(label => labelIconMap.set(label, 'icon/kl-lt.png'));
+labelkllt.forEach(label => labelIconMap.set(label, 'icon/kl-lt-v2.png'));
 
 const labelkwskhr = ['7137','8123','8130'];
-labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr.png'));
+labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr-v2.png'));
 
 const labelliesse = ['1382','1590','1859','0854','8147','0905'];
-labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse.png'));
+labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse-v2.png'));
 
 const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672','8186'];
-labelmk.forEach(label => labelIconMap.set(label, 'icon/mk.png'));
+labelmk.forEach(label => labelIconMap.set(label, 'icon/mk-v2.png'));
 
 const labelmk517 = ['2091','2103'];
-labelmk517.forEach(label => labelIconMap.set(label, 'icon/mk517.png'));
+labelmk517.forEach(label => labelIconMap.set(label, 'icon/mk517-v2.png'));
 
 const labelmk619 = ['2414','2416','2418'];
-labelmk619.forEach(label => labelIconMap.set(label, 'icon/mk619.png'));
+labelmk619.forEach(label => labelIconMap.set(label, 'icon/mk619-v2.png'));
 
 const labelmkf = ['0603','2548','0014'];
-labelmkf.forEach(label => labelIconMap.set(label, 'icon/mk-f.png'));
+labelmkf.forEach(label => labelIconMap.set(label, 'icon/mk-f-v2.png'));
 
 const labelmp35silver = ['7106','7109','7111','7112','7114','7117','7119'];
-labelmp35silver.forEach(label => labelIconMap.set(label, 'icon/mp35-silver.png'));
+labelmp35silver.forEach(label => labelIconMap.set(label, 'icon/mp35-silver-v2.png'));
 
 const labelmp37 = ['2039','2046','8006','7058','8007','8009','8010','8012','7078','7084','7088','7089','7090','7091','7098','7099','7100','7129','7130','7136','7139','7143','7145','7151','7152','8096','8171'];
-labelmp37.forEach(label => labelIconMap.set(label, 'icon/mp37.png'));
+labelmp37.forEach(label => labelIconMap.set(label, 'icon/mp37-v2.png'));
 
 const labelmp37black = ['7082','7083','7093','7094','7095','7096'];
-labelmp37black.forEach(label => labelIconMap.set(label, 'icon/mp37-black.png'));
+labelmp37black.forEach(label => labelIconMap.set(label, 'icon/mp37-black-v2.png'));
 
 const labelmp37silver = ['7080','7086','7087','7092'];
-labelmp37silver.forEach(label => labelIconMap.set(label, 'icon/mp37-silver.png'));
+labelmp37silver.forEach(label => labelIconMap.set(label, 'icon/mp37-silver-v2.png'));
 
 const labelmp317 = ['2536','2585','2586','2588','2592','2593'];
-labelmp317.forEach(label => labelIconMap.set(label, 'icon/mp317.png'));
+labelmp317.forEach(label => labelIconMap.set(label, 'icon/mp317-v2.png'));
 
 const labelnankairj = ['8063','8064'];
-labelnankairj.forEach(label => labelIconMap.set(label, 'icon/nankai-rj.png'));
+labelnankairj.forEach(label => labelIconMap.set(label, 'icon/nankai-rj-v2.png'));
 
 const labelpdgkr = ['1836','1837','0997','1091','1092','1196','1197','1217','8182','7148','7150','7153','8112','8069','0885','8039'];
-labelpdgkr.forEach(label => labelIconMap.set(label, 'icon/pdg-kr.png'));
+labelpdgkr.forEach(label => labelIconMap.set(label, 'icon/pdg-kr-v2.png'));
 
 const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','0998','1091','1092','1196','1197','1217','1605','1835','8036','8041','0998'];
-labelpdglr.forEach(label => labelIconMap.set(label, 'icon/pdg-lr.png'));
+labelpdglr.forEach(label => labelIconMap.set(label, 'icon/pdg-lr-v2.png'));
 
 const labelpkhr = ['8024','8033','8044','8074'];
-labelpkhr.forEach(label => labelIconMap.set(label, 'icon/pk-hr.png'));
+labelpkhr.forEach(label => labelIconMap.set(label, 'icon/pk-hr-v2.png'));
 
 const labelrakuraku = ['0017','0018','0867','0021','8163','8162','0116','8188','0119','0120','0121','8169','0193','0236','0237','0238','2045','0299','0302','0397','0408','0406','0407','0409','8134','8135','0847'];
-labelrakuraku.forEach(label => labelIconMap.set(label, 'icon/rakuraku.png'));
+labelrakuraku.forEach(label => labelIconMap.set(label, 'icon/rakuraku-v2.png'));
 
 const labelrakurakuf = ['0017','0116'];
-labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f.png'));
+labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f-v2.png'));
 
 const labelrinkomio = ['1336','1369','1379','5003','5004','1710','1720','2020','1732','1850','1854','1857','2041','8025'];
-labelrinkomio.forEach(label => labelIconMap.set(label, 'icon/rinko-mio.png'));
+labelrinkomio.forEach(label => labelIconMap.set(label, 'icon/rinko-mio-v2.png'));
 
 const labelserega = ['1537','1538',,'8001','8002'];
-labelserega.forEach(label => labelIconMap.set(label, 'icon/serega(15~).png'));
+labelserega.forEach(label => labelIconMap.set(label, 'icon/serega(15~)-v2.png'));
 
 const labeltkgmk = ['1472','1473','0879','5006','0878','8045','1660','0878','7133','8183','1833','1834','1926','1927','1928','1929','1930','2004','2005'];
-labeltkgmk.forEach(label => labelIconMap.set(label, 'icon/tkg-mk.png'));
+labeltkgmk.forEach(label => labelIconMap.set(label, 'icon/tkg-mk-v2.png'));
 
 const labeltoeimklong = ['7046','1990','7047','1999'];
-labeltoeimklong.forEach(label => labelIconMap.set(label, 'icon/toei-mk-long.png'));
+labeltoeimklong.forEach(label => labelIconMap.set(label, 'icon/toei-mk-long-v2.png'));
 
 const labelmiharu = ['0500'];
-labelmiharu.forEach(label => labelIconMap.set(label, 'icon/miharu.png'));
+labelmiharu.forEach(label => labelIconMap.set(label, 'icon/miharu-v2.png'));
 
 const labelmiharu290 = ['0386'];
-labelmiharu290.forEach(label => labelIconMap.set(label, 'icon/miharu290.png'));
+labelmiharu290.forEach(label => labelIconMap.set(label, 'icon/miharu290-v2.png'));
 
 const label234 = ['7146','5002','0430','0431','7135','7144','8159','7163','8072','7164','7166','8086','7171','8089','8090','8085','7172','8097','7181','8103','7182','8107','7186','8113','7187','8126','8133','8185','8167','8168','8200'];
-label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
+label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
 
     function cleanId(v) {
@@ -4289,11 +4289,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
     function iconUrlForLabel(label) {
-      return labelIconMap.get(String(label ?? "").trim()) || "icon/yokokamo.png";
+      return labelIconMap.get(String(label ?? "").trim()) || "icon/yokokamo-v2.png";
     }
 
     async function ensureVehicleIcons(vehicles) {
-      const urls = new Set(["icon/yokokamo.png"]);
+      const urls = new Set(["icon/yokokamo-v2.png"]);
 
       for (const v of vehicles || []) {
         urls.add(iconUrlForLabel(v.label));
@@ -4309,7 +4309,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         expr.push(label, url);
       }
 
-      expr.push("icon/yokokamo.png");
+      expr.push("icon/yokokamo-v2.png");
       return expr;
     }
 
@@ -4497,7 +4497,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     }
 
     function getVehicleIconUrl(label) {
-      return labelIconMap.get(String(label ?? "")) || "icon/yokokamo.png";
+      return labelIconMap.get(String(label ?? "")) || "icon/yokokamo-v2.png";
     }
 
 
@@ -4755,7 +4755,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         // 静的GTFSは初回だけ。車両画像は運行中のものだけ後から読む。
         await loadStaticGtfs();
-        await loadImageToMap("icon/yokokamo.png");
+        await loadImageToMap("icon/yokokamo-v2.png");
 
         installLayers();
 
