@@ -1821,6 +1821,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             background: #f8fbfc;
           }
 
+          .unyo-flow-card-actual {
+            border-color: #c8d1d6;
+            background: #f4f6f7;
+            opacity: .9;
+          }
+
+          .unyo-flow-actual-badge {
+            background: #75858d !important;
+            color: #fff !important;
+            border-color: #75858d !important;
+          }
+
           .unyo-flow-card-end {
             width: 110px;
             min-height: 42px;
@@ -1903,6 +1915,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             stroke: #9badb6;
             stroke-width: 2;
             stroke-linecap: round;
+          }
+
+          .unyo-flow-edge-actual {
+            stroke: #a5b0b6;
+            stroke-width: 1.5;
           }
 
           .unyo-flow-edge-main {
@@ -2162,49 +2179,120 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
     function buildPredictionFlowLayout(data) {
       const roots = getPredictionRootNodes(data);
       const current = data?.current || null;
+      const actualHistory =
+        Array.isArray(data?.actual_history)
+          ? data.actual_history
+          : [];
 
       let idSeq = 0;
-      const makeEntry = (node, depth, parentId = null, currentNode = false) => ({
+
+      const makeEntry = (
+        node,
+        depth,
+        parentId = null,
+        currentNode = false,
+        actualNode = false
+      ) => ({
         id: `unyo-flow-${++idSeq}`,
         node,
         depth,
         parentId,
         currentNode,
+        actualNode,
         children: [],
         x: 0,
         y: 0
       });
 
-      let rootEntry;
+      const currentEntry = current
+        ? makeEntry(
+            current,
+            0,
+            null,
+            true,
+            false
+          )
+        : makeEntry(
+            {
+              route_name: "現在便",
+              virtual_root: true
+            },
+            0,
+            null,
+            true,
+            false
+          );
 
-      if (current) {
-        rootEntry = makeEntry(current, 0, null, true);
-        rootEntry.children = roots.map(node =>
-          buildPredictionFlowBranch(node, 1, rootEntry.id, makeEntry)
+      currentEntry.children =
+        roots.map(node =>
+          buildPredictionFlowBranch(
+            node,
+            1,
+            currentEntry.id,
+            makeEntry
+          )
         );
-      } else {
-        rootEntry = makeEntry(
-          { route_name: "現在便", virtual_root: true },
-          0,
-          null,
-          true
+
+      // 今日終了済みの実績は、
+      // 現在便より左側へ時系列で一直線に配置。
+      const actualEntries =
+        actualHistory.map(
+          (node, index) =>
+            makeEntry(
+              node,
+              index - actualHistory.length,
+              null,
+              false,
+              true
+            )
         );
-        rootEntry.children = roots.map(node =>
-          buildPredictionFlowBranch(node, 1, rootEntry.id, makeEntry)
-        );
-      }
 
       const entries = [];
       const edges = [];
 
-      const collect = entry => {
-        entries.push(entry);
-        for (const child of entry.children) {
-          edges.push({ from: entry, to: child });
-          collect(child);
-        }
-      };
-      collect(rootEntry);
+      for (
+        let i = 0;
+        i < actualEntries.length;
+        i++
+      ) {
+        const from =
+          actualEntries[i];
+
+        const to =
+          i + 1 <
+          actualEntries.length
+            ? actualEntries[i + 1]
+            : currentEntry;
+
+        entries.push(from);
+
+        edges.push({
+          from,
+          to,
+          actualEdge: true
+        });
+      }
+
+      const collectPrediction =
+        entry => {
+          entries.push(entry);
+
+          for (
+            const child of entry.children
+          ) {
+            edges.push({
+              from: entry,
+              to: child,
+              actualEdge: false
+            });
+
+            collectPrediction(child);
+          }
+        };
+
+      collectPrediction(
+        currentEntry
+      );
 
       const CARD_W = 180;
       const CARD_H = 52;
@@ -2215,60 +2303,144 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       const PAD_X = 14;
       const PAD_Y = 12;
 
-      const cardWidth = entry =>
-        isPredictionServiceEnd(entry.node) ? END_W : CARD_W;
+      const cardWidth =
+        entry =>
+          isPredictionServiceEnd(
+            entry.node
+          )
+            ? END_W
+            : CARD_W;
 
-      const cardHeight = entry =>
-        isPredictionServiceEnd(entry.node) ? END_H : CARD_H;
+      const cardHeight =
+        entry =>
+          isPredictionServiceEnd(
+            entry.node
+          )
+            ? END_H
+            : CARD_H;
 
-      let nextLeafY = PAD_Y;
+      let nextLeafY =
+        PAD_Y;
 
-      const placeY = entry => {
-        if (!entry.children.length) {
-          entry.y = nextLeafY;
-          nextLeafY += cardHeight(entry) + ROW_GAP;
+      const placeY =
+        entry => {
+          if (
+            !entry.children.length
+          ) {
+            entry.y =
+              nextLeafY;
+
+            nextLeafY +=
+              cardHeight(entry) +
+              ROW_GAP;
+
+            return entry.y;
+          }
+
+          entry.children.forEach(
+            placeY
+          );
+
+          const first =
+            entry.children[0];
+
+          const last =
+            entry.children[
+              entry.children.length - 1
+            ];
+
+          const firstCenter =
+            first.y +
+            cardHeight(first) / 2;
+
+          const lastCenter =
+            last.y +
+            cardHeight(last) / 2;
+
+          entry.y =
+            (
+              firstCenter +
+              lastCenter
+            ) / 2 -
+            cardHeight(entry) / 2;
+
           return entry.y;
-        }
+        };
 
-        entry.children.forEach(placeY);
+      placeY(
+        currentEntry
+      );
 
-        const first = entry.children[0];
-        const last = entry.children[entry.children.length - 1];
-
-        const firstCenter =
-          first.y + cardHeight(first) / 2;
-        const lastCenter =
-          last.y + cardHeight(last) / 2;
-
+      // 実績側は横一直線。
+      for (
+        const entry of actualEntries
+      ) {
         entry.y =
-          (firstCenter + lastCenter) / 2 -
-          cardHeight(entry) / 2;
+          currentEntry.y;
+      }
 
-        return entry.y;
-      };
-
-      placeY(rootEntry);
-
+      let minDepth = 0;
       let maxDepth = 0;
-      for (const entry of entries) {
-        maxDepth = Math.max(maxDepth, entry.depth);
+
+      for (
+        const entry of entries
+      ) {
+        minDepth =
+          Math.min(
+            minDepth,
+            entry.depth
+          );
+
+        maxDepth =
+          Math.max(
+            maxDepth,
+            entry.depth
+          );
+      }
+
+      for (
+        const entry of entries
+      ) {
         entry.x =
           PAD_X +
-          entry.depth * (CARD_W + COL_GAP);
+          (
+            entry.depth -
+            minDepth
+          ) *
+          (
+            CARD_W +
+            COL_GAP
+          );
       }
 
       const width =
         PAD_X * 2 +
-        maxDepth * (CARD_W + COL_GAP) +
+        (
+          maxDepth -
+          minDepth
+        ) *
+        (
+          CARD_W +
+          COL_GAP
+        ) +
         CARD_W;
 
-      const height = Math.max(
-        nextLeafY + PAD_Y,
-        rootEntry.y + cardHeight(rootEntry) + PAD_Y
-      );
+      const height =
+        Math.max(
+          nextLeafY +
+            PAD_Y,
+          currentEntry.y +
+            cardHeight(
+              currentEntry
+            ) +
+            PAD_Y
+        );
 
       return {
-        rootEntry,
+        rootEntry:
+          currentEntry,
+        currentEntry,
+        actualEntries,
         entries,
         edges,
         width,
@@ -2312,6 +2484,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return `累積 ${Number.isInteger(value) ? value : value.toFixed(1)}%`;
     }
 
+    function formatCumulativeN(node) {
+      const count =
+        Number(node?.cumulative_count);
+
+      const n =
+        Number(node?.cumulative_n);
+
+      if (
+        Number.isFinite(count) &&
+        Number.isFinite(n)
+      ) {
+        return `n=${count}/${n}`;
+      }
+
+      return "";
+    }
+
     function createPredictionFlowCard(entry) {
       const node = entry.node;
       const item = document.createElement("div");
@@ -2320,6 +2509,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       if (entry.currentNode) {
         item.classList.add("unyo-flow-card-current");
+      }
+
+      if (entry.actualNode) {
+        item.classList.add("unyo-flow-card-actual");
       }
 
       if (isPredictionServiceEnd(node)) {
@@ -2342,12 +2535,21 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       if (entry.currentNode) {
         badge.classList.add("unyo-flow-current-badge");
         badge.textContent = "現在便";
+      } else if (entry.actualNode) {
+        badge.classList.add("unyo-flow-actual-badge");
+        badge.textContent = "実績";
       } else {
-        badge.textContent = formatPredictionProbability(node);
+        const cumulative =
+          Number(node?.cumulative_probability);
+
+        badge.textContent =
+          Number.isFinite(cumulative)
+            ? `${Number.isInteger(cumulative) ? cumulative : cumulative.toFixed(1)}%`
+            : "";
       }
 
       if (isPredictionServiceEnd(node)) {
-        name.textContent = "運用終了";
+        name.textContent = "運行終了";
       } else if (entry.currentNode && node?.virtual_root) {
         name.textContent = "現在便";
       } else if (node?.occupied_by_other) {
@@ -2372,19 +2574,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         item.appendChild(path);
       }
 
-      if (!entry.currentNode && !node?.virtual_root) {
+      if (
+        !entry.currentNode &&
+        !entry.actualNode &&
+        !node?.virtual_root
+      ) {
         const sample = document.createElement("div");
         sample.className = "unyo-flow-sample";
 
-        const cumulative =
-          formatCumulativeProbability(node);
         const nText =
-          formatPredictionN(node);
+          formatCumulativeN(node);
 
         sample.textContent =
-          [cumulative, nText]
-            .filter(Boolean)
-            .join(" ・ ");
+          nText;
 
         item.appendChild(sample);
       }
@@ -2468,7 +2670,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         path.setAttribute(
           "class",
-          predictionEdgeClass(to.node)
+          edge.actualEdge
+            ? "unyo-flow-edge unyo-flow-edge-actual"
+            : predictionEdgeClass(to.node)
         );
 
         svg.appendChild(path);
@@ -2543,7 +2747,32 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             }
           }
 
-          body.scrollLeft = 0;
+          const currentCard =
+            body.querySelector(
+              ".unyo-flow-card-current"
+            );
+
+          if (currentCard) {
+            const zoom =
+              getPredictionZoom(body);
+
+            const currentCenter =
+              (
+                currentCard.offsetLeft +
+                currentCard.offsetWidth / 2
+              ) *
+              zoom;
+
+            body.scrollLeft =
+              Math.max(
+                0,
+                currentCenter -
+                  body.clientWidth * 0.42
+              );
+          } else {
+            body.scrollLeft = 0;
+          }
+
           body.scrollTop = 0;
         });
       }
@@ -2662,7 +2891,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         name.replaceChildren();
 
         if (isPredictionServiceEnd(best)) {
-          name.textContent = "運用終了";
+          name.textContent = "運行終了";
         } else if (best?.occupied_by_other) {
           const routeText = document.createElement("span");
           routeText.textContent = predictionRouteName(best);
