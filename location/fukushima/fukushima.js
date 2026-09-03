@@ -617,7 +617,7 @@ labelnankairj.forEach(label => labelIconMap.set(label, 'icon/nankai-rj-v2.png'))
 const labelpdgkr = ['1836','1837','0997','0998','1091','1092','1196','1197','1217','8182','7148','7150','7153','8112','8069','0885','8039'];
 labelpdgkr.forEach(label => labelIconMap.set(label, 'icon/pdg-kr-v2.png'));
 
-const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','0998','1091','1092','1196','1197','1217','1605','1835','8036','8041'];
+const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','1091','1092','1196','1197','1217','1605','1835','8036','8041'];
 labelpdglr.forEach(label => labelIconMap.set(label, 'icon/pdg-lr-v2.png'));
 
 const labelpkhr = ['8024','8033','8044','8074'];
