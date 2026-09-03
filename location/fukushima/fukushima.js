@@ -52,6 +52,344 @@
     // =========================================================
     const CAMERA_STORAGE_KEY = "fukushima-map-camera-v1";
 
+    // =========================================================
+    // 営業所・駐在・工場・待機場所
+    // =========================================================
+    // coordinates は [経度, 緯度] の順。
+    // 最後の点は自動で先頭点につなぐので、同じ座標を重ねて書かなくてOK。
+    //
+    // 例:
+    // {
+    //   id: "fukushima_depot",
+    //   name: "福島営業所",
+    //   type: "depot",
+    //   coordinates: [
+    //     [140.000000, 37.000000],
+    //     [140.000500, 37.000000],
+    //     [140.000500, 37.000500],
+    //     [140.000000, 37.000500]
+    //   ]
+    // }
+    //
+    // type:
+    //   depot     = 営業所
+    //   resident  = 駐在
+    //   factory   = 工場
+    //   standby   = 待機場所
+    const VEHICLE_PLACE_AREAS = [
+      // ここへ場所を追加
+    ];
+
+    const VEHICLE_PLACE_VISIBILITY_STORAGE_KEY =
+      "fukushima-vehicle-place-visibility-v1";
+
+    let vehiclePlaceVisible = (() => {
+      try {
+        const saved =
+          localStorage.getItem(
+            VEHICLE_PLACE_VISIBILITY_STORAGE_KEY
+          );
+
+        // 初回は表示ON。
+        return saved === null
+          ? true
+          : saved === "1";
+      } catch (_) {
+        return true;
+      }
+    })();
+
+    function normalizeVehiclePlaceRing(coordinates) {
+      if (!Array.isArray(coordinates)) return [];
+
+      const ring =
+        coordinates
+          .map(point => {
+            if (
+              !Array.isArray(point) ||
+              point.length < 2
+            ) {
+              return null;
+            }
+
+            const lng = Number(point[0]);
+            const lat = Number(point[1]);
+
+            if (
+              !Number.isFinite(lng) ||
+              !Number.isFinite(lat)
+            ) {
+              return null;
+            }
+
+            return [lng, lat];
+          })
+          .filter(Boolean);
+
+      if (ring.length < 3) {
+        return [];
+      }
+
+      const first = ring[0];
+      const last = ring[ring.length - 1];
+
+      if (
+        first[0] !== last[0] ||
+        first[1] !== last[1]
+      ) {
+        ring.push([...first]);
+      }
+
+      return ring;
+    }
+
+    function vehiclePlaceAreasGeoJson() {
+      return {
+        type: "FeatureCollection",
+        features:
+          VEHICLE_PLACE_AREAS
+            .map(place => {
+              const ring =
+                normalizeVehiclePlaceRing(
+                  place?.coordinates
+                );
+
+              if (ring.length < 4) {
+                return null;
+              }
+
+              return {
+                type: "Feature",
+                properties: {
+                  id:
+                    String(place?.id || ""),
+                  name:
+                    String(place?.name || "名称未設定"),
+                  placeType:
+                    String(place?.type || "standby")
+                },
+                geometry: {
+                  type: "Polygon",
+                  coordinates: [ring]
+                }
+              };
+            })
+            .filter(Boolean)
+      };
+    }
+
+    function setVehiclePlaceVisibility(visible) {
+      vehiclePlaceVisible = Boolean(visible);
+
+      const visibility =
+        vehiclePlaceVisible
+          ? "visible"
+          : "none";
+
+      for (const layerId of [
+        "vehicle-place-fill",
+        "vehicle-place-line",
+        "vehicle-place-label"
+      ]) {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(
+            layerId,
+            "visibility",
+            visibility
+          );
+        }
+      }
+
+      try {
+        localStorage.setItem(
+          VEHICLE_PLACE_VISIBILITY_STORAGE_KEY,
+          vehiclePlaceVisible ? "1" : "0"
+        );
+      } catch (_) {}
+
+      updateVehiclePlaceToggleButton();
+    }
+
+    let vehiclePlaceToggleButton = null;
+
+    function updateVehiclePlaceToggleButton() {
+      if (!vehiclePlaceToggleButton) return;
+
+      vehiclePlaceToggleButton.textContent =
+        vehiclePlaceVisible
+          ? "場所 ON"
+          : "場所 OFF";
+
+      vehiclePlaceToggleButton.title =
+        vehiclePlaceVisible
+          ? "営業所・駐在・待機場所を非表示"
+          : "営業所・駐在・待機場所を表示";
+
+      vehiclePlaceToggleButton.setAttribute(
+        "aria-pressed",
+        vehiclePlaceVisible ? "true" : "false"
+      );
+    }
+
+    class VehiclePlaceToggleControl {
+      onAdd(mapInstance) {
+        this.map = mapInstance;
+
+        this.container =
+          document.createElement("div");
+
+        this.container.className =
+          "maplibregl-ctrl maplibregl-ctrl-group";
+
+        const button =
+          document.createElement("button");
+
+        button.type = "button";
+        button.style.width = "auto";
+        button.style.minWidth = "62px";
+        button.style.padding = "0 8px";
+        button.style.fontSize = "11px";
+        button.style.fontWeight = "700";
+        button.setAttribute(
+          "aria-label",
+          "営業所・駐在・待機場所の表示切替"
+        );
+
+        button.addEventListener(
+          "click",
+          () => {
+            setVehiclePlaceVisibility(
+              !vehiclePlaceVisible
+            );
+          }
+        );
+
+        vehiclePlaceToggleButton = button;
+        updateVehiclePlaceToggleButton();
+
+        this.container.appendChild(button);
+        return this.container;
+      }
+
+      onRemove() {
+        if (
+          vehiclePlaceToggleButton &&
+          this.container?.contains(
+            vehiclePlaceToggleButton
+          )
+        ) {
+          vehiclePlaceToggleButton = null;
+        }
+
+        this.container?.remove();
+        this.map = undefined;
+      }
+    }
+
+    function installVehiclePlaceLayers() {
+      if (
+        !map.getSource(
+          "vehicle-place-areas"
+        )
+      ) {
+        map.addSource(
+          "vehicle-place-areas",
+          {
+            type: "geojson",
+            data:
+              vehiclePlaceAreasGeoJson()
+          }
+        );
+      }
+
+      const visibility =
+        vehiclePlaceVisible
+          ? "visible"
+          : "none";
+
+      if (
+        !map.getLayer(
+          "vehicle-place-fill"
+        )
+      ) {
+        map.addLayer({
+          id: "vehicle-place-fill",
+          type: "fill",
+          source: "vehicle-place-areas",
+          layout: {
+            visibility
+          },
+          paint: {
+            "fill-color": [
+              "match",
+              ["get", "placeType"],
+              "depot", "#516b7a",
+              "resident", "#6e7f89",
+              "factory", "#7b6d62",
+              "standby", "#667d70",
+              "#697b85"
+            ],
+            "fill-opacity": 0.16
+          }
+        });
+      }
+
+      if (
+        !map.getLayer(
+          "vehicle-place-line"
+        )
+      ) {
+        map.addLayer({
+          id: "vehicle-place-line",
+          type: "line",
+          source: "vehicle-place-areas",
+          layout: {
+            visibility
+          },
+          paint: {
+            "line-color": [
+              "match",
+              ["get", "placeType"],
+              "depot", "#405968",
+              "resident", "#596d78",
+              "factory", "#6b5c51",
+              "standby", "#4e6758",
+              "#536873"
+            ],
+            "line-width": 2,
+            "line-opacity": 0.9
+          }
+        });
+      }
+
+      if (
+        !map.getLayer(
+          "vehicle-place-label"
+        )
+      ) {
+        map.addLayer({
+          id: "vehicle-place-label",
+          type: "symbol",
+          source: "vehicle-place-areas",
+          layout: {
+            visibility,
+            "text-field": ["get", "name"],
+            "text-size": 11,
+            "text-font": [
+              "Noto Sans Regular"
+            ],
+            "text-allow-overlap": false
+          },
+          paint: {
+            "text-color": "#34454f",
+            "text-halo-color": "rgba(255,255,255,.96)",
+            "text-halo-width": 1.5
+          }
+        });
+      }
+    }
+
+
     function loadSavedCamera() {
       try {
         const raw = localStorage.getItem(CAMERA_STORAGE_KEY);
@@ -141,6 +479,7 @@
     }
 
     map.addControl(new BasemapToggleControl(), "top-right");
+    map.addControl(new VehiclePlaceToggleControl(), "top-right");
 
 
     // 車番検索UI
@@ -6004,6 +6343,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         await loadImageToMap("icon/yokokamo-v2.png");
 
         installLayers();
+        installVehiclePlaceLayers();
 
         status.textContent = "リアルタイム情報取得中...";
         setLoading(true, 72);
