@@ -2621,7 +2621,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         z-index: -2147483647;
         pointer-events: none;
         background: #ffffff;
-        opacity: 1;
       `;
 
       const clone =
@@ -2708,345 +2707,182 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         svg.style.overflow = "visible";
       }
 
-      // 保存時は画面表示上のパン位置・余白を引き継がず、
-      // 実際に存在するツリー要素の範囲だけを切り出して保存する。
-      const exportBody =
-        clone.querySelector(".unyo-prediction-body");
-
-      const exportStage =
-        clone.querySelector(".unyo-flow-stage");
-
-      const exportCanvas =
-        clone.querySelector(".unyo-flow-canvas");
-
-      if (
-        !exportBody ||
-        !exportStage ||
-        !exportCanvas
-      ) {
-        throw new Error(
-          "保存用ツリーを取得できません"
-        );
-      }
-
-      // 保存用ではズームを完全解除。
-      exportCanvas.style.setProperty(
-        "transform",
-        "scale(1)",
-        "important"
-      );
-      exportCanvas.style.setProperty(
-        "transform-origin",
-        "0 0",
-        "important"
-      );
-
-      // まずstageを元の生サイズへ戻して座標計算を安定させる。
-      const rawWidth =
-        Math.max(
-          Number(
-            exportStage.dataset.rawWidth || 0
-          ),
-          exportCanvas.scrollWidth || 0,
-          exportCanvas.offsetWidth || 0
-        );
-
-      const rawHeight =
-        Math.max(
-          Number(
-            exportStage.dataset.rawHeight || 0
-          ),
-          exportCanvas.scrollHeight || 0,
-          exportCanvas.offsetHeight || 0
-        );
-
-      exportStage.style.setProperty(
-        "width",
-        `${Math.ceil(rawWidth)}px`,
-        "important"
-      );
-
-      exportStage.style.setProperty(
-        "height",
-        `${Math.ceil(rawHeight)}px`,
-        "important"
-      );
-
-      exportStage.style.setProperty(
-        "overflow",
-        "visible",
-        "important"
-      );
-
-      for (
-        const svg of
-          clone.querySelectorAll(
-            ".unyo-flow-svg"
-          )
-      ) {
-        svg.style.setProperty(
-          "overflow",
-          "visible",
-          "important"
-        );
-      }
-
-      // 実際のカードを基準にツリーの使用範囲を求める。
-      const cards =
-        [
-          ...clone.querySelectorAll(
-            ".unyo-flow-card"
-          )
-        ];
-
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-
-      for (const card of cards) {
-        const left =
-          card.offsetLeft;
-
-        const top =
-          card.offsetTop;
-
-        const right =
-          left +
-          card.offsetWidth;
-
-        const bottom =
-          top +
-          card.offsetHeight;
-
-        minX =
-          Math.min(
-            minX,
-            left
-          );
-
-        minY =
-          Math.min(
-            minY,
-            top
-          );
-
-        maxX =
-          Math.max(
-            maxX,
-            right
-          );
-
-        maxY =
-          Math.max(
-            maxY,
-            bottom
-          );
-      }
-
-      // カードが無いケースはstage全体を使用。
-      if (
-        !Number.isFinite(minX) ||
-        !Number.isFinite(minY) ||
-        !Number.isFinite(maxX) ||
-        !Number.isFinite(maxY)
-      ) {
-        minX = 0;
-        minY = 0;
-        maxX = rawWidth;
-        maxY = rawHeight;
-      }
-
-      // SVG線がカードより少し外側へ出るため余白を確保。
-      const treePaddingX = 28;
-      const treePaddingY = 24;
-
-      const contentWidth =
-        Math.ceil(
-          Math.max(
-            1,
-            maxX -
-            minX +
-            treePaddingX * 2
-          )
-        );
-
-      const contentHeight =
-        Math.ceil(
-          Math.max(
-            1,
-            maxY -
-            minY +
-            treePaddingY * 2
-          )
-        );
-
-      // ツリー全体を左上へ詰める。
-      exportCanvas.style.setProperty(
-        "transform",
-        `translate(${
-          treePaddingX - minX
-        }px, ${
-          treePaddingY - minY
-        }px) scale(1)`,
-        "important"
-      );
-
-      exportStage.style.setProperty(
-        "width",
-        `${contentWidth}px`,
-        "important"
-      );
-
-      exportStage.style.setProperty(
-        "height",
-        `${contentHeight}px`,
-        "important"
-      );
-
-      // スクロール領域や灰色背景を保存しない。
-      exportBody.scrollLeft = 0;
-      exportBody.scrollTop = 0;
-
-      exportBody.style.setProperty(
-        "width",
-        `${contentWidth}px`,
-        "important"
-      );
-
-      exportBody.style.setProperty(
-        "height",
-        `${contentHeight}px`,
-        "important"
-      );
-
-      exportBody.style.setProperty(
-        "max-width",
-        "none",
-        "important"
-      );
-
-      exportBody.style.setProperty(
-        "max-height",
-        "none",
-        "important"
-      );
-
-      exportBody.style.setProperty(
-        "overflow",
-        "hidden",
-        "important"
-      );
-
-      exportBody.style.setProperty(
-        "background",
-        "#ffffff",
-        "important"
-      );
-
-      exportBody.style.setProperty(
-        "padding",
-        "0",
-        "important"
-      );
-
-      // 保存用ポップアップも余計な背景・影・幅制限を除去。
-      clone.style.setProperty(
-        "width",
-        `${contentWidth}px`,
-        "important"
-      );
-
-      clone.style.setProperty(
-        "max-width",
-        "none",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "min-width",
-        "0",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "height",
-        "auto",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "max-height",
-        "none",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "overflow",
-        "hidden",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "background",
-        "#ffffff",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "box-shadow",
-        "none",
-        "important"
-      );
-
-      clone.style.setProperty(
-        "border",
-        "0",
-        "important"
-      );
-
-      // 見出しは残すが、横幅はツリー幅に合わせる。
-      const exportHead =
-        clone.querySelector(
-          ".unyo-prediction-title"
-        )?.parentElement;
-
-      if (exportHead) {
-        exportHead.style.setProperty(
-          "width",
-          `${contentWidth}px`,
-          "important"
-        );
-        exportHead.style.setProperty(
-          "box-sizing",
-          "border-box",
-          "important"
-        );
-        exportHead.style.setProperty(
-          "padding",
-          "12px 16px 8px",
-          "important"
-        );
-        exportHead.style.setProperty(
-          "margin",
-          "0",
-          "important"
-        );
-        exportHead.style.setProperty(
+      if (cloneStage) {
+        cloneStage.style.setProperty(
           "background",
           "#ffffff",
           "important"
         );
       }
 
+      const cloneCanvasForExport =
+        clone.querySelector(".unyo-flow-canvas");
+
+      if (cloneCanvasForExport) {
+        // 座標は動かさない。表示時のズームだけ解除して全体をそのまま保存。
+        cloneCanvasForExport.style.setProperty(
+          "transform",
+          "scale(1)",
+          "important"
+        );
+        cloneCanvasForExport.style.setProperty(
+          "transform-origin",
+          "0 0",
+          "important"
+        );
+        cloneCanvasForExport.style.setProperty(
+          "background",
+          "#ffffff",
+          "important"
+        );
+      }
+
+      // 保存時は画面幅の制限を完全に外し、
+      // ツリー全体の横幅・縦幅に合わせてポップアップ自体を拡張する。
+      const exportBody =
+        clone.querySelector(".unyo-prediction-body");
+
+      const exportStage =
+        clone.querySelector(".unyo-flow-stage");
+
+      const exportRawWidth =
+        exportStage
+          ? Math.max(
+              Number(exportStage.dataset.rawWidth || 0),
+              exportStage.scrollWidth || 0,
+              exportStage.offsetWidth || 0
+            )
+          : 0;
+
+      const exportRawHeight =
+        exportStage
+          ? Math.max(
+              Number(exportStage.dataset.rawHeight || 0),
+              exportStage.scrollHeight || 0,
+              exportStage.offsetHeight || 0
+            )
+          : 0;
+
+      // bodyのpadding分を含めて余裕を確保。
+      const exportHorizontalPadding = 48;
+      const exportVerticalPadding = 48;
+
+      if (exportBody) {
+        exportBody.scrollLeft = 0;
+        exportBody.scrollTop = 0;
+
+        exportBody.style.setProperty(
+          "width",
+          `${Math.ceil(exportRawWidth + exportHorizontalPadding)}px`,
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "max-width",
+          "none",
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "min-width",
+          "0",
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "height",
+          `${Math.ceil(exportRawHeight + exportVerticalPadding)}px`,
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "max-height",
+          "none",
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "overflow",
+          "visible",
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "overflow-x",
+          "visible",
+          "important"
+        );
+
+        exportBody.style.setProperty(
+          "overflow-y",
+          "visible",
+          "important"
+        );
+
+        // 保存画像では画面用のドット背景やスクロール領域の色を使わない。
+        exportBody.style.setProperty(
+          "background",
+          "#ffffff",
+          "important"
+        );
+        exportBody.style.setProperty(
+          "background-image",
+          "none",
+          "important"
+        );
+      }
+
+      clone.style.setProperty(
+        "width",
+        `${Math.ceil(exportRawWidth + exportHorizontalPadding + 26)}px`,
+        "important"
+      );
+      clone.style.setProperty(
+        "max-width",
+        "none",
+        "important"
+      );
+      clone.style.setProperty(
+        "min-width",
+        "0",
+        "important"
+      );
+      clone.style.setProperty(
+        "height",
+        "auto",
+        "important"
+      );
+      clone.style.setProperty(
+        "max-height",
+        "none",
+        "important"
+      );
+      clone.style.setProperty(
+        "overflow",
+        "visible",
+        "important"
+      );
+      clone.style.setProperty(
+        "background",
+        "#ffffff",
+        "important"
+      );
+      clone.style.setProperty(
+        "background-image",
+        "none",
+        "important"
+      );
+
       // html2canvasで特に差が出やすい当日充当/現在便の外箱は、
-      // 保存時だけ inset shadow を使わず border-left で再現。
+      // 画面側と同じ値を明示しておく。
       for (
         const card of
           clone.querySelectorAll(
             ".unyo-flow-card-actual"
           )
       ) {
+        // html2canvas は inset box-shadow を全面塗りとして
+        // 誤描画することがあるため、保存時だけ border-left で再現。
         card.style.borderWidth = "2px";
         card.style.borderStyle = "solid";
         card.style.borderColor = "#4f8a69";
@@ -3080,13 +2916,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       document.body.appendChild(exportHost);
 
       try {
-        // DOMを一度レイアウトさせてから最終サイズを測る。
-        await new Promise(resolve =>
-          requestAnimationFrame(() =>
-            requestAnimationFrame(resolve)
-          )
-        );
-
         const rect =
           clone.getBoundingClientRect();
 
@@ -3108,13 +2937,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             )
           );
 
-        // スマホでは巨大canvasを作ると右端/下端が切れるため、
-        // 全範囲が1枚に入る最大scaleを自動計算。
+        // スマホブラウザは巨大canvasを作ると、
+        // 右端/下端が無言で切れることがある。
+        // そのため「全範囲が必ず1枚に入る」範囲で
+        // 可能な限り高いscaleを自動計算する。
         const isMobileExport =
           window.matchMedia(
             "(max-width: 640px)"
           ).matches;
 
+        // iOS/Safariを含め安全側に倒した上限。
+        // PCは余裕を持たせる。
         const maxCanvasSide =
           isMobileExport
             ? 8192
@@ -3136,17 +2969,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
         const scaleByWidth =
           maxCanvasSide /
-          Math.max(
-            1,
-            captureWidth
-          );
+          Math.max(1, captureWidth);
 
         const scaleByHeight =
           maxCanvasSide /
-          Math.max(
-            1,
-            captureHeight
-          );
+          Math.max(1, captureHeight);
 
         const scaleByArea =
           Math.sqrt(
@@ -3168,6 +2995,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
               scaleByArea
             )
           );
+
+        console.log(
+          "prediction export:",
+          {
+            captureWidth,
+            captureHeight,
+            exportScale,
+            isMobileExport
+          }
+        );
 
         const canvas =
           await html2canvas(
