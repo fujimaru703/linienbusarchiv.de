@@ -143,6 +143,11 @@
     map.addControl(new BasemapToggleControl(), "top-right");
 
 
+    // 車番検索UI
+    let vehicleSearchInput = null;
+    let vehicleSearchList = null;
+    let vehicleSearchResultMarker = null;
+
     class VehicleSearchControl {
       onAdd(mapInstance) {
         this.map = mapInstance;
@@ -298,10 +303,6 @@
     let vehicleInfoPanel = null;
     const vehicleNumberMarkers = new Map();
 
-    // 車番検索UI
-    let vehicleSearchInput = null;
-    let vehicleSearchList = null;
-    let vehicleSearchResultMarker = null;
     const rareVehicleMarkers = new Map();
 
     let rareVehicleSet =
