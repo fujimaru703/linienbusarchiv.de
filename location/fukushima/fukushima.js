@@ -36,6 +36,9 @@
     const RARE_VEHICLES_REFRESH_MS =
       2 * 60 * 1000;
 
+    const RARE_VEHICLES_STORAGE_KEY =
+      "fukushima-rare-vehicles-v1";
+
     const UPDATE_INTERVAL = 15000;
 
     // バスロケ表示時間:
@@ -192,7 +195,9 @@
     const vehicleNumberMarkers = new Map();
     const rareVehicleMarkers = new Map();
 
-    let rareVehicleSet = new Set();
+    let rareVehicleSet =
+      loadRareVehiclesFromStorage();
+
     let rareVehiclesLastFetch = 0;
     let rareVehiclesFetchRunning = false;
 
@@ -818,7 +823,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       selectedTripId = null;
 
       updateVehicleNumberMarkers([]);
-      rareVehicleSet = new Set();
       updateRareVehicleMarkers([]);
       clearSelectedStopNameMarkers();
 
@@ -3671,6 +3675,55 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       return [0, Math.round(halfIcon + 3)];
     }
 
+    function loadRareVehiclesFromStorage() {
+      try {
+        const raw =
+          localStorage.getItem(
+            RARE_VEHICLES_STORAGE_KEY
+          );
+
+        if (!raw) {
+          return new Set();
+        }
+
+        const data =
+          JSON.parse(raw);
+
+        const vehicles =
+          Array.isArray(data?.vehicles)
+            ? data.vehicles
+            : [];
+
+        return new Set(
+          vehicles
+            .map(
+              value =>
+                cleanId(value)
+            )
+            .filter(Boolean)
+        );
+      } catch (_) {
+        return new Set();
+      }
+    }
+
+    function saveRareVehiclesToStorage(
+      set
+    ) {
+      try {
+        localStorage.setItem(
+          RARE_VEHICLES_STORAGE_KEY,
+          JSON.stringify({
+            savedAt:
+              Date.now(),
+            vehicles:
+              [...set]
+          })
+        );
+      } catch (_) {}
+    }
+
+
     function rareVehicleMarkerOffset() {
       const halfIcon =
         25 * vehicleIconScaleAtZoom(map.getZoom());
@@ -3833,6 +3886,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
         if (changed) {
           rareVehicleSet =
             nextSet;
+
+          saveRareVehiclesToStorage(
+            rareVehicleSet
+          );
 
           updateRareVehicleMarkers([
             ...latestVehicles,
