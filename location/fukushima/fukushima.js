@@ -2915,6 +2915,32 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             actualCumulative < 5
               ? `${percent}% レア✨`
               : `${percent}%`;
+
+          if (
+            actualCumulative < 5
+          ) {
+            const rareAssignedVehicle =
+              cleanId(
+                node?.assigned_vehicle
+              );
+
+            if (rareAssignedVehicle) {
+              rareVehicleSet.add(
+                rareAssignedVehicle
+              );
+
+              console.log(
+                "[rare-operation]",
+                rareAssignedVehicle,
+                `${percent}%`
+              );
+
+              updateRareVehicleMarkers([
+                ...latestVehicles,
+                ...fallbackVehicles
+              ]);
+            }
+          }
         } else {
           badge.textContent = "";
         }
@@ -2948,6 +2974,36 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             cumulative < 5
               ? `${percent}% レア✨`
               : `${percent}%`;
+
+          // ツリー上で「5%未満 + 実際に他車充当」が確認できた時点で、
+          // その車を地図上のレア車集合へ即登録する。
+          // /rare-vehicles の一括判定とは独立した二重経路。
+          if (
+            confirmed &&
+            cumulative < 5
+          ) {
+            const rareAssignedVehicle =
+              cleanId(
+                node?.assigned_vehicle
+              );
+
+            if (rareAssignedVehicle) {
+              rareVehicleSet.add(
+                rareAssignedVehicle
+              );
+
+              console.log(
+                "[rare-operation]",
+                rareAssignedVehicle,
+                `${percent}%`
+              );
+
+              updateRareVehicleMarkers([
+                ...latestVehicles,
+                ...fallbackVehicles
+              ]);
+            }
+          }
         } else {
           badge.textContent = "";
         }
@@ -3723,11 +3779,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
         const data = await response.json();
 
-        rareVehicleSet = new Set(
+        const apiRareVehicles =
           (data?.vehicles || [])
-            .map(row => cleanId(row?.vehicle_cd))
-            .filter(Boolean)
-        );
+            .map(
+              row =>
+                cleanId(
+                  row?.vehicle_cd
+                )
+            )
+            .filter(Boolean);
+
+        for (
+          const vehicleCd of
+            apiRareVehicles
+        ) {
+          rareVehicleSet.add(
+            vehicleCd
+          );
+        }
 
         updateRareVehicleMarkers([
           ...latestVehicles,
