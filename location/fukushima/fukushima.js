@@ -364,6 +364,7 @@
     let tripDelays = Object.create(null);
     let latestVehicles = [];
     let fallbackVehicles = [];
+    let retainedVehicles = [];
     let staticGtfsLoaded = false;
     let updateRunning = false;
     let selectedTripId = null;
@@ -1022,7 +1023,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const nowParts = japanNowParts();
       const hour = Math.floor(nowParts.seconds / 3600);
 
-      if (hour < 4) return true;
+      // 前日残留車を06:00～17:59も取得できるようfallback APIを維持する。
+      if (hour < 18) return true;
 
       const window = getTodayServiceWindow();
       if (!window) return true;
@@ -1037,6 +1039,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     function clearRealtimeDisplayForOffHours() {
       latestVehicles = [];
       fallbackVehicles = [];
+      retainedVehicles = [];
       tripDelays = Object.create(null);
       selectedTripId = null;
 
@@ -1236,12 +1239,54 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       }
 
       fallbackVehicles = vehicles;
+
+      const retained = [];
+
+      for (const v of data.retainedVehicles || []) {
+        const lat = Number(v?.latitude);
+        const lon = Number(v?.longitude);
+        const vehicleCd = cleanId(v?.vehicleCd);
+
+        if (!vehicleCd) continue;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        if (lat === 0 && lon === 0) continue;
+
+        retained.push({
+          tripId: "",
+          routeId: "",
+          seq: NaN,
+          label: vehicleCd,
+          lat,
+          lon,
+          bearing: 0,
+          isFallback: false,
+          isRetained: true
+        });
+      }
+
+      retainedVehicles = retained;
     }
 
     function displayedVehicles() {
+      // 今日側の車番を常に優先。
+      // Worker側でも除外しているが、フロント側でも二重表示を防ぐ。
+      const activeVehicleCds = new Set(
+        [
+          ...latestVehicles,
+          ...fallbackVehicles
+        ]
+          .map(v => cleanId(v?.label))
+          .filter(Boolean)
+      );
+
+      const retained = retainedVehicles.filter(
+        v => !activeVehicleCds.has(cleanId(v?.label))
+      );
+
       return [
         ...latestVehicles,
-        ...fallbackVehicles
+        ...fallbackVehicles,
+        ...retained
       ];
     }
 
@@ -1272,13 +1317,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       vehicleFeaturesByTrip.clear();
 
       const features = displayedVehicles().map((v, idx) => {
-        const delay = v.isFallback ? 0 : getDelayForVehicle(v);
-        const routeName = v.isFallback
-          ? (v.fallbackRouteName || v.fallbackRoute || "路線名不明")
-          : (routeNames[v.routeId] || "路線名不明");
-        const headsign = v.isFallback
-          ? (v.fallbackDestination || "行先不明")
-          : (tripHeadsigns[v.tripId] || "行先不明");
+        const delay = (v.isFallback || v.isRetained) ? 0 : getDelayForVehicle(v);
+        const routeName = v.isRetained
+          ? ""
+          : v.isFallback
+            ? (v.fallbackRouteName || v.fallbackRoute || "路線名不明")
+            : (routeNames[v.routeId] || "路線名不明");
+        const headsign = v.isRetained
+          ? ""
+          : v.isFallback
+            ? (v.fallbackDestination || "行先不明")
+            : (tripHeadsigns[v.tripId] || "行先不明");
 
         const f = {
           type: "Feature",
@@ -1294,10 +1343,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             headsign,
             label: v.label,
             delay,
-            delayText: v.isFallback ? "非営業" : formatDelay(delay),
+            delayText: v.isRetained
+              ? "前日最終位置"
+              : (v.isFallback ? "非営業" : formatDelay(delay)),
             iconKey: v.label,
             bearing: Number.isFinite(v.bearing) ? v.bearing : 0,
             isFallback: v.isFallback ? 1 : 0,
+            isRetained: v.isRetained ? 1 : 0,
             shihatsuName: v.fallbackShihatsuName || "",
             shihatsuTime: v.fallbackShihatsuTime || "",
             terminalTime: v.fallbackTerminalTime || "",
@@ -1307,7 +1359,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           }
         };
 
-        if (!v.isFallback && v.tripId) {
+        if (!v.isFallback && !v.isRetained && v.tripId) {
           vehicleFeaturesByTrip.set(v.tripId, f);
         }
         return f;
@@ -3809,7 +3861,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       updateRareVehicleMarkers([
         ...latestVehicles,
-        ...fallbackVehicles
+        ...fallbackVehicles,
+        ...retainedVehicles
       ]);
     }
 
@@ -4445,10 +4498,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             rareVehicleSet
           );
 
-          updateVehicleNumberMarkers([
-            ...latestVehicles,
-            ...fallbackVehicles
-          ]);
+          updateVehicleNumberMarkers(
+            displayedVehicles()
+          );
         }
       } catch (e) {
         // 失敗時は現在のレア車番表示を維持する。
@@ -4463,10 +4515,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
 
-    function applyVehicleNumberStyle(el, isRare) {
+    function applyVehicleNumberStyle(el, isRare, isRetained = false) {
       if (!el) return;
 
-      if (isRare) {
+      if (isRetained) {
+        el.style.border = "1px solid rgba(112, 121, 128, .40)";
+        el.style.background = "rgba(224, 227, 229, .92)";
+        el.style.boxShadow = "0 1px 4px rgba(40, 48, 54, .10)";
+        el.style.color = "#747d83";
+        el.style.fontWeight = "800";
+      } else if (isRare) {
         // レア運用中:
         // ✨を出さず、アイコン下の車番ラベルだけ金色系に変える。
         el.style.border = "1px solid rgba(184, 134, 11, .72)";
@@ -4484,7 +4542,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
 
-    function createVehicleNumberElement(label, isRare = false) {
+    function createVehicleNumberElement(label, isRare = false, isRetained = false) {
       const el = document.createElement("div");
 
       el.textContent = label || "?";
@@ -4501,7 +4559,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       el.style.userSelect = "none";
       el.style.webkitUserSelect = "none";
 
-      applyVehicleNumberStyle(el, isRare);
+      applyVehicleNumberStyle(el, isRare, isRetained);
 
       return el;
     }
@@ -4681,32 +4739,36 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       if (!v) return null;
 
       const delay =
-        v.isFallback
+        (v.isFallback || v.isRetained)
           ? 0
           : getDelayForVehicle(v);
 
       const routeName =
-        v.isFallback
-          ? (
-              v.fallbackRouteName ||
-              v.fallbackRoute ||
-              "路線名不明"
-            )
-          : (
-              routeNames[v.routeId] ||
-              "路線名不明"
-            );
+        v.isRetained
+          ? ""
+          : v.isFallback
+            ? (
+                v.fallbackRouteName ||
+                v.fallbackRoute ||
+                "路線名不明"
+              )
+            : (
+                routeNames[v.routeId] ||
+                "路線名不明"
+              );
 
       const headsign =
-        v.isFallback
-          ? (
-              v.fallbackDestination ||
-              "行先不明"
-            )
-          : (
-              tripHeadsigns[v.tripId] ||
-              "行先不明"
-            );
+        v.isRetained
+          ? ""
+          : v.isFallback
+            ? (
+                v.fallbackDestination ||
+                "行先不明"
+              )
+            : (
+                tripHeadsigns[v.tripId] ||
+                "行先不明"
+              );
 
       return {
         type: "Feature",
@@ -4725,9 +4787,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           label: v.label || "?",
           delay,
           delayText:
-            v.isFallback
-              ? "非営業"
-              : formatDelay(delay),
+            v.isRetained
+              ? "前日最終位置"
+              : (
+                  v.isFallback
+                    ? "非営業"
+                    : formatDelay(delay)
+                ),
           iconKey: v.label || "",
           bearing:
             Number.isFinite(v.bearing)
@@ -4735,6 +4801,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
               : 0,
           isFallback:
             v.isFallback ? 1 : 0,
+          isRetained:
+            v.isRetained ? 1 : 0,
           shihatsuName:
             v.fallbackShihatsuName || "",
           shihatsuTime:
@@ -4804,6 +4872,20 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           type: "FeatureCollection",
           features: [feature]
         });
+      }
+
+      if (Number(p.isRetained) === 1) {
+        selectedTripId = null;
+        clearSelectedStopNameMarkers();
+
+        map.getSource("selected-route")
+          ?.setData(emptyFeatureCollection());
+
+        map.getSource("selected-stops")
+          ?.setData(emptyFeatureCollection());
+
+        hideVehicleInfoPanel();
+        return;
       }
 
       if (Number(p.isFallback) === 1) {
@@ -4948,7 +5030,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         alive.add(key);
 
         const vehicleCd = cleanId(v.label);
+        const isRetained =
+          v?.isRetained === true;
+
         const isRare =
+          !isRetained &&
           !!vehicleCd &&
           rareVehicleSet.has(vehicleCd);
 
@@ -4957,7 +5043,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         if (!item) {
           const element = createVehicleNumberElement(
             v.label,
-            isRare
+            isRare,
+            isRetained
           );
 
           const marker = new maplibregl.Marker({
@@ -4985,7 +5072,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           // Markerを作り直さずその場で見た目だけ切り替える。
           applyVehicleNumberStyle(
             item.element,
-            isRare
+            isRare,
+            isRetained
           );
         }
       }
@@ -5216,6 +5304,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           "icon-ignore-placement": true,
           "icon-pitch-alignment": "viewport",
           "icon-rotation-alignment": "viewport"
+        },
+        paint: {
+          "icon-opacity": [
+            "case",
+            ["==", ["get", "isRetained"], 1],
+            0.38,
+            1
+          ]
         }
       });
 
@@ -5239,6 +5335,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           type: "FeatureCollection",
           features: [JSON.parse(JSON.stringify(f))]
         });
+
+        // 前日残留車は位置情報だけ表示する。
+        if (Number(p.isRetained) === 1) {
+          selectedTripId = null;
+          hideVehicleInfoPanel();
+          clearSelectedStopNameMarkers();
+          map.getSource("selected-vehicle").setData(emptyFeatureCollection());
+          map.getSource("selected-route").setData(emptyFeatureCollection());
+          map.getSource("selected-stops").setData(emptyFeatureCollection());
+          return;
+        }
 
         // fallback車両には現在のGTFS trip_idが無いので、
         // 直前便の情報だけパネル表示してルート・停留所は出さない。
@@ -5427,9 +5534,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             // fallbackだけ失敗しても通常の営業車表示は維持する。
             console.error("fallback取得失敗:", fallbackError);
             fallbackVehicles = [];
+            retainedVehicles = [];
           }
         } else {
           fallbackVehicles = [];
+          retainedVehicles = [];
         }
 
         const allVehicles = displayedVehicles();
@@ -5489,11 +5598,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             `LIVE  ${latestVehicles.length}台運行中` +
             (fallbackVehicles.length
               ? ` / 非営業 ${fallbackVehicles.length}台`
+              : "") +
+            (retainedVehicles.length
+              ? ` / 前日残留 ${retainedVehicles.length}台`
               : "");
         } else {
+          const parts = [];
+
+          if (fallbackVehicles.length) {
+            parts.push(`非営業車両 ${fallbackVehicles.length}台`);
+          }
+
+          if (retainedVehicles.length) {
+            parts.push(`前日残留 ${retainedVehicles.length}台`);
+          }
+
           status.textContent =
-            fallbackVehicles.length
-              ? `非営業車両 ${fallbackVehicles.length}台`
+            parts.length
+              ? parts.join(" / ")
               : "現在は営業運行終了後です";
         }
 
