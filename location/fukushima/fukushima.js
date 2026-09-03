@@ -4691,13 +4691,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const wrap =
         document.createElement("div");
 
-      // アイコン本体の62x62だけをMarkerの基準ボックスにする。
-      // 車番ラベルはボックス外へ出すことで、元のMapLibreアイコンと
-      // 緯度経度の中心位置を完全に一致させる。
+      const searchIconSize =
+        window.matchMedia("(max-width: 640px)").matches
+          ? 52
+          : 62;
+
+      // アイコン本体だけをMarkerの基準ボックスにする。
+      // 車番ラベルはボックス外へ出し、元アイコンと座標中心を合わせる。
       wrap.style.cssText = `
         position:relative;
-        width:62px;
-        height:62px;
+        width:${searchIconSize}px;
+        height:${searchIconSize}px;
         pointer-events:none;
         z-index:9999;
       `;
@@ -4718,8 +4722,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         position:absolute;
         left:0;
         top:0;
-        width:62px;
-        height:62px;
+        width:${searchIconSize}px;
+        height:${searchIconSize}px;
         object-fit:contain;
         filter:drop-shadow(0 3px 7px rgba(0,0,0,.32));
         user-select:none;
@@ -4733,7 +4737,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       badge.style.cssText = `
         position:absolute;
         left:50%;
-        top:64px;
+        top:${searchIconSize + 2}px;
         transform:translateX(-50%);
         padding:2px 6px;
         border:1px solid rgba(38,52,60,.18);
@@ -5308,13 +5312,21 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         source: "vehicles",
         layout: {
           "icon-image": iconExpression(),
-          "icon-size": [
-            "interpolate", ["linear"], ["zoom"],
-            8, 0.35,
-            13, 0.65,
-            16, 0.9,
-            19, 1.15
-          ],
+          "icon-size": window.matchMedia("(max-width: 640px)").matches
+            ? [
+                "interpolate", ["linear"], ["zoom"],
+                8, 0.30,
+                13, 0.55,
+                16, 0.76,
+                19, 0.98
+              ]
+            : [
+                "interpolate", ["linear"], ["zoom"],
+                8, 0.35,
+                13, 0.65,
+                16, 0.9,
+                19, 1.15
+              ],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
           "icon-pitch-alignment": "viewport",
