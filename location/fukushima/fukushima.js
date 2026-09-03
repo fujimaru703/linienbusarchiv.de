@@ -623,10 +623,10 @@ labelpdglr.forEach(label => labelIconMap.set(label, 'icon/pdg-lr-v2.png'));
 const labelpkhr = ['8024','8033','8044','8074'];
 labelpkhr.forEach(label => labelIconMap.set(label, 'icon/pk-hr-v2.png'));
 
-const labelrakuraku = ['0018','0021','8163','8162','0116','8188','0119','0120','0121','8169','0193','0236','0237','0238','2045','0299','0302','0397','0408','0406','0407','0409','8134','8135'];
+const labelrakuraku = ['0018','0021','8163','8162','0116','8188','0119','0120','0121','8169','0193','0236','0237','0238','2045','0299','0302','0397','0408','0406','0407','0409','8134','8135','0017','0847','0867']];
 labelrakuraku.forEach(label => labelIconMap.set(label, 'icon/rakuraku-v3.png'));
 
-const labelrakurakuf = ['0017','0116','0017','0847','0867'];
+const labelrakurakuf = ['0017','0116';
 labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f-v3.png'));
 
 const labelrinkomio = ['1336','1369','1379','5003','5004','1710','1720','2020','1732','1850','1854','1857','2041','8025'];
