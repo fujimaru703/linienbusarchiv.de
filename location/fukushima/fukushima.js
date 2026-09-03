@@ -3016,6 +3016,49 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
 
       if (
+        entry.currentNode &&
+        !node?.virtual_root
+      ) {
+        // 現在便も、ここまで実際に辿った運用パターンの
+        // サンプル数 n=count/total を表示する。
+        //
+        // day_treeでは現在便にも actual_cumulative_* が
+        // 入っているのでそれを最優先し、無い場合だけ
+        // cumulative_* をフォールバックとして使う。
+        const currentCountRaw =
+          node?.actual_cumulative_count ??
+          node?.cumulative_count;
+
+        const currentNRaw =
+          node?.actual_cumulative_n ??
+          node?.cumulative_n;
+
+        const currentCount =
+          Number(currentCountRaw);
+
+        const currentN =
+          Number(currentNRaw);
+
+        if (
+          currentCountRaw !== null &&
+          currentCountRaw !== undefined &&
+          currentNRaw !== null &&
+          currentNRaw !== undefined &&
+          Number.isFinite(currentCount) &&
+          Number.isFinite(currentN)
+        ) {
+          const sample =
+            document.createElement("div");
+
+          sample.className =
+            "unyo-flow-sample";
+
+          sample.textContent =
+            `n=${currentCount}/${currentN}`;
+
+          item.appendChild(sample);
+        }
+      } else if (
         entry.actualNode &&
         entry.depth !== 0 &&
         !node?.virtual_root
