@@ -430,9 +430,6 @@ label2940.forEach(label => labelIconMap.set(label, 'icon/2940-v2.png'));
 const label2941 = ['2941'];
 label2941.forEach(label => labelIconMap.set(label, 'icon/2941-v2.png'));
 
-const label7077 = ['7077'];
-label7077.forEach(label => labelIconMap.set(label, 'icon/7077-v2.png'));
-
 const label7079 = ['7079'];
 label7079.forEach(label => labelIconMap.set(label, 'icon/7079-v2.png'));
 
@@ -532,7 +529,7 @@ labelmkf.forEach(label => labelIconMap.set(label, 'icon/mk-f-v2.png'));
 const labelmp35silver = ['7106','7109','7111','7112','7114','7117','7119'];
 labelmp35silver.forEach(label => labelIconMap.set(label, 'icon/mp35-silver-v2.png'));
 
-const labelmp37 = ['2039','2046','8006','7058','8007','8009','8010','8012','7078','7084','7088','7089','7090','7091','7098','7099','7100','7129','7130','7136','7139','7143','7145','7151','7152','8096','8171'];
+const labelmp37 = ['2039','2046','8006','7058','8007','8009','8010','8012','7077','7078','7084','7088','7089','7090','7091','7098','7099','7100','7129','7130','7136','7139','7143','7145','7151','7152','8096','8171'];
 labelmp37.forEach(label => labelIconMap.set(label, 'icon/mp37-v2.png'));
 
 const labelmp37black = ['7082','7083','7093','7094','7095','7096'];
