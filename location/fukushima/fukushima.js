@@ -3280,7 +3280,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       for (
         const card of
           clone.querySelectorAll(
-            ".unyo-flow-card-actual"
+            ".unyo-flow-card-actual:not(.unyo-flow-card-place)"
           )
       ) {
         // html2canvas は inset box-shadow を全面塗りとして
@@ -3297,10 +3297,88 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         card.style.opacity = "1";
       }
 
+      // 施設カードもhtml2canvasで左帯が崩れないよう、
+      // 保存時だけ inset shadow を border-left へ置き換える。
       for (
         const card of
           clone.querySelectorAll(
-            ".unyo-flow-card-current.unyo-flow-card-actual"
+            ".unyo-flow-card-place"
+          )
+      ) {
+        const isArrival =
+          card.classList.contains(
+            "unyo-flow-card-place-arrival"
+          );
+
+        const isDeparture =
+          card.classList.contains(
+            "unyo-flow-card-place-departure"
+          );
+
+        const isInferred =
+          card.classList.contains(
+            "unyo-flow-card-place-inferred"
+          );
+
+        const borderColor =
+          isArrival
+            ? "#557d69"
+            : isDeparture
+              ? "#806d54"
+              : "#667985";
+
+        const leftColor =
+          isInferred
+            ? "#a08b68"
+            : borderColor;
+
+        const background =
+          isInferred
+            ? "#fbf9f5"
+            : isArrival
+              ? "#f2f8f4"
+              : isDeparture
+                ? "#faf7f2"
+                : "#f5f8f9";
+
+        card.style.borderWidth =
+          "2px";
+
+        card.style.borderStyle =
+          isInferred
+            ? "dashed"
+            : "solid";
+
+        card.style.borderColor =
+          borderColor;
+
+        card.style.borderLeftWidth =
+          "6px";
+
+        card.style.borderLeftStyle =
+          "solid";
+
+        card.style.borderLeftColor =
+          leftColor;
+
+        card.style.background =
+          background;
+
+        card.style.backgroundColor =
+          background;
+
+        card.style.boxShadow =
+          "0 3px 9px rgba(37,57,69,.12)";
+
+        card.style.opacity =
+          "1";
+      }
+
+
+      for (
+        const card of
+          clone.querySelectorAll(
+            ".unyo-flow-card-current.unyo-flow-card-actual:not(.unyo-flow-card-place)"
           )
       ) {
         card.style.borderWidth = "2px";
@@ -3627,6 +3705,76 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             background: #dfeef3;
             border-color: #b8d2dc;
             color: #365a6b;
+          }
+
+          /* 営業所・駐在・工場・待機場所の到着/出発 */
+          .unyo-flow-card-place,
+          .unyo-flow-card-place.unyo-flow-card-actual {
+            border-width: 2px;
+            border-style: solid;
+            border-color: #667985;
+            background: #f5f8f9;
+            box-shadow:
+              inset 4px 0 0 #667985,
+              0 3px 9px rgba(37,57,69,.12);
+            opacity: 1;
+          }
+
+          .unyo-flow-card-place-arrival,
+          .unyo-flow-card-place-arrival.unyo-flow-card-actual {
+            border-color: #557d69;
+            background: #f2f8f4;
+            box-shadow:
+              inset 4px 0 0 #557d69,
+              0 3px 9px rgba(37,57,69,.12);
+          }
+
+          .unyo-flow-card-place-departure,
+          .unyo-flow-card-place-departure.unyo-flow-card-actual {
+            border-color: #806d54;
+            background: #faf7f2;
+            box-shadow:
+              inset 4px 0 0 #806d54,
+              0 3px 9px rgba(37,57,69,.12);
+          }
+
+          .unyo-flow-card-place-inferred,
+          .unyo-flow-card-place-inferred.unyo-flow-card-actual {
+            border-style: dashed;
+            border-color: #85765f;
+            background: #fbf9f5;
+            box-shadow:
+              inset 4px 0 0 #a08b68,
+              0 3px 9px rgba(37,57,69,.10);
+          }
+
+          .unyo-flow-place-name {
+            font-size: 10px;
+          }
+
+          .unyo-flow-place-badge {
+            color: #fff;
+            background: #667985;
+          }
+
+          .unyo-flow-card-place-arrival .unyo-flow-place-badge {
+            background: #557d69;
+          }
+
+          .unyo-flow-card-place-departure .unyo-flow-place-badge {
+            background: #806d54;
+          }
+
+          .unyo-flow-card-place-inferred .unyo-flow-place-badge {
+            background: #8a7659;
+          }
+
+          .unyo-flow-place-time {
+            margin-top: 5px;
+            font-size: 9px;
+            line-height: 1.2;
+            font-weight: 900;
+            color: #53636b;
           }
 
           .unyo-flow-card-end {
@@ -4683,6 +4831,133 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       return "";
     }
 
+    function isPredictionPlaceEvent(node) {
+      return Boolean(
+        node?.place_event === true ||
+        node?.type === "place_event" ||
+        node?.type === "place_departure"
+      );
+    }
+
+
+    function predictionPlaceEventLabel(node) {
+      const eventType =
+        cleanId(node?.event_type);
+
+      const inferred =
+        Boolean(node?.inferred);
+
+      if (eventType === "arrival") {
+        return inferred
+          ? "到着（推定）"
+          : "到着";
+      }
+
+      if (eventType === "departure") {
+        return inferred
+          ? "出庫"
+          : "出発";
+      }
+
+      const label =
+        cleanId(node?.event_label);
+
+      if (label) {
+        return label;
+      }
+
+      return "施設イベント";
+    }
+
+
+    function createPredictionPlaceEventCard(
+      entry,
+      item
+    ) {
+      const node =
+        entry.node;
+
+      const eventType =
+        cleanId(node?.event_type);
+
+      item.classList.add(
+        "unyo-flow-card-place"
+      );
+
+      if (eventType === "arrival") {
+        item.classList.add(
+          "unyo-flow-card-place-arrival"
+        );
+      } else if (
+        eventType === "departure"
+      ) {
+        item.classList.add(
+          "unyo-flow-card-place-departure"
+        );
+      }
+
+      if (node?.inferred) {
+        item.classList.add(
+          "unyo-flow-card-place-inferred"
+        );
+      }
+
+      const top =
+        document.createElement("div");
+
+      top.className =
+        "unyo-flow-topline";
+
+      const name =
+        document.createElement("div");
+
+      name.className =
+        "unyo-flow-name unyo-flow-place-name";
+
+      name.textContent =
+        cleanId(node?.place_name) ||
+        "施設";
+
+      const badge =
+        document.createElement("span");
+
+      badge.className =
+        "unyo-flow-badge unyo-flow-place-badge";
+
+      badge.textContent =
+        predictionPlaceEventLabel(
+          node
+        );
+
+      top.append(
+        name,
+        badge
+      );
+
+      item.appendChild(top);
+
+      const displayTime =
+        cleanId(
+          node?.display_time
+        );
+
+      if (displayTime) {
+        const time =
+          document.createElement("div");
+
+        time.className =
+          "unyo-flow-place-time";
+
+        time.textContent =
+          displayTime;
+
+        item.appendChild(time);
+      }
+
+      return item;
+    }
+
+
     function createPredictionFlowCard(entry) {
       const node = entry.node;
       const item = document.createElement("div");
@@ -4706,6 +4981,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       if (node?.occupied_by_other) {
         item.classList.add("unyo-flow-card-occupied");
+      }
+
+      // 施設到着/出発は通常の便カードとは別表示。
+      // 「本日充当」、系統、停留所、確率、n は表示しない。
+      if (isPredictionPlaceEvent(node)) {
+        return createPredictionPlaceEventCard(
+          entry,
+          item
+        );
       }
 
       const top = document.createElement("div");
