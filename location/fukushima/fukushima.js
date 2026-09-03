@@ -2892,13 +2892,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           "unyo-flow-actual-badge"
         );
 
+        const actualCumulativeRaw =
+          node
+            ?.actual_cumulative_probability;
+
         const actualCumulative =
           Number(
-            node
-              ?.actual_cumulative_probability
+            actualCumulativeRaw
           );
 
         if (
+          actualCumulativeRaw !== null &&
+          actualCumulativeRaw !== undefined &&
+          actualCumulativeRaw !== "" &&
           Number.isFinite(
             actualCumulative
           )
@@ -3060,12 +3066,49 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
 
       if (
-        !entry.currentNode &&
-        !entry.actualNode &&
+        entry.actualNode &&
         !node?.virtual_root
       ) {
-        const sample = document.createElement("div");
-        sample.className = "unyo-flow-sample";
+        const actualCountRaw =
+          node?.actual_cumulative_count;
+
+        const actualNRaw =
+          node?.actual_cumulative_n;
+
+        const actualCount =
+          Number(actualCountRaw);
+
+        const actualN =
+          Number(actualNRaw);
+
+        if (
+          actualCountRaw !== null &&
+          actualCountRaw !== undefined &&
+          actualNRaw !== null &&
+          actualNRaw !== undefined &&
+          Number.isFinite(actualCount) &&
+          Number.isFinite(actualN)
+        ) {
+          const sample =
+            document.createElement("div");
+
+          sample.className =
+            "unyo-flow-sample";
+
+          sample.textContent =
+            `n=${actualCount}/${actualN}`;
+
+          item.appendChild(sample);
+        }
+      } else if (
+        !entry.currentNode &&
+        !node?.virtual_root
+      ) {
+        const sample =
+          document.createElement("div");
+
+        sample.className =
+          "unyo-flow-sample";
 
         const nText =
           formatCumulativeN(node);
