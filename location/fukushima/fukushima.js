@@ -163,7 +163,6 @@
     map.on("pitchend", saveMapCamera);
     map.on("zoom", () => {
       updateVehicleNumberMarkerOffsets();
-      updateRareVehicleMarkerOffsets();
     });
 
     // =========================================================
@@ -841,7 +840,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       selectedTripId = null;
 
       updateVehicleNumberMarkers([]);
-      updateRareVehicleMarkers([]);
       clearSelectedStopNameMarkers();
 
       if (vehicleInfoPanel) {
@@ -2156,8 +2154,20 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       stage.style.width =
         `${Math.max(scaledWidth, minScrollableWidth)}px`;
 
+      // ズーム時に最下段カードが表示領域の端で切れないよう、
+      // スクロール領域の下側へ十分な余白を確保する。
+      const scaledHeight =
+        Math.max(1, rawHeight * nextZoom);
+
+      const bottomScrollPadding =
+        Math.max(
+          90,
+          Math.round(body.clientHeight * 0.22)
+        );
+
       stage.style.height =
-        `${Math.max(1, rawHeight * nextZoom)}px`;
+        `${scaledHeight + bottomScrollPadding}px`;
+
       body.dataset.predictionZoom = String(nextZoom);
 
       if (keepCenter && oldZoom > 0) {
@@ -4119,13 +4129,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             rareVehicleSet
           );
 
-          updateRareVehicleMarkers([
+          updateVehicleNumberMarkers([
             ...latestVehicles,
             ...fallbackVehicles
           ]);
         }
       } catch (e) {
-        // 失敗時は今表示中の✨を消さない。
+        // 失敗時は現在のレア車番表示を維持する。
         console.warn(
           "rare vehicles load failed",
           e
@@ -4137,27 +4147,45 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
 
-    function createVehicleNumberElement(label) {
+    function applyVehicleNumberStyle(el, isRare) {
+      if (!el) return;
+
+      if (isRare) {
+        // レア運用中:
+        // ✨を出さず、アイコン下の車番ラベルだけ金色系に変える。
+        el.style.border = "1px solid rgba(184, 134, 11, .72)";
+        el.style.background = "rgba(255, 248, 214, .96)";
+        el.style.boxShadow = "0 1px 5px rgba(152, 108, 0, .22)";
+        el.style.color = "#7a5700";
+        el.style.fontWeight = "900";
+      } else {
+        el.style.border = "1px solid rgba(38, 52, 60, .16)";
+        el.style.background = "rgba(255, 255, 255, .90)";
+        el.style.boxShadow = "0 1px 4px rgba(21, 42, 56, .12)";
+        el.style.color = "#26343c";
+        el.style.fontWeight = "800";
+      }
+    }
+
+
+    function createVehicleNumberElement(label, isRare = false) {
       const el = document.createElement("div");
 
       el.textContent = label || "?";
       el.style.pointerEvents = "none";
       el.style.whiteSpace = "nowrap";
       el.style.padding = "1px 4px";
-      el.style.border = "1px solid rgba(38, 52, 60, .16)";
       el.style.borderRadius = "4px";
-      el.style.background = "rgba(255, 255, 255, .90)";
-      el.style.boxShadow = "0 1px 4px rgba(21, 42, 56, .12)";
-      el.style.color = "#26343c";
       el.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', sans-serif";
       el.style.fontSize = "9px";
-      el.style.fontWeight = "800";
       el.style.lineHeight = "1.15";
       el.style.letterSpacing = ".1px";
       el.style.backdropFilter = "blur(3px)";
       el.style.webkitBackdropFilter = "blur(3px)";
       el.style.userSelect = "none";
       el.style.webkitUserSelect = "none";
+
+      applyVehicleNumberStyle(el, isRare);
 
       return el;
     }
@@ -4177,10 +4205,18 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         const key = vehicleMarkerKey(v);
         alive.add(key);
 
+        const vehicleCd = cleanId(v.label);
+        const isRare =
+          !!vehicleCd &&
+          rareVehicleSet.has(vehicleCd);
+
         let item = vehicleNumberMarkers.get(key);
 
         if (!item) {
-          const element = createVehicleNumberElement(v.label);
+          const element = createVehicleNumberElement(
+            v.label,
+            isRare
+          );
 
           const marker = new maplibregl.Marker({
             element,
@@ -4202,6 +4238,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           if (item.element.textContent !== nextText) {
             item.element.textContent = nextText;
           }
+
+          // rareVehicleSetが更新された場合も、
+          // Markerを作り直さずその場で見た目だけ切り替える。
+          applyVehicleNumberStyle(
+            item.element,
+            isRare
+          );
         }
       }
 
@@ -4652,7 +4695,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         await ensureVehicleIcons(allVehicles);
         map.getSource("vehicles").setData(vehicleGeoJson());
         updateVehicleNumberMarkers(allVehicles);
-        updateRareVehicleMarkers(allVehicles);
 
         // レア運用一覧だけは2分ごとに一括更新。
         // 15秒の位置更新自体は待たせない。
