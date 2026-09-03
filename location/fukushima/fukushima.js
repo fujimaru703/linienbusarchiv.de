@@ -1604,7 +1604,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           // 04:00～05:59は通常色、
           // 06:00～17:59はグレー表示。
           isRetainedGray:
-            v?.grayOut === true
+            v?.grayOut === true ||
+            v?.grayOut === 1 ||
+            v?.grayOut === "1"
         });
       }
 
@@ -5063,8 +5065,67 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     function showVehicleInfoPanel(vehicleProperties, currentSeq) {
       const panel = ensureVehicleInfoPanel();
 
+      const isRetained =
+        Number(vehicleProperties.isRetained) === 1;
+
+      const isRetainedGray =
+        Number(vehicleProperties.isRetainedGray) === 1;
+
       const isFallback =
         Number(vehicleProperties.isFallback) === 1;
+
+      // グレーアウト中の前日残留車は、車番と「前日データ」であることだけ表示。
+      // 便情報・次便予測・回送追跡は表示しない。
+      if (isRetained) {
+        if (!isRetainedGray) {
+          hideVehicleInfoPanel();
+          return;
+        }
+
+        const iconUrl =
+          getVehicleIconUrl(
+            vehicleProperties.label
+          );
+
+        const head =
+          document.createElement("div");
+        head.className = "vip-head";
+
+        const img =
+          document.createElement("img");
+        img.className = "vip-icon";
+        img.src = iconUrl;
+        img.alt = "";
+        img.style.filter = "grayscale(1)";
+        img.style.opacity = "0.55";
+
+        const number =
+          document.createElement("div");
+        number.className = "vip-number";
+        number.textContent =
+          vehicleProperties.label || "?";
+
+        head.append(img, number);
+
+        const previousDay =
+          document.createElement("div");
+        previousDay.className = "vip-route";
+        previousDay.textContent = "前日の最終位置";
+
+        const note =
+          document.createElement("div");
+        note.className = "vip-destination";
+        note.textContent = "前日データ";
+
+        panel.replaceChildren(
+          head,
+          previousDay,
+          note
+        );
+
+        panel.style.display = "block";
+        return;
+      }
 
       const next =
         isFallback
@@ -5903,7 +5964,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         map.getSource("selected-stops")
           ?.setData(emptyFeatureCollection());
 
-        hideVehicleInfoPanel();
+        if (Number(p.isRetainedGray) === 1) {
+          showVehicleInfoPanel(p, NaN);
+        } else {
+          hideVehicleInfoPanel();
+        }
         return;
       }
 
@@ -6339,7 +6404,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           "icon-opacity": [
             "case",
             ["==", ["get", "isRetainedGray"], 1],
-            0.38,
+            0.32,
             1
           ]
         }
@@ -6366,14 +6431,20 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           features: [JSON.parse(JSON.stringify(f))]
         });
 
-        // 前日残留車は位置情報だけ表示する。
+        // 前日残留車はルート・停留所を出さない。
+        // グレーアウト中だけ、前日データ用の簡易ポップアップを表示する。
         if (Number(p.isRetained) === 1) {
           selectedTripId = null;
-          hideVehicleInfoPanel();
           clearSelectedStopNameMarkers();
-          map.getSource("selected-vehicle").setData(emptyFeatureCollection());
           map.getSource("selected-route").setData(emptyFeatureCollection());
           map.getSource("selected-stops").setData(emptyFeatureCollection());
+
+          if (Number(p.isRetainedGray) === 1) {
+            showVehicleInfoPanel(p, NaN);
+          } else {
+            hideVehicleInfoPanel();
+            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
+          }
           return;
         }
 
