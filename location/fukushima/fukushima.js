@@ -5995,14 +5995,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         }
       } else if (
         entry.actualNode &&
-        entry.depth !== 0 &&
         !node?.virtual_root
       ) {
         const actualCountRaw =
-          node?.actual_cumulative_count;
+          node?.actual_cumulative_count ??
+          node?.cumulative_count;
 
         const actualNRaw =
-          node?.actual_cumulative_n;
+          node?.actual_cumulative_n ??
+          node?.cumulative_n;
 
         const actualCount =
           Number(actualCountRaw);
