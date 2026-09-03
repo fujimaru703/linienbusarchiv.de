@@ -194,6 +194,7 @@
 
     let rareVehicleSet = new Set();
     let rareVehiclesLastFetch = 0;
+    let rareVehiclesFetchRunning = false;
 
     // 車番ごとの当日充当履歴。プルダウンを初めて開いた時だけ取得する。
     const vehicleHistoryCache = new Map();
@@ -2902,6 +2903,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
           );
 
         if (
+          entry.depth !== 0 &&
           actualCumulativeRaw !== null &&
           actualCumulativeRaw !== undefined &&
           actualCumulativeRaw !== "" &&
@@ -2921,32 +2923,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             actualCumulative < 5
               ? `${percent}% レア✨`
               : `${percent}%`;
-
-          if (
-            actualCumulative < 5
-          ) {
-            const rareAssignedVehicle =
-              cleanId(
-                node?.assigned_vehicle
-              );
-
-            if (rareAssignedVehicle) {
-              rareVehicleSet.add(
-                rareAssignedVehicle
-              );
-
-              console.log(
-                "[rare-operation]",
-                rareAssignedVehicle,
-                `${percent}%`
-              );
-
-              updateRareVehicleMarkers([
-                ...latestVehicles,
-                ...fallbackVehicles
-              ]);
-            }
-          }
         } else {
           badge.textContent = "";
         }
@@ -2980,36 +2956,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             cumulative < 5
               ? `${percent}% レア✨`
               : `${percent}%`;
-
-          // ツリー上で「5%未満 + 実際に他車充当」が確認できた時点で、
-          // その車を地図上のレア車集合へ即登録する。
-          // /rare-vehicles の一括判定とは独立した二重経路。
-          if (
-            confirmed &&
-            cumulative < 5
-          ) {
-            const rareAssignedVehicle =
-              cleanId(
-                node?.assigned_vehicle
-              );
-
-            if (rareAssignedVehicle) {
-              rareVehicleSet.add(
-                rareAssignedVehicle
-              );
-
-              console.log(
-                "[rare-operation]",
-                rareAssignedVehicle,
-                `${percent}%`
-              );
-
-              updateRareVehicleMarkers([
-                ...latestVehicles,
-                ...fallbackVehicles
-              ]);
-            }
-          }
         } else {
           badge.textContent = "";
         }
@@ -3067,6 +3013,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       if (
         entry.actualNode &&
+        entry.depth !== 0 &&
         !node?.virtual_root
       ) {
         const actualCountRaw =
@@ -3798,55 +3745,109 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
-    async function refreshRareVehicles(force = false) {
-      const now = Date.now();
+    async function refreshRareVehicles(
+      force = false
+    ) {
+      const now =
+        Date.now();
 
       if (
-        !force &&
-        now - rareVehiclesLastFetch < RARE_VEHICLES_REFRESH_MS
+        rareVehiclesFetchRunning
       ) {
         return;
       }
 
-      rareVehiclesLastFetch = now;
+      if (
+        !force &&
+        now -
+          rareVehiclesLastFetch <
+          RARE_VEHICLES_REFRESH_MS
+      ) {
+        return;
+      }
+
+      rareVehiclesLastFetch =
+        now;
+
+      rareVehiclesFetchRunning =
+        true;
 
       try {
-        const response = await fetch(
-          RARE_VEHICLES_URL,
-          { cache: "no-store" }
-        );
+        const response =
+          await fetch(
+            RARE_VEHICLES_URL,
+            {
+              cache:
+                "no-store"
+            }
+          );
 
         if (!response.ok) {
-          throw new Error(`rare vehicles HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        const apiRareVehicles =
-          (data?.vehicles || [])
-            .map(
-              row =>
-                cleanId(
-                  row?.vehicle_cd
-                )
-            )
-            .filter(Boolean);
-
-        for (
-          const vehicleCd of
-            apiRareVehicles
-        ) {
-          rareVehicleSet.add(
-            vehicleCd
+          throw new Error(
+            `rare vehicles HTTP ${response.status}`
           );
         }
 
-        updateRareVehicleMarkers([
-          ...latestVehicles,
-          ...fallbackVehicles
-        ]);
+        const data =
+          await response.json();
+
+        const nextSet =
+          new Set(
+            (
+              data?.vehicles ||
+              []
+            )
+              .map(
+                row =>
+                  cleanId(
+                    row?.vehicle_cd
+                  )
+              )
+              .filter(
+                Boolean
+              )
+          );
+
+        // 内容が同じならDOM/Markerを触らない。
+        let changed =
+          nextSet.size !==
+          rareVehicleSet.size;
+
+        if (!changed) {
+          for (
+            const vehicleCd of
+              nextSet
+          ) {
+            if (
+              !rareVehicleSet.has(
+                vehicleCd
+              )
+            ) {
+              changed =
+                true;
+              break;
+            }
+          }
+        }
+
+        if (changed) {
+          rareVehicleSet =
+            nextSet;
+
+          updateRareVehicleMarkers([
+            ...latestVehicles,
+            ...fallbackVehicles
+          ]);
+        }
       } catch (e) {
-        console.warn("rare vehicles load failed", e);
+        // 失敗時は今表示中の✨を消さない。
+        console.warn(
+          "rare vehicles load failed",
+          e
+        );
+      } finally {
+        rareVehiclesFetchRunning =
+          false;
       }
     }
 
