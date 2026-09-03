@@ -47,6 +47,94 @@
     const SERVICE_END_MARGIN_SEC = 20 * 60;
     const SERVICE_TIMEZONE = "Asia/Tokyo";
 
+
+    // =========================================================
+    // スマホ: ページ全体のブラウザズームを禁止
+    // 詳細予測ツリー内の独自2本指ズームはそのまま使用する。
+    // =========================================================
+    (() => {
+      const insidePredictionOverlay =
+        target =>
+          Boolean(
+            target &&
+            typeof target.closest ===
+              "function" &&
+            target.closest(
+              "#unyoPredictionOverlay"
+            )
+          );
+
+      // iOS Safari のネイティブ pinch zoom を止める。
+      for (const type of [
+        "gesturestart",
+        "gesturechange",
+        "gestureend"
+      ]) {
+        document.addEventListener(
+          type,
+          e => {
+            // 予測ツリー内も Safari のページズームは止める。
+            // ツリー自体の拡大は既存の独自処理で行う。
+            e.preventDefault();
+          },
+          {
+            passive: false,
+            capture: true
+          }
+        );
+      }
+
+      // 2本指でページ全体が拡大されるのを防ぐ。
+      document.addEventListener(
+        "touchmove",
+        e => {
+          if (
+            e.touches &&
+            e.touches.length >= 2
+          ) {
+            e.preventDefault();
+          }
+        },
+        {
+          passive: false,
+          capture: true
+        }
+      );
+
+      // 予測ツリー以外でのダブルタップ拡大も防ぐ。
+      let lastTouchEndAt = 0;
+
+      document.addEventListener(
+        "touchend",
+        e => {
+          if (
+            insidePredictionOverlay(
+              e.target
+            )
+          ) {
+            return;
+          }
+
+          const now =
+            Date.now();
+
+          if (
+            now - lastTouchEndAt <
+              300
+          ) {
+            e.preventDefault();
+          }
+
+          lastTouchEndAt =
+            now;
+        },
+        {
+          passive: false,
+          capture: true
+        }
+      );
+    })();
+
    // =========================================================
     // 地図
     // =========================================================
@@ -2609,6 +2697,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           color: #17232b;
           display: none;
           pointer-events: auto;
+          touch-action: manipulation;
         }
 
         #vehicleInfoPanel .vip-head {
@@ -6850,6 +6939,37 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           return new Set();
         }
 
+        const parsed =
+          JSON.parse(raw);
+
+        const today =
+          getJstDateString();
+
+        // 日付が変わったら前日のレア判定は引き継がない。
+        if (
+          !parsed ||
+          parsed.serviceDate !== today ||
+          !Array.isArray(
+            parsed.vehicles
+          )
+        ) {
+          localStorage.removeItem(
+            RARE_VEHICLES_STORAGE_KEY
+          );
+
+          return new Set();
+        }
+
+        return new Set(
+          parsed.vehicles.map(
+            cleanId
+          ).filter(Boolean)
+        );
+      } catch (_) {
+        return new Set();
+      }
+    }
+
         const data =
           JSON.parse(raw);
 
@@ -6872,17 +6992,22 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
     function saveRareVehiclesToStorage(
-      set
+      vehicles
     ) {
       try {
         localStorage.setItem(
           RARE_VEHICLES_STORAGE_KEY,
           JSON.stringify({
+            serviceDate:
+              getJstDateString(),
             savedAt:
               Date.now(),
             vehicles:
-              [...set]
+              [...vehicles]
           })
+        );
+      } catch (_) {}
+    })
         );
       } catch (_) {}
     }
@@ -6965,6 +7090,33 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     async function refreshRareVehicles(
       force = false
     ) {
+      // 日付跨ぎ時は、取得成功前でも前日の表示を消す。
+      try {
+        const raw =
+          localStorage.getItem(
+            RARE_VEHICLES_STORAGE_KEY
+          );
+
+        if (raw) {
+          const parsed =
+            JSON.parse(raw);
+
+          if (
+            parsed?.serviceDate !==
+              getJstDateString()
+          ) {
+            localStorage.removeItem(
+              RARE_VEHICLES_STORAGE_KEY
+            );
+
+            rareVehicleSet =
+              new Set();
+
+            updateRareVehicleMarkers();
+          }
+        }
+      } catch (_) {}
+
       const now =
         Date.now();
 
