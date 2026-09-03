@@ -5147,7 +5147,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         panel.replaceChildren(
           head,
           previousDay,
-          note
         );
 
         panel.style.display = "block";
