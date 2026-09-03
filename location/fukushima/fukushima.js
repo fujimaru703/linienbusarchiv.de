@@ -47,7 +47,7 @@
     const SERVICE_END_MARGIN_SEC = 20 * 60;
     const SERVICE_TIMEZONE = "Asia/Tokyo";
 
-    // =========================================================
+   // =========================================================
     // 地図
     // =========================================================
     const CAMERA_STORAGE_KEY = "fukushima-map-camera-v1";
@@ -5086,13 +5086,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const isFallback =
         Number(vehicleProperties.isFallback) === 1;
 
-      // グレーアウト中の前日残留車は、車番と「前日データ」であることだけ表示。
+      // 前日残留車は4:00～17:59の間、通常色/グレーを問わず簡易ポップアップを表示。
       // 便情報・次便予測・回送追跡は表示しない。
       if (isRetained) {
-        if (!isRetainedGray) {
-          hideVehicleInfoPanel();
-          return;
-        }
 
         const iconUrl =
           getVehicleIconUrl(
@@ -5108,8 +5104,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         img.className = "vip-icon";
         img.src = iconUrl;
         img.alt = "";
-        img.style.filter = "grayscale(1)";
-        img.style.opacity = "0.55";
+        if (isRetainedGray) {
+          img.style.filter = "grayscale(1)";
+          img.style.opacity = "0.55";
+        }
 
         const number =
           document.createElement("div");
@@ -5976,11 +5974,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         map.getSource("selected-stops")
           ?.setData(emptyFeatureCollection());
 
-        if (Number(p.isRetainedGray) === 1) {
-          showVehicleInfoPanel(p, NaN);
-        } else {
-          hideVehicleInfoPanel();
-        }
+        showVehicleInfoPanel(p, NaN);
         return;
       }
 
@@ -6443,20 +6437,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           features: [JSON.parse(JSON.stringify(f))]
         });
 
-        // 前日残留車はルート・停留所を出さない。
-        // グレーアウト中だけ、前日データ用の簡易ポップアップを表示する。
+        // 前日残留車はルート・停留所を出さず、4:00～17:59は通常色/グレーを問わず
+        // 前日データ用の簡易ポップアップを表示する。回送追跡も表示しない。
         if (Number(p.isRetained) === 1) {
           selectedTripId = null;
           clearSelectedStopNameMarkers();
           map.getSource("selected-route").setData(emptyFeatureCollection());
           map.getSource("selected-stops").setData(emptyFeatureCollection());
-
-          if (Number(p.isRetainedGray) === 1) {
-            showVehicleInfoPanel(p, NaN);
-          } else {
-            hideVehicleInfoPanel();
-            map.getSource("selected-vehicle").setData(emptyFeatureCollection());
-          }
+          showVehicleInfoPanel(p, NaN);
           return;
         }
 
