@@ -1838,20 +1838,62 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
           .unyo-flow-card-current {
             border-width: 2px;
-            border-color: #526b78;
-            background: #f8fbfc;
+            border-color: #365a6b;
+            background: #f4fafc;
+            box-shadow:
+              0 0 0 2px rgba(54,90,107,.18),
+              0 4px 12px rgba(37,57,69,.16);
           }
 
+          /* 今日この車が実際に担当した便。
+             未充当の履歴候補とは外箱から見分けられるようにする。 */
           .unyo-flow-card-actual {
-            border-color: #c8d1d6;
-            background: #f4f6f7;
-            opacity: .9;
+            border-width: 2px;
+            border-color: #4f8a69;
+            background: #f2f8f4;
+            box-shadow:
+              inset 4px 0 0 #4f8a69,
+              0 3px 9px rgba(37,57,69,.13);
+            opacity: 1;
+          }
+
+          /* 現在便は「本日充当」よりさらに強く表示 */
+          .unyo-flow-card-current.unyo-flow-card-actual {
+            border-width: 2px;
+            border-color: #365a6b;
+            background: #eef7fa;
+            box-shadow:
+              inset 4px 0 0 #365a6b,
+              0 0 0 2px rgba(54,90,107,.20),
+              0 5px 14px rgba(37,57,69,.18);
           }
 
           .unyo-flow-actual-badge {
-            background: #75858d !important;
+            background: #4f8a69 !important;
             color: #fff !important;
-            border-color: #75858d !important;
+            border-color: #4f8a69 !important;
+          }
+
+          .unyo-flow-actual-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            margin-top: 4px;
+            padding: 1px 5px;
+            border-radius: 999px;
+            background: #e2f1e7;
+            border: 1px solid #b9d8c4;
+            color: #356548;
+            font-size: 7px;
+            line-height: 1.2;
+            font-weight: 900;
+            letter-spacing: .02em;
+          }
+
+          .unyo-flow-card-current .unyo-flow-actual-label {
+            background: #dfeef3;
+            border-color: #b8d2dc;
+            color: #365a6b;
           }
 
           .unyo-flow-card-end {
@@ -2980,6 +3022,23 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
 
       top.append(name, badge);
       item.appendChild(top);
+
+      if (entry.actualNode) {
+        const actualLabel =
+          document.createElement("div");
+
+        actualLabel.className =
+          "unyo-flow-actual-label";
+
+        actualLabel.textContent =
+          entry.currentNode
+            ? "本日充当・現在"
+            : "本日充当";
+
+        item.appendChild(
+          actualLabel
+        );
+      }
 
       if (entry.actualNode) {
         const actualState =
