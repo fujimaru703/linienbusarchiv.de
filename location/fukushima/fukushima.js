@@ -554,22 +554,24 @@
           source:
             "vehicle-place-label-points",
 
-          // 広域表示では場所名を消す。
-          minzoom: 14,
+          // 広域～中距離で表示し、拡大しすぎたら消す。
+          // zoom 15.5以上では非表示。
+          maxzoom: 15.5,
 
           layout: {
             visibility,
             "text-field":
               ["get", "name"],
 
-            // 拡大するほど少し大きくする。
+            // 広域側ではやや小さく、中距離で少し大きく。
             "text-size": [
               "interpolate",
               ["linear"],
               ["zoom"],
-              14, 13,
-              16, 15,
-              18, 16
+              10, 11,
+              12, 12,
+              14, 14,
+              15.4, 15
             ],
 
             "text-font": [
@@ -577,44 +579,56 @@
             ],
 
             "text-allow-overlap":
-              false,
+              true,
             "text-ignore-placement":
-              false,
+              true,
 
-            // 3D表示でも文字は画面正面を向く。
+            // 3D表示でも文字は地面に寝かせず画面正面を向く。
             "text-pitch-alignment":
               "viewport",
             "text-rotation-alignment":
               "viewport",
 
-            // pitchが大きいほど上へ浮かせる。
-            "text-offset": [
-              "interpolate",
-              ["linear"],
-              ["pitch"],
-              0,
-              ["literal", [0, 0]],
-              30,
-              ["literal", [0, -0.55]],
-              60,
-              ["literal", [0, -1.2]]
-            ]
+            // 実際の浮き上がり量は pitchchange 側で動的変更する。
+            "text-offset":
+              [0, 0]
           },
 
           paint: {
             "text-color":
-              "#24343d",
+              "#1f3038",
             "text-halo-color":
-              "rgba(255,255,255,.98)",
+              "rgba(255,255,255,1)",
             "text-halo-width":
-              2.8,
+              3,
             "text-halo-blur":
-              0.35
+              0.4
           }
         });
       }
     }
 
+
+
+    function updateVehiclePlaceLabelPitchOffset() {
+      if (!map.getLayer("vehicle-place-label")) return;
+
+      const pitch = Number(map.getPitch()) || 0;
+
+      // 2Dでは中央、3Dになるほど上へ浮かせる。
+      const y =
+        pitch >= 55 ? -1.35 :
+        pitch >= 40 ? -0.95 :
+        pitch >= 25 ? -0.55 :
+        pitch >= 10 ? -0.25 :
+        0;
+
+      map.setLayoutProperty(
+        "vehicle-place-label",
+        "text-offset",
+        [0, y]
+      );
+    }
 
     function loadSavedCamera() {
       try {
@@ -906,6 +920,12 @@
     map.on("zoomend", saveMapCamera);
     map.on("rotateend", saveMapCamera);
     map.on("pitchend", saveMapCamera);
+    map.on("pitch", () => {
+      updateVehiclePlaceLabelPitchOffset();
+    });
+    map.on("pitchend", () => {
+      updateVehiclePlaceLabelPitchOffset();
+    });
     map.on("zoom", () => {
       updateVehicleNumberMarkerOffsets();
     });
@@ -6979,6 +6999,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
         installLayers();
         installVehiclePlaceLayers();
+      updateVehiclePlaceLabelPitchOffset();
 
         status.textContent = "リアルタイム情報取得中...";
         setLoading(true, 72);
