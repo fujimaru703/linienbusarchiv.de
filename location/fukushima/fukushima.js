@@ -316,7 +316,7 @@
     let expandedHistoryVehicleCd = null;
 
     const labelIconMap = new Map();
-    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8138','8139','8141','8143','8145','8146','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
+    const label290 = ['2007','8015','8016','8037','8038','8057','8058','8059','8077','8078','8079','8081','8101','8102','0873','0874','8127','8138','8141','8143','8145','2006','0741','0743','0744','0774','0775','0803','8060','8061','7165','8080','80801','8098','8099','8100','8128','8129','8156','8157','8158','0887','0889','7216','0896','0897','8178','8179','8203','8204','8205','5007','5008'];
     label290.forEach(label => labelIconMap.set(label, 'icon/290-v2.png'));
 
 const labelergaev = ['7704','7705','7706'];
@@ -328,6 +328,9 @@ label557.forEach(label => labelIconMap.set(label, 'icon/557&2411-v2.png'));
 const label8137 = ['8137'];
 label8137.forEach(label => labelIconMap.set(label, 'icon/8137miura.png'));
 
+const label8139 = ['8139'];
+label8139.forEach(label => labelIconMap.set(label, 'icon/8139.png'));
+
 const label8140 = ['8140'];
 label8140.forEach(label => labelIconMap.set(label, 'icon/8140hgakuin.png'));
 
@@ -336,6 +339,9 @@ label8144.forEach(label => labelIconMap.set(label, 'icon/8144fdaigaku.png'));
 
 const label8145 = ['8145'];
 label8145.forEach(label => labelIconMap.set(label, 'icon/8145oyama.png'));
+
+const label8146 = ['8146'];
+label8146.forEach(label => labelIconMap.set(label, 'icon/8146.png'));
 
 const label8181 = ['8181'];
 label8181.forEach(label => labelIconMap.set(label, 'icon/8181-v2.png'));
