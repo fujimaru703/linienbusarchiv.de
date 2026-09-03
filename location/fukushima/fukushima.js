@@ -4210,6 +4210,29 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             font-weight: 900;
           }
 
+          /* 入庫場所不明カードだけは通常カードの省略表示を解除 */
+          .unyo-flow-card-place-unknown
+          .unyo-flow-name.unyo-flow-place-message {
+            flex: 1 1 100%;
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            line-height: 1.45;
+            font-size: 9px;
+          }
+
+          .unyo-flow-card-place-unknown
+          .unyo-flow-topline {
+            display: block;
+            width: 100%;
+            overflow: visible;
+          }
+
           .unyo-flow-badge {
             flex: 0 0 auto;
             padding: 1px 5px;
