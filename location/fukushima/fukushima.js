@@ -3345,6 +3345,123 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
       }
     }
 
+    function treeHasSelfRareActual(
+      node
+    ) {
+      if (!node) {
+        return false;
+      }
+
+      const isSelfActual =
+        Boolean(
+          node?.day_actual
+        );
+
+      if (isSelfActual) {
+        const countRaw =
+          node
+            ?.actual_cumulative_count;
+
+        const probabilityRaw =
+          node
+            ?.actual_cumulative_probability;
+
+        const count =
+          Number(countRaw);
+
+        const probability =
+          Number(
+            probabilityRaw
+          );
+
+        if (
+          node?.rare_pattern ===
+            true ||
+          (
+            countRaw !== null &&
+            countRaw !== undefined &&
+            Number.isFinite(
+              count
+            ) &&
+            count === 0
+          ) ||
+          (
+            probabilityRaw !== null &&
+            probabilityRaw !== undefined &&
+            Number.isFinite(
+              probability
+            ) &&
+            probability < 5
+          )
+        ) {
+          return true;
+        }
+      }
+
+      for (
+        const child of
+          getPredictionChildren(
+            node
+          )
+      ) {
+        if (
+          treeHasSelfRareActual(
+            child
+          )
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+
+    function registerRareVehicleFromOwnTree(
+      data,
+      vehicleCd
+    ) {
+      vehicleCd =
+        cleanId(
+          vehicleCd
+        );
+
+      if (
+        !vehicleCd ||
+        !data?.day_tree ||
+        !treeHasSelfRareActual(
+          data.day_tree
+        )
+      ) {
+        return;
+      }
+
+      if (
+        rareVehicleSet.has(
+          vehicleCd
+        )
+      ) {
+        return;
+      }
+
+      // 詳細ツリー自身が「この車の本日実績はレア」と確定した場合は、
+      // /rare-vehicles の一括集計結果を待たず、その場で地図✨へ反映。
+      // day_actualだけを見るため他車の兄弟枝で誤判定しない。
+      rareVehicleSet.add(
+        vehicleCd
+      );
+
+      saveRareVehiclesToStorage(
+        rareVehicleSet
+      );
+
+      updateRareVehicleMarkers([
+        ...latestVehicles,
+        ...fallbackVehicles
+      ]);
+    }
+
+
     async function loadAndShowPredictionTree(tripId, vehicleCd, isFallback = false) {
       const overlay = ensurePredictionPopup();
       const body = overlay.querySelector(".unyo-prediction-body");
@@ -3384,6 +3501,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234.png'));
             data?.error || "predict-tree API error"
           );
         }
+
+        // ツリー側で自車の0%/5%未満実績が確認できたなら、
+        // 一括APIの判定ズレがあっても地図✨を確実に付ける。
+        registerRareVehicleFromOwnTree(
+          data,
+          vehicleCd
+        );
 
         showPredictionPopup(data);
       } catch (e) {
