@@ -6939,18 +6939,17 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           return new Set();
         }
 
-        const parsed =
+        const data =
           JSON.parse(raw);
 
         const today =
           getJstDateString();
 
-        // 日付が変わったら前日のレア判定は引き継がない。
         if (
-          !parsed ||
-          parsed.serviceDate !== today ||
+          !data ||
+          data.serviceDate !== today ||
           !Array.isArray(
-            parsed.vehicles
+            data.vehicles
           )
         ) {
           localStorage.removeItem(
@@ -6961,25 +6960,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         }
 
         return new Set(
-          parsed.vehicles.map(
-            cleanId
-          ).filter(Boolean)
-        );
-      } catch (_) {
-        return new Set();
-      }
-    }
-
-        const data =
-          JSON.parse(raw);
-
-        const vehicles =
-          Array.isArray(data?.vehicles)
-            ? data.vehicles
-            : [];
-
-        return new Set(
-          vehicles
+          data.vehicles
             .map(
               value =>
                 cleanId(value)
@@ -6990,6 +6971,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         return new Set();
       }
     }
+
 
     function saveRareVehiclesToStorage(
       vehicles
@@ -7007,90 +6989,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           })
         );
       } catch (_) {}
-    })
-        );
-      } catch (_) {}
     }
 
-
-    function rareVehicleMarkerOffset() {
-      const halfIcon =
-        25 * vehicleIconScaleAtZoom(map.getZoom());
-
-      return [
-        Math.round(halfIcon * 0.72),
-        -Math.round(halfIcon * 0.72)
-      ];
-    }
-
-    function createRareVehicleElement() {
-      const el = document.createElement("div");
-      el.textContent = "✨";
-      el.style.pointerEvents = "none";
-      el.style.fontSize = "16px";
-      el.style.lineHeight = "1";
-      el.style.filter =
-        "drop-shadow(0 1px 2px rgba(0,0,0,.35))";
-      el.style.userSelect = "none";
-      el.style.webkitUserSelect = "none";
-      return el;
-    }
-
-    function updateRareVehicleMarkers(vehicles) {
-      const alive = new Set();
-      const offset = rareVehicleMarkerOffset();
-
-      for (const v of vehicles || []) {
-        if (!Number.isFinite(v.lat) || !Number.isFinite(v.lon)) continue;
-
-        const vehicleCd = cleanId(v.label);
-        if (!vehicleCd || !rareVehicleSet.has(vehicleCd)) continue;
-
-        const key = vehicleMarkerKey(v);
-        alive.add(key);
-
-        let item = rareVehicleMarkers.get(key);
-
-        if (!item) {
-          const element = createRareVehicleElement();
-
-          const marker = new maplibregl.Marker({
-            element,
-            anchor: "center",
-            offset,
-            pitchAlignment: "viewport",
-            rotationAlignment: "viewport"
-          })
-            .setLngLat([v.lon, v.lat])
-            .addTo(map);
-
-          item = { marker, element };
-          rareVehicleMarkers.set(key, item);
-        } else {
-          item.marker.setLngLat([v.lon, v.lat]);
-          item.marker.setOffset(offset);
-        }
-      }
-
-      for (const [key, item] of rareVehicleMarkers) {
-        if (alive.has(key)) continue;
-        item.marker.remove();
-        rareVehicleMarkers.delete(key);
-      }
-    }
-
-    function updateRareVehicleMarkerOffsets() {
-      const offset = rareVehicleMarkerOffset();
-
-      for (const { marker } of rareVehicleMarkers.values()) {
-        marker.setOffset(offset);
-      }
-    }
 
     async function refreshRareVehicles(
       force = false
     ) {
-      // 日付跨ぎ時は、取得成功前でも前日の表示を消す。
+      // 日付が変わっていたら、API取得前に前日のレア表示を消す。
       try {
         const raw =
           localStorage.getItem(
@@ -7098,11 +7003,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           );
 
         if (raw) {
-          const parsed =
+          const saved =
             JSON.parse(raw);
 
           if (
-            parsed?.serviceDate !==
+            saved?.serviceDate !==
               getJstDateString()
           ) {
             localStorage.removeItem(
@@ -7116,6 +7021,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           }
         }
       } catch (_) {}
+
 
       const now =
         Date.now();
