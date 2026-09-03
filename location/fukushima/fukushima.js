@@ -469,6 +469,9 @@ label8150.forEach(label => labelIconMap.set(label, 'icon/8150-v2.png'));
 const label8155 = ['8155'];
 label8155.forEach(label => labelIconMap.set(label, 'icon/8155-v2.png'));
 
+const label8186 = ['8186'];
+label8186.forEach(label => labelIconMap.set(label, 'icon/8186.png'));
+
 const label7097 = ['7097'];
 label7097.forEach(label => labelIconMap.set(label, 'icon/7097-v2.png'));
 
@@ -511,7 +514,7 @@ labelkwskhr.forEach(label => labelIconMap.set(label, 'icon/kwsk-hr-v2.png'));
 const labelliesse = ['1382','1590','1859','0854','8147','0905'];
 labelliesse.forEach(label => labelIconMap.set(label, 'icon/liesse-v2.png'));
 
-const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672','8186'];
+const labelmk = ['8199','0672','0864','2009','2022','8019','8022','8073','8076','7199','7217','1541','8202','0672'];
 labelmk.forEach(label => labelIconMap.set(label, 'icon/mk-v2.png'));
 
 const labelmk517 = ['2091','2103'];
@@ -541,10 +544,10 @@ labelmp317.forEach(label => labelIconMap.set(label, 'icon/mp317-v2.png'));
 const labelnankairj = ['8063','8064'];
 labelnankairj.forEach(label => labelIconMap.set(label, 'icon/nankai-rj-v2.png'));
 
-const labelpdgkr = ['1836','1837','0997','1091','1092','1196','1197','1217','8182','7148','7150','7153','8112','8069','0885','8039'];
+const labelpdgkr = ['1836','1837','0997','0998','1091','1092','1196','1197','1217','8182','7148','7150','7153','8112','8069','0885','8039'];
 labelpdgkr.forEach(label => labelIconMap.set(label, 'icon/pdg-kr-v2.png'));
 
-const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','0998','1091','1092','1196','1197','1217','1605','1835','8036','8041','0998'];
+const labelpdglr = ['0995','0996','8088','1089','1090','1192','1193','1194','1219','1220','1221','0997','0998','1091','1092','1196','1197','1217','1605','1835','8036','8041'];
 labelpdglr.forEach(label => labelIconMap.set(label, 'icon/pdg-lr-v2.png'));
 
 const labelpkhr = ['8024','8033','8044','8074'];
