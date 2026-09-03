@@ -623,10 +623,10 @@ labelpdglr.forEach(label => labelIconMap.set(label, 'icon/pdg-lr-v2.png'));
 const labelpkhr = ['8024','8033','8044','8074'];
 labelpkhr.forEach(label => labelIconMap.set(label, 'icon/pk-hr-v2.png'));
 
-const labelrakuraku = ['0018','0021','8163','8162','0116','8188','0119','0120','0121','8169','0193','0236','0237','0238','2045','0299','0302','0397','0408','0406','0407','0409','8134','8135','0017','0847','0867']];
+const labelrakuraku = ['0018','0021','8163','8162','0116','8188','0119','0120','0121','8169','0193','0236','0237','0238','2045','0299','0302','0397','0408','0406','0407','0409','8134','8135','0017','0847','0867'];
 labelrakuraku.forEach(label => labelIconMap.set(label, 'icon/rakuraku-v3.png'));
 
-const labelrakurakuf = ['0017','0116';
+const labelrakurakuf = ['0017','0116'];
 labelrakurakuf.forEach(label => labelIconMap.set(label, 'icon/rakuraku-f-v3.png'));
 
 const labelrinkomio = ['1336','1369','1379','5003','5004','1710','1720','2020','1732','1850','1854','1857','2041','8025'];
@@ -4622,28 +4622,35 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       wrap.style.cssText = `
         position:relative;
-        width:62px;
-        height:62px;
+        width:72px;
+        height:78px;
         pointer-events:none;
+        z-index:9999;
       `;
 
-      const ring =
-        document.createElement("div");
+      const img =
+        document.createElement("img");
 
-      ring.style.cssText = `
+      const iconUrl =
+        labelIconMap.get(
+          cleanId(label)
+        ) ||
+        "icon/default-bus.png";
+
+      img.src = iconUrl;
+      img.alt = "";
+      img.draggable = false;
+      img.style.cssText = `
         position:absolute;
         left:50%;
-        top:50%;
-        width:48px;
-        height:48px;
-        transform:translate(-50%,-50%);
-        box-sizing:border-box;
-        border:3px solid #1677d2;
-        border-radius:50%;
-        background:rgba(255,255,255,.08);
-        box-shadow:
-          0 0 0 3px rgba(255,255,255,.90),
-          0 2px 10px rgba(0,0,0,.28);
+        top:0;
+        width:62px;
+        height:62px;
+        transform:translateX(-50%);
+        object-fit:contain;
+        filter:drop-shadow(0 3px 7px rgba(0,0,0,.32));
+        user-select:none;
+        -webkit-user-select:none;
       `;
 
       const badge =
@@ -4653,19 +4660,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       badge.style.cssText = `
         position:absolute;
         left:50%;
-        bottom:-7px;
+        bottom:0;
         transform:translateX(-50%);
         padding:2px 6px;
-        border:2px solid #1677d2;
-        border-radius:6px;
-        background:#fff;
-        color:#125a9c;
-        box-shadow:0 2px 7px rgba(0,0,0,.20);
-        font:900 11px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;
+        border:1px solid rgba(38,52,60,.18);
+        border-radius:5px;
+        background:rgba(255,255,255,.96);
+        color:#26343c;
+        box-shadow:0 2px 7px rgba(0,0,0,.18);
+        font:900 10px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;
         white-space:nowrap;
       `;
 
-      wrap.append(ring, badge);
+      wrap.append(img, badge);
       return wrap;
     }
 
@@ -4766,7 +4773,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             createVehicleSearchResultElement(
               p.label
             ),
-          anchor: "center"
+          anchor: "bottom"
         })
           .setLngLat([
             Number(v.lon),
