@@ -2427,7 +2427,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       const title = document.createElement("div");
       title.className = "unyo-prediction-title";
-      title.textContent = "運用予測";
+      title.textContent = "次便予測";
       title.style.cssText = "font-size:14px;font-weight:900;";
 
       const close = document.createElement("button");
