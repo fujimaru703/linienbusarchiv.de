@@ -2555,6 +2555,45 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       }
     }
 
+    function copyComputedStylesDeep(source, target) {
+      if (!source || !target) return;
+
+      const sourceStyle =
+        window.getComputedStyle(source);
+
+      // ブラウザが実際に描画している計算済みCSSを
+      // 保存用クローンへ直接固定する。
+      for (const prop of sourceStyle) {
+        try {
+          target.style.setProperty(
+            prop,
+            sourceStyle.getPropertyValue(prop),
+            sourceStyle.getPropertyPriority(prop)
+          );
+        } catch (_) {}
+      }
+
+      const sourceChildren =
+        source.children || [];
+
+      const targetChildren =
+        target.children || [];
+
+      const count =
+        Math.min(
+          sourceChildren.length,
+          targetChildren.length
+        );
+
+      for (let i = 0; i < count; i++) {
+        copyComputedStylesDeep(
+          sourceChildren[i],
+          targetChildren[i]
+        );
+      }
+    }
+
+
     async function capturePredictionPopupBlob() {
       const overlay =
         ensurePredictionPopup();
@@ -2581,11 +2620,19 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         top: 0;
         z-index: -1;
         pointer-events: none;
-        opacity: 0;
+        background: #ffffff;
       `;
 
       const clone =
         popup.cloneNode(true);
+
+      // cloneNodeだけではブラウザの計算済みスタイルが完全には
+      // 引き継がれず、html2canvas側で枠色・影・背景などが
+      // 変わることがあるため、画面上の実描画スタイルを固定する。
+      copyComputedStylesDeep(
+        popup,
+        clone
+      );
 
       const cloneBody =
         clone.querySelector(".unyo-prediction-body");
@@ -2654,6 +2701,37 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       clone.style.width = "auto";
       clone.style.maxHeight = "none";
       clone.style.overflow = "visible";
+
+      // html2canvasで特に差が出やすい当日充当/現在便の外箱は、
+      // 画面側と同じ値を明示しておく。
+      for (
+        const card of
+          clone.querySelectorAll(
+            ".unyo-flow-card-actual"
+          )
+      ) {
+        card.style.borderWidth = "2px";
+        card.style.borderStyle = "solid";
+        card.style.borderColor = "#4f8a69";
+        card.style.background = "#f2f8f4";
+        card.style.boxShadow =
+          "inset 4px 0 0 #4f8a69, 0 3px 9px rgba(37,57,69,.13)";
+        card.style.opacity = "1";
+      }
+
+      for (
+        const card of
+          clone.querySelectorAll(
+            ".unyo-flow-card-current.unyo-flow-card-actual"
+          )
+      ) {
+        card.style.borderWidth = "2px";
+        card.style.borderStyle = "solid";
+        card.style.borderColor = "#365a6b";
+        card.style.background = "#eef7fa";
+        card.style.boxShadow =
+          "inset 4px 0 0 #365a6b, 0 0 0 2px rgba(54,90,107,.20), 0 5px 14px rgba(37,57,69,.18)";
+      }
 
       exportHost.appendChild(clone);
       document.body.appendChild(exportHost);
