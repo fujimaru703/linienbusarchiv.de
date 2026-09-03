@@ -556,7 +556,7 @@
 
           // 広域～中距離で表示し、拡大しすぎたら消す。
           // zoom 15.5以上では非表示。
-          maxzoom: 15.5,
+          maxzoom: 17,
 
           layout: {
             visibility,
