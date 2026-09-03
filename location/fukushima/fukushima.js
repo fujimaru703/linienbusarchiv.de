@@ -1,3 +1,4 @@
+
 "use strict";
 
     // =========================================================
@@ -222,6 +223,9 @@ label8140.forEach(label => labelIconMap.set(label, 'icon/8140hgakuin.png'));
 
 const label8144 = ['8144'];
 label8144.forEach(label => labelIconMap.set(label, 'icon/8144fdaigaku.png'));
+
+const label8145 = ['8145'];
+label8145.forEach(label => labelIconMap.set(label, 'icon/8145oyama.png'));
 
 const label8181 = ['8181'];
 label8181.forEach(label => labelIconMap.set(label, 'icon/8181-v2.png'));
