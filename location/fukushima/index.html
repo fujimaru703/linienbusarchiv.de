@@ -1,22 +1,104 @@
 <!DOCTYPE html>
 <html lang="ja">
 
-    <head>
-        <link rel="preconnect" href="https://unpkg.com" crossorigin>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-        <title>福島交通バスロケーション</title>
-        <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css">
-        <link rel="stylesheet" href="./fukushima.css">
-    </head>
+<head>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <meta charset="utf-8">
 
-    <body>
-        <div id="loadingBar"></div>
-        <div id="map"></div>
-        <div id="statusDisplay">読込中...</div>
-        <div id="timestampDisplay">最終更新: <span id="readableTimestamp">-</span></div>
-        <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
-        <script src="./fukushima.js"></script>
-    </body>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    >
+
+    <title>福島交通バスロケーション</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css"
+    >
+
+    <link rel="stylesheet" href="./fukushima.css">
+
+    <style>
+        /* =========================================
+           スマホ用固定画像ヘッダー
+           ========================================= */
+
+        #mobileHeader {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+
+            #mobileHeader {
+                display: flex;
+
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+
+                z-index: 10000;
+
+                align-items: center;
+                justify-content: center;
+
+                background: #ffffff;
+
+                /* iPhoneのノッチ部分 */
+                padding-top: env(safe-area-inset-top);
+
+                box-sizing: border-box;
+            }
+
+            #mobileHeader img {
+                display: block;
+
+                width: 100%;
+                height: 56px;
+
+                object-fit: contain;
+            }
+
+            /* ヘッダーの下から地図を開始 */
+            #map {
+                top: calc(
+                    56px + env(safe-area-inset-top)
+                );
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- スマホだけ表示される固定ヘッダー -->
+    <div id="mobileHeader">
+        <img
+            src="./mobile-header.png"
+            alt="福島交通バスロケ"
+        >
+    </div>
+
+    <div id="loadingBar"></div>
+
+    <div id="map"></div>
+
+    <div id="statusDisplay">
+        読込中...
+    </div>
+
+    <div id="timestampDisplay">
+        最終更新:
+        <span id="readableTimestamp">-</span>
+    </div>
+
+    <script
+        src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"
+    ></script>
+
+    <script src="./fukushima.js"></script>
+
+</body>
 
 </html>
