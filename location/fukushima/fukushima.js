@@ -3283,12 +3283,24 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
     function getMostLikelyPrediction(nodes) {
-      if (!Array.isArray(nodes) || !nodes.length) return null;
+  if (!Array.isArray(nodes) || !nodes.length) return null;
 
-      return [...nodes].sort(
-        (a, b) => predictionProbability(b) - predictionProbability(a)
-      )[0] || null;
-    }
+  const available = nodes.filter(
+    node =>
+      !node?.occupied_by_other &&
+      !node?.other_vehicle_actual
+  );
+
+  if (!available.length) {
+    return null;
+  }
+
+  return [...available].sort(
+    (a, b) =>
+      predictionProbability(b) -
+      predictionProbability(a)
+  )[0] || null;
+}
 
     function predictionPathText(node) {
       const probability = formatPredictionProbability(node);
