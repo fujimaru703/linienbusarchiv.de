@@ -5576,30 +5576,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const eventType =
         cleanId(node?.event_type);
 
-      const placeType =
-        cleanId(node?.place_type);
-
-      const isStandby =
-        placeType === "standby";
-
       const inferred =
         Boolean(node?.inferred);
 
       if (eventType === "arrival") {
-        if (isStandby) {
-          return "待機開始";
-        }
-
         return inferred
           ? "到着（推定）"
           : "到着";
       }
 
       if (eventType === "departure") {
-        if (isStandby) {
-          return "待機終了";
-        }
-
         return inferred
           ? "出庫"
           : "出発";
@@ -5609,9 +5595,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         eventType ===
           "arrival_departure"
       ) {
-        return isStandby
-          ? "待機"
-          : "到着・出発";
+        return "到着・出発";
       }
 
       if (eventType === "entry") {
@@ -5725,40 +5709,25 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         arrivalRow.className =
           "unyo-flow-place-combined-row unyo-flow-place-combined-arrival";
 
-        const arrivalLabel =
-          document.createElement("span");
-
-        arrivalLabel.className =
-          "unyo-flow-place-combined-badge";
-
-        arrivalLabel.textContent =
-          cleanId(node?.place_type) ===
-            "standby"
-            ? "待機開始"
-            : "到着";
-
         const arrivalTime =
           document.createElement("span");
 
         arrivalTime.className =
           "unyo-flow-place-combined-time";
 
-        arrivalTime.textContent =
+        const arrivalDisplayTime =
           cleanId(
             node?.arrival_display_time
           );
 
-        arrivalRow.append(
-          arrivalLabel
-        );
+        arrivalTime.textContent =
+          arrivalDisplayTime
+            ? `${arrivalDisplayTime} 到着`
+            : "到着";
 
-        if (
-          arrivalTime.textContent
-        ) {
-          arrivalRow.append(
-            arrivalTime
-          );
-        }
+        arrivalRow.append(
+          arrivalTime
+        );
 
         const departureRow =
           document.createElement("div");
@@ -5766,44 +5735,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         departureRow.className =
           "unyo-flow-place-combined-row unyo-flow-place-combined-departure";
 
-        const departureLabel =
-          document.createElement("span");
-
-        departureLabel.className =
-          "unyo-flow-place-combined-badge";
-
-        departureLabel.textContent =
-          cleanId(node?.place_type) ===
-            "standby"
-            ? "待機終了"
-            : (
-                node?.departure_inferred
-                  ? "出庫"
-                  : "出発"
-              );
-
         const departureTime =
           document.createElement("span");
 
         departureTime.className =
           "unyo-flow-place-combined-time";
 
-        departureTime.textContent =
+        const departureDisplayTime =
           cleanId(
             node?.departure_display_time
           );
 
-        departureRow.append(
-          departureLabel
-        );
+        const departureText =
+          node?.departure_inferred
+            ? "出庫"
+            : "出発";
 
-        if (
-          departureTime.textContent
-        ) {
-          departureRow.append(
-            departureTime
-          );
-        }
+        departureTime.textContent =
+          departureDisplayTime
+            ? `${departureDisplayTime} ${departureText}`
+            : departureText;
+
+        departureRow.append(
+          departureTime
+        );
 
         item.append(
           arrivalRow,
@@ -5855,6 +5810,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         );
 
         return item;
+      } else if (
+        eventType === "arrival" ||
+        eventType === "departure"
+      ) {
+        // 到着/出発は施設名の横には表示しない。
+        // 時刻行にだけ「09:28 到着」「09:41 出発」の形で表示。
+        top.append(name);
       } else {
         top.append(
           name,
