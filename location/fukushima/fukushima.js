@@ -41,9 +41,6 @@
 
     const UPDATE_INTERVAL = 15000;
 
-    // 前日最終位置は23:00:00になった時点で表示終了。
-    const PREVIOUS_DAY_RETAINED_CUTOFF_SEC = 23 * 60 * 60;
-
     // バスロケ表示時間:
     // その日の始発10分前 ～ 終バスの終点到着20分後
     const SERVICE_START_MARGIN_SEC = 10 * 60;
@@ -217,7 +214,7 @@
   },
   {
     id: "yanagawa_chuzai",
-    name: "梁川車庫",
+    name: "梁川駐在",
     type: "depot",
     coordinates: [
       [140.60904318733012, 37.864840489667245],
@@ -418,12 +415,12 @@
   name: "蓬田車庫",
   type: "depot",
   coordinates: [
-      [140.57902657590074, 37.23061443172802],
-      [140.57873289963285, 37.230425958845075],
-      [140.57839112121763, 37.23067188058797],
-      [140.57868986086945, 37.23089865197614]
-    ]
- },
+    [140.57902657590074, 37.23061443172802],
+    [140.57873289963285, 37.230425958845075],
+    [140.57839112121763, 37.23067188058797],
+    [140.57868986086945, 37.23089865197614]
+  ]
+},
     {
   id: "ono_shucchojo",
   name: "小野出張所",
@@ -1598,7 +1595,6 @@
     let updateRunning = false;
     let selectedTripId = null;
     let realtimeTimer = null;
-    let retainedCutoffTimer = null;
     let vehicleFeaturesByTrip = new Map();
     let selectedStopNameMarkers = [];
     let vehicleInfoPanel = null;
@@ -2242,11 +2238,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       return window.nowSec >= window.startSec && window.nowSec <= window.endSec;
     }
 
-    function isPreviousDayRetainedVisible() {
-      const nowParts = japanNowParts();
-      return nowParts.seconds < PREVIOUS_DAY_RETAINED_CUTOFF_SEC;
-    }
-
     // fallbackは
     // ・通常のバスロケ運行時間中
     // ・その日の最終便終了後～24:00
@@ -2256,10 +2247,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     // 04:00～その日の運行開始前はGASも呼ばない。
     function isFallbackLocationOperating() {
       const nowParts = japanNowParts();
+      const hour = Math.floor(nowParts.seconds / 3600);
 
-      // 前日最終位置を04:00～22:59:59も取得できるようfallback APIを維持する。
-      // 23:00:00以降は前日残留だけ非表示にし、fallback自体は下の条件で継続できる。
-      if (nowParts.seconds < PREVIOUS_DAY_RETAINED_CUTOFF_SEC) return true;
+      // 前日最終位置を04:00～17:59も取得できるようfallback APIを維持する。
+      if (hour < 18) return true;
 
       const window = getTodayServiceWindow();
       if (!window) return true;
@@ -2477,36 +2468,33 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       const retained = [];
 
-      // 23:00:00以降はWorkerがretainedVehiclesを返しても前日分を採用しない。
-      if (isPreviousDayRetainedVisible()) {
-        for (const v of data.retainedVehicles || []) {
-          const lat = Number(v?.latitude);
-          const lon = Number(v?.longitude);
-          const vehicleCd = cleanId(v?.vehicleCd);
+      for (const v of data.retainedVehicles || []) {
+        const lat = Number(v?.latitude);
+        const lon = Number(v?.longitude);
+        const vehicleCd = cleanId(v?.vehicleCd);
 
-          if (!vehicleCd) continue;
-          if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-          if (lat === 0 && lon === 0) continue;
+        if (!vehicleCd) continue;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        if (lat === 0 && lon === 0) continue;
 
-          retained.push({
-            tripId: "",
-            routeId: "",
-            seq: NaN,
-            label: vehicleCd,
-            lat,
-            lon,
-            bearing: 0,
-            isFallback: false,
-            isRetained: true,
+        retained.push({
+          tripId: "",
+          routeId: "",
+          seq: NaN,
+          label: vehicleCd,
+          lat,
+          lon,
+          bearing: 0,
+          isFallback: false,
+          isRetained: true,
 
-            // 04:00～05:59は通常色、
-            // 06:00～22:59:59はWorker指定に従ってグレー表示。
-            isRetainedGray:
-              v?.grayOut === true ||
-              v?.grayOut === 1 ||
-              v?.grayOut === "1"
-          });
-        }
+          // 04:00～05:59は通常色、
+          // 06:00～17:59はグレー表示。
+          isRetainedGray:
+            v?.grayOut === true ||
+            v?.grayOut === 1 ||
+            v?.grayOut === "1"
+        });
       }
 
       retainedVehicles = retained;
@@ -2524,11 +2512,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           .filter(Boolean)
       );
 
-      const retained = isPreviousDayRetainedVisible()
-        ? retainedVehicles.filter(
-            v => !activeVehicleCds.has(cleanId(v?.label))
-          )
-        : [];
+      const retained = retainedVehicles.filter(
+        v => !activeVehicleCds.has(cleanId(v?.label))
+      );
 
       return [
         ...latestVehicles,
@@ -4220,6 +4206,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           /* 営業所・駐在・工場・待機場所の到着/出発 */
           .unyo-flow-card-place,
           .unyo-flow-card-place.unyo-flow-card-actual {
+            /* 施設ノードは表示内容が少ないことが多いので、
+               通常便の180px固定箱を使わず内容量に応じた幅へ縮める。
+               実際の幅はJS側 predictionPlaceCardWidth() で決定する。 */
+            width: auto;
+            min-width: 120px;
+            max-width: 180px;
+            min-height: 44px;
             border-width: 2px;
             border-style: solid;
             border-color: #667985;
@@ -4287,7 +4280,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           }
 
           .unyo-flow-card-place-arrival-departure {
-            min-height: 72px;
+            min-height: 60px;
             border-color: #687667;
             background: #f5f8f4;
             box-shadow:
@@ -5083,17 +5076,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const PAD_Y = 12;
 
       const cardWidth =
-        entry =>
-          (
+        entry => {
+          if (
             isPredictionServiceEnd(
               entry.node
             ) ||
             isPredictionStopped(
               entry.node
             )
-          )
-            ? END_W
-            : CARD_W;
+          ) {
+            return END_W;
+          }
+
+          if (
+            isPredictionPlaceEvent(
+              entry.node
+            )
+          ) {
+            return predictionPlaceCardWidth(
+              entry.node
+            );
+          }
+
+          return CARD_W;
+        };
 
       const cardHeight =
         entry => {
@@ -5109,17 +5115,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           }
 
           if (
-            entry?.node?.event_type ===
-              "unknown_place"
+            isPredictionPlaceEvent(
+              entry.node
+            )
           ) {
-            return 96;
-          }
-
-          if (
-            entry?.node?.event_type ===
-              "arrival_departure"
-          ) {
-            return 72;
+            return predictionPlaceCardHeight(
+              entry.node
+            );
           }
 
           return CARD_H;
@@ -5359,30 +5361,56 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const PAD_Y = 12;
 
       const cardWidth =
-        entry =>
-          (
+        entry => {
+          if (
             isPredictionServiceEnd(
               entry.node
             ) ||
             isPredictionStopped(
               entry.node
             )
-          )
-            ? END_W
-            : CARD_W;
+          ) {
+            return END_W;
+          }
+
+          if (
+            isPredictionPlaceEvent(
+              entry.node
+            )
+          ) {
+            return predictionPlaceCardWidth(
+              entry.node
+            );
+          }
+
+          return CARD_W;
+        };
 
       const cardHeight =
-        entry =>
-          (
+        entry => {
+          if (
             isPredictionServiceEnd(
               entry.node
             ) ||
             isPredictionStopped(
               entry.node
             )
-          )
-            ? END_H
-            : CARD_H;
+          ) {
+            return END_H;
+          }
+
+          if (
+            isPredictionPlaceEvent(
+              entry.node
+            )
+          ) {
+            return predictionPlaceCardHeight(
+              entry.node
+            );
+          }
+
+          return CARD_H;
+        };
 
       let nextLeafY =
         PAD_Y;
@@ -5587,6 +5615,69 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       return "";
     }
+
+    // 施設ノードは通常便カード(180px)より情報量が少ないため、
+    // 施設名・時刻行の文字量に応じて横幅を120～180pxで可変にする。
+    // ツリーの列間隔自体は従来の180px基準を維持するので、
+    // 既存の枝配置を崩さず箱だけコンパクトになる。
+    function predictionPlaceCardWidth(node) {
+      if (!isPredictionPlaceEvent(node)) {
+        return 180;
+      }
+
+      const eventType =
+        cleanId(node?.event_type);
+
+      // 長文説明を出す特殊カードは従来幅を維持。
+      if (eventType === "unknown_place") {
+        return 180;
+      }
+
+      const strings = [
+        cleanId(node?.place_name) || "施設",
+        cleanId(node?.display_time),
+        cleanId(node?.arrival_display_time),
+        cleanId(node?.departure_display_time)
+      ].filter(Boolean);
+
+      let maxChars = 0;
+      for (const text of strings) {
+        maxChars = Math.max(
+          maxChars,
+          Array.from(String(text)).length
+        );
+      }
+
+      // 時刻行には「 到着」「 出発」が付くので少し余裕を足す。
+      const estimated =
+        30 + maxChars * 10;
+
+      return Math.max(
+        120,
+        Math.min(180, estimated)
+      );
+    }
+
+
+    function predictionPlaceCardHeight(node) {
+      if (!isPredictionPlaceEvent(node)) {
+        return 52;
+      }
+
+      const eventType =
+        cleanId(node?.event_type);
+
+      if (eventType === "unknown_place") {
+        return 96;
+      }
+
+      if (eventType === "arrival_departure") {
+        return 60;
+      }
+
+      return 44;
+    }
+
 
     function isPredictionPlaceEvent(node) {
       return Boolean(
@@ -6260,6 +6351,16 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         const card = createPredictionFlowCard(entry);
         card.style.left = `${entry.x}px`;
         card.style.top = `${entry.y}px`;
+
+        // 施設カードだけは内容量に合わせた可変サイズを実際のDOMにも反映。
+        // 通常便カードは従来どおり180px固定。
+        if (isPredictionPlaceEvent(entry.node)) {
+          card.style.width =
+            `${layout.cardWidth(entry)}px`;
+          card.style.minHeight =
+            `${layout.cardHeight(entry)}px`;
+        }
+
         canvas.appendChild(card);
       }
 
@@ -6542,73 +6643,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       }
     }
 
-    // 詳細ツリー内から「現在便」を探す。
-    // 通常の次便予測も、詳細ツリーと同じ現在地点を基準にする。
-    function findCurrentPredictionNode(node) {
-      if (!node) return null;
-
-      if (node?.current_node === true) {
-        return node;
-      }
-
-      for (const child of getPredictionChildren(node)) {
-        const found =
-          findCurrentPredictionNode(child);
-
-        if (found) {
-          return found;
-        }
-      }
-
-      return null;
-    }
-
-
-    // 通常表示で「次便」を選ぶ基準ノード。
-    //
-    // 通常運行中:
-    //   現在便 → その直後の枝
-    //
-    // 現在待機中:
-    //   現在便 → 施設到着/出発 → その直後の枝
-    //
-    // 施設ノードが連続している間だけ先へ進み、
-    // その次に並ぶ複数候補の中から最大確率を選ぶ。
-    function getCurrentPredictionAnchor(data) {
-      const current =
-        findCurrentPredictionNode(
-          data?.day_tree
-        );
-
-      if (!current) {
-        return null;
-      }
-
-      let anchor = current;
-
-      while (true) {
-        const children =
-          getPredictionChildren(anchor);
-
-        // 待機・入庫・出庫が現在便の直後に直列で入っている場合のみ、
-        // その施設ノードの先を「現在地点」として扱う。
-        if (
-          children.length === 1 &&
-          isPredictionPlaceEvent(
-            children[0]
-          )
-        ) {
-          anchor = children[0];
-          continue;
-        }
-
-        break;
-      }
-
-      return anchor;
-    }
-
-
     async function appendNextTripPrediction(panel, vehicleProperties) {
       const tripId = cleanId(vehicleProperties?.tripId);
       if (!tripId) return;
@@ -6638,11 +6672,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       try {
         const vehicleCd = cleanId(vehicleProperties?.label);
 
-        // 通常表示でも詳細ツリーを基準にする。
-        // これにより「現在便の直後」または「現在待機中なら待機の直後」から、
-        // 最も確率が高い1便だけをそのまま表示できる。
         const response = await fetch(
-          UNYO_PREDICT_TREE_URL +
+          UNYO_PREDICT_URL +
           "?trip_id=" +
           encodeURIComponent(tripId) +
           (vehicleCd
@@ -6655,37 +6686,20 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         );
 
         if (!response.ok) {
-          throw new Error(`predict-tree HTTP ${response.status}`);
+          throw new Error(`predict HTTP ${response.status}`);
         }
 
         const data = await response.json();
 
         if (!data?.ok) {
-          throw new Error(
-            data?.error ||
-            "predict-tree API error"
-          );
+          throw new Error(data?.error || "predict API error");
         }
 
         // パネルを閉じた後や別車両へ切り替えた後の遅延レスポンスを無視する。
         if (!box.isConnected) return;
 
-        const anchor =
-          getCurrentPredictionAnchor(
-            data
-          );
-
-        const nodes = anchor
-          ? getPredictionChildren(anchor)
-          : [];
-
-        // 余計な除外判定はしない。
-        // 詳細ツリーで現在地点の直後に存在する枝のうち、
-        // 単純に確率最大のものを通常表示へ出す。
-        const best =
-          getMostLikelyPrediction(
-            nodes
-          );
+        const nodes = getPredictionRootNodes(data);
+        const best = getMostLikelyPrediction(nodes);
 
         if (!best) {
           name.textContent = "予測なし";
@@ -6719,6 +6733,8 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
         path.textContent = predictionPathText(best);
 
+        // 通常表示では /predict の1段分しか取得していない。
+        // さらに先はクリックされた時だけ /predict-tree を取得する。
         box.style.cursor = "pointer";
         box.title = "クリックしてさらに先の予測を表示";
         box.tabIndex = 0;
@@ -6759,7 +6775,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const isFallback =
         Number(vehicleProperties.isFallback) === 1;
 
-      // 前日残留車は4:00～22:59:59の間、通常色/グレーを問わず簡易ポップアップを表示。
+      // 前日残留車は4:00～17:59の間、通常色/グレーを問わず簡易ポップアップを表示。
       // 便情報・次便予測・回送追跡は表示しない。
       if (isRetained) {
 
@@ -8074,7 +8090,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           features: [JSON.parse(JSON.stringify(f))]
         });
 
-        // 前日残留車はルート・停留所を出さず、4:00～22:59:59は通常色/グレーを問わず
+        // 前日残留車はルート・停留所を出さず、4:00～17:59は通常色/グレーを問わず
         // 前日データ用の簡易ポップアップを表示する。回送追跡も表示しない。
         if (Number(p.isRetained) === 1) {
           selectedTripId = null;
@@ -8366,57 +8382,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       }
     }
 
-    function removePreviousDayRetainedVehicles() {
-      if (!retainedVehicles.length) return;
-
-      retainedVehicles = [];
-
-      const allVehicles = displayedVehicles();
-      updateVehicleSearchSuggestions(allVehicles);
-
-      const source = map.getSource("vehicles");
-      if (source) {
-        source.setData(vehicleGeoJson());
-      }
-
-      updateVehicleNumberMarkers(allVehicles);
-    }
-
-    function schedulePreviousDayRetainedCutoff() {
-      if (retainedCutoffTimer !== null) {
-        clearTimeout(retainedCutoffTimer);
-        retainedCutoffTimer = null;
-      }
-
-      const now = new Date();
-      const nowParts = japanNowParts(now);
-      const daySec = 24 * 60 * 60;
-
-      let secondsUntilCutoff =
-        PREVIOUS_DAY_RETAINED_CUTOFF_SEC - nowParts.seconds;
-
-      // 23:00:00以降に予約した場合は翌日の23:00:00を狙う。
-      if (secondsUntilCutoff <= 0) {
-        secondsUntilCutoff += daySec;
-      }
-
-      // japanNowPartsは秒単位なので、現在のミリ秒分を引いて23:00:00.000に合わせる。
-      const delayMs = Math.max(
-        0,
-        secondsUntilCutoff * 1000 - now.getMilliseconds()
-      );
-
-      retainedCutoffTimer = window.setTimeout(() => {
-        retainedCutoffTimer = null;
-
-        // 23:00:00で前日分だけ即時削除する。
-        removePreviousDayRetainedVehicles();
-
-        // 翌日分も同じ23:00:00に削除できるよう再予約。
-        schedulePreviousDayRetainedCutoff();
-      }, delayMs);
-    }
-
     function startRealtimeTimer() {
       if (realtimeTimer !== null) return;
 
@@ -8464,7 +8429,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         setLoading(true, 72);
         await updateRealtime();
 
-        schedulePreviousDayRetainedCutoff();
         startRealtimeTimer();
       } catch (e) {
         console.error(e);
