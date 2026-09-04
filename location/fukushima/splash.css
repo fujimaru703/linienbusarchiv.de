@@ -1,0 +1,96 @@
+/* =========================================================
+   PWA / Web共通スプラッシュ画面
+   iOS / Android / 通常ブラウザで同じ見た目を出すための自前実装
+   ========================================================= */
+
+#appSplash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+
+  background: #ffffff;
+  color: #1f2d36;
+
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity .38s ease,
+    visibility .38s ease;
+}
+
+#appSplash.app-splash-hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#appSplash .app-splash-icon {
+  width: min(30vw, 144px);
+  height: min(30vw, 144px);
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  margin-bottom: 20px;
+}
+
+#appSplash .app-splash-title {
+  max-width: 92vw;
+  text-align: center;
+  font-size: clamp(21px, 5.4vw, 32px);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: .02em;
+}
+
+#appSplash .app-splash-subtitle {
+  max-width: 92vw;
+  margin-top: 8px;
+  text-align: center;
+  font-size: clamp(12px, 3.3vw, 16px);
+  font-weight: 600;
+  line-height: 1.55;
+  color: #5d6b73;
+}
+
+#appSplash .app-splash-spinner {
+  width: 28px;
+  height: 28px;
+  margin-top: 28px;
+  border: 3px solid rgba(31, 45, 54, .14);
+  border-top-color: rgba(31, 45, 54, .78);
+  border-radius: 50%;
+  animation: app-splash-spin .85s linear infinite;
+}
+
+#appSplash .app-splash-loading {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #718089;
+}
+
+@keyframes app-splash-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appSplash {
+    transition: none;
+  }
+
+  #appSplash .app-splash-spinner {
+    animation: none;
+  }
+}
