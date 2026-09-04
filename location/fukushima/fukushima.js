@@ -3867,13 +3867,13 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       ) {
         card.style.borderWidth = "2px";
         card.style.borderStyle = "solid";
-        card.style.borderColor = "#365a6b";
+        card.style.borderColor = "#4f8a69";
         card.style.borderLeftWidth = "6px";
-        card.style.borderLeftColor = "#365a6b";
-        card.style.background = "#eef7fa";
-        card.style.backgroundColor = "#eef7fa";
+        card.style.borderLeftColor = "#4f8a69";
+        card.style.background = "#f2f8f4";
+        card.style.backgroundColor = "#f2f8f4";
         card.style.boxShadow =
-          "0 0 0 2px rgba(54,90,107,.20), 0 5px 14px rgba(37,57,69,.18)";
+          "0 0 0 2px rgba(79,138,105,.20), 0 5px 14px rgba(37,57,69,.18)";
       }
 
       exportHost.appendChild(clone);
@@ -4152,14 +4152,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
             opacity: 1;
           }
 
-          /* 現在便は「本日充当」よりさらに強く表示 */
+          /* 現在便も、本日充当ノードと同じ緑系の外箱にする。
+             ただし「現在便」バッジはそのまま残して見分けやすくする。 */
           .unyo-flow-card-current.unyo-flow-card-actual {
             border-width: 2px;
-            border-color: #365a6b;
-            background: #eef7fa;
+            border-color: #4f8a69;
+            background: #f2f8f4;
             box-shadow:
-              inset 4px 0 0 #365a6b,
-              0 0 0 2px rgba(54,90,107,.20),
+              inset 4px 0 0 #4f8a69,
+              0 0 0 2px rgba(79,138,105,.20),
               0 5px 14px rgba(37,57,69,.18);
           }
 
@@ -5875,8 +5876,15 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         time.className =
           "unyo-flow-place-time";
 
+        const timeLabel =
+          predictionPlaceEventLabel(
+            node
+          );
+
         time.textContent =
-          displayTime;
+          timeLabel
+            ? `${displayTime} ${timeLabel}`
+            : displayTime;
 
         item.appendChild(time);
       }
