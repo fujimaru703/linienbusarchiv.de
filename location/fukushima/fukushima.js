@@ -217,7 +217,7 @@
   },
   {
     id: "yanagawa_chuzai",
-    name: "梁川駐在",
+    name: "梁川車庫",
     type: "depot",
     coordinates: [
       [140.60904318733012, 37.864840489667245],
