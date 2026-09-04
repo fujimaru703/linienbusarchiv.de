@@ -214,7 +214,7 @@
   },
   {
     id: "yanagawa_chuzai",
-    name: "梁川車庫",
+    name: "梁川駐在",
     type: "depot",
     coordinates: [
       [140.60904318733012, 37.864840489667245],
@@ -590,28 +590,15 @@
     ]
   },
   {
-  id: "uwahama_shako_1",
-  groupId: "uwahama_shako",
-  name: "上浜車庫",
-  type: "depot",
-  coordinates: [
-    [140.47634260913438, 37.75302198764269],
-    [140.4769601877523, 37.75313332473289],
-    [140.47700645585792, 37.75349172298759]
-  ]
-},
-{
-  id: "uwahama_shako_2",
-  groupId: "uwahama_shako",
-  name: "上浜車庫",
-  type: "depot",
-  coordinates: [
-    [140.47713118728092, 37.75365733646745],
-    [140.47691608726748, 37.754124206341096],
-    [140.477040183221, 37.754166723222184],
-    [140.4772945799257, 37.75373337694328]
-  ]
-},
+    id: "kamihama_standby",
+    name: "上浜車庫",
+    type: "standby",
+    coordinates: [
+      [140.47634260913438, 37.75302198764269],
+      [140.4769601877523, 37.75313332473289],
+      [140.47700645585792, 37.75349172298759]
+    ]
+  },
   {
     id: "ohara_1",
     name: "大原待機1",
@@ -3283,24 +3270,12 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     }
 
     function getMostLikelyPrediction(nodes) {
-  if (!Array.isArray(nodes) || !nodes.length) return null;
+      if (!Array.isArray(nodes) || !nodes.length) return null;
 
-  const available = nodes.filter(
-    node =>
-      !node?.occupied_by_other &&
-      !node?.other_vehicle_actual
-  );
-
-  if (!available.length) {
-    return null;
-  }
-
-  return [...available].sort(
-    (a, b) =>
-      predictionProbability(b) -
-      predictionProbability(a)
-  )[0] || null;
-}
+      return [...nodes].sort(
+        (a, b) => predictionProbability(b) - predictionProbability(a)
+      )[0] || null;
+    }
 
     function predictionPathText(node) {
       const probability = formatPredictionProbability(node);
@@ -6542,6 +6517,73 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       }
     }
 
+    // 詳細ツリー内から「現在便」を探す。
+    // 通常の次便予測も、詳細ツリーと同じ現在地点を基準にする。
+    function findCurrentPredictionNode(node) {
+      if (!node) return null;
+
+      if (node?.current_node === true) {
+        return node;
+      }
+
+      for (const child of getPredictionChildren(node)) {
+        const found =
+          findCurrentPredictionNode(child);
+
+        if (found) {
+          return found;
+        }
+      }
+
+      return null;
+    }
+
+
+    // 通常表示で「次便」を選ぶ基準ノード。
+    //
+    // 通常運行中:
+    //   現在便 → その直後の枝
+    //
+    // 現在待機中:
+    //   現在便 → 施設到着/出発 → その直後の枝
+    //
+    // 施設ノードが連続している間だけ先へ進み、
+    // その次に並ぶ複数候補の中から最大確率を選ぶ。
+    function getCurrentPredictionAnchor(data) {
+      const current =
+        findCurrentPredictionNode(
+          data?.day_tree
+        );
+
+      if (!current) {
+        return null;
+      }
+
+      let anchor = current;
+
+      while (true) {
+        const children =
+          getPredictionChildren(anchor);
+
+        // 待機・入庫・出庫が現在便の直後に直列で入っている場合のみ、
+        // その施設ノードの先を「現在地点」として扱う。
+        if (
+          children.length === 1 &&
+          isPredictionPlaceEvent(
+            children[0]
+          )
+        ) {
+          anchor = children[0];
+          continue;
+        }
+
+        break;
+      }
+
+      return anchor;
+    }
+
+
     async function appendNextTripPrediction(panel, vehicleProperties) {
       const tripId = cleanId(vehicleProperties?.tripId);
       if (!tripId) return;
@@ -6571,8 +6613,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       try {
         const vehicleCd = cleanId(vehicleProperties?.label);
 
+        // 通常表示でも詳細ツリーを基準にする。
+        // これにより「現在便の直後」または「現在待機中なら待機の直後」から、
+        // 最も確率が高い1便だけをそのまま表示できる。
         const response = await fetch(
-          UNYO_PREDICT_URL +
+          UNYO_PREDICT_TREE_URL +
           "?trip_id=" +
           encodeURIComponent(tripId) +
           (vehicleCd
@@ -6585,20 +6630,37 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         );
 
         if (!response.ok) {
-          throw new Error(`predict HTTP ${response.status}`);
+          throw new Error(`predict-tree HTTP ${response.status}`);
         }
 
         const data = await response.json();
 
         if (!data?.ok) {
-          throw new Error(data?.error || "predict API error");
+          throw new Error(
+            data?.error ||
+            "predict-tree API error"
+          );
         }
 
         // パネルを閉じた後や別車両へ切り替えた後の遅延レスポンスを無視する。
         if (!box.isConnected) return;
 
-        const nodes = getPredictionRootNodes(data);
-        const best = getMostLikelyPrediction(nodes);
+        const anchor =
+          getCurrentPredictionAnchor(
+            data
+          );
+
+        const nodes = anchor
+          ? getPredictionChildren(anchor)
+          : [];
+
+        // 余計な除外判定はしない。
+        // 詳細ツリーで現在地点の直後に存在する枝のうち、
+        // 単純に確率最大のものを通常表示へ出す。
+        const best =
+          getMostLikelyPrediction(
+            nodes
+          );
 
         if (!best) {
           name.textContent = "予測なし";
@@ -6632,8 +6694,6 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
         path.textContent = predictionPathText(best);
 
-        // 通常表示では /predict の1段分しか取得していない。
-        // さらに先はクリックされた時だけ /predict-tree を取得する。
         box.style.cursor = "pointer";
         box.title = "クリックしてさらに先の予測を表示";
         box.tabIndex = 0;
