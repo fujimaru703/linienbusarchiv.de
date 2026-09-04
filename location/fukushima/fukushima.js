@@ -41,6 +41,9 @@
 
     const UPDATE_INTERVAL = 15000;
 
+    // 前日最終位置は23:00:00になった時点で表示終了。
+    const PREVIOUS_DAY_RETAINED_CUTOFF_SEC = 23 * 60 * 60;
+
     // バスロケ表示時間:
     // その日の始発10分前 ～ 終バスの終点到着20分後
     const SERVICE_START_MARGIN_SEC = 10 * 60;
@@ -1584,6 +1587,7 @@
     let updateRunning = false;
     let selectedTripId = null;
     let realtimeTimer = null;
+    let retainedCutoffTimer = null;
     let vehicleFeaturesByTrip = new Map();
     let selectedStopNameMarkers = [];
     let vehicleInfoPanel = null;
@@ -2227,6 +2231,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       return window.nowSec >= window.startSec && window.nowSec <= window.endSec;
     }
 
+    function isPreviousDayRetainedVisible() {
+      const nowParts = japanNowParts();
+      return nowParts.seconds < PREVIOUS_DAY_RETAINED_CUTOFF_SEC;
+    }
+
     // fallbackは
     // ・通常のバスロケ運行時間中
     // ・その日の最終便終了後～24:00
@@ -2236,10 +2245,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
     // 04:00～その日の運行開始前はGASも呼ばない。
     function isFallbackLocationOperating() {
       const nowParts = japanNowParts();
-      const hour = Math.floor(nowParts.seconds / 3600);
 
-      // 前日最終位置を04:00～17:59も取得できるようfallback APIを維持する。
-      if (hour < 23) return true;
+      // 前日最終位置を04:00～22:59:59も取得できるようfallback APIを維持する。
+      // 23:00:00以降は前日残留だけ非表示にし、fallback自体は下の条件で継続できる。
+      if (nowParts.seconds < PREVIOUS_DAY_RETAINED_CUTOFF_SEC) return true;
 
       const window = getTodayServiceWindow();
       if (!window) return true;
@@ -2457,33 +2466,36 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
 
       const retained = [];
 
-      for (const v of data.retainedVehicles || []) {
-        const lat = Number(v?.latitude);
-        const lon = Number(v?.longitude);
-        const vehicleCd = cleanId(v?.vehicleCd);
+      // 23:00:00以降はWorkerがretainedVehiclesを返しても前日分を採用しない。
+      if (isPreviousDayRetainedVisible()) {
+        for (const v of data.retainedVehicles || []) {
+          const lat = Number(v?.latitude);
+          const lon = Number(v?.longitude);
+          const vehicleCd = cleanId(v?.vehicleCd);
 
-        if (!vehicleCd) continue;
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-        if (lat === 0 && lon === 0) continue;
+          if (!vehicleCd) continue;
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+          if (lat === 0 && lon === 0) continue;
 
-        retained.push({
-          tripId: "",
-          routeId: "",
-          seq: NaN,
-          label: vehicleCd,
-          lat,
-          lon,
-          bearing: 0,
-          isFallback: false,
-          isRetained: true,
+          retained.push({
+            tripId: "",
+            routeId: "",
+            seq: NaN,
+            label: vehicleCd,
+            lat,
+            lon,
+            bearing: 0,
+            isFallback: false,
+            isRetained: true,
 
-          // 04:00～05:59は通常色、
-          // 06:00～17:59はグレー表示。
-          isRetainedGray:
-            v?.grayOut === true ||
-            v?.grayOut === 1 ||
-            v?.grayOut === "1"
-        });
+            // 04:00～05:59は通常色、
+            // 06:00～22:59:59はWorker指定に従ってグレー表示。
+            isRetainedGray:
+              v?.grayOut === true ||
+              v?.grayOut === 1 ||
+              v?.grayOut === "1"
+          });
+        }
       }
 
       retainedVehicles = retained;
@@ -2501,9 +2513,11 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           .filter(Boolean)
       );
 
-      const retained = retainedVehicles.filter(
-        v => !activeVehicleCds.has(cleanId(v?.label))
-      );
+      const retained = isPreviousDayRetainedVisible()
+        ? retainedVehicles.filter(
+            v => !activeVehicleCds.has(cleanId(v?.label))
+          )
+        : [];
 
       return [
         ...latestVehicles,
@@ -6734,7 +6748,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const isFallback =
         Number(vehicleProperties.isFallback) === 1;
 
-      // 前日残留車は4:00～17:59の間、通常色/グレーを問わず簡易ポップアップを表示。
+      // 前日残留車は4:00～22:59:59の間、通常色/グレーを問わず簡易ポップアップを表示。
       // 便情報・次便予測・回送追跡は表示しない。
       if (isRetained) {
 
@@ -8049,7 +8063,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           features: [JSON.parse(JSON.stringify(f))]
         });
 
-        // 前日残留車はルート・停留所を出さず、4:00～17:59は通常色/グレーを問わず
+        // 前日残留車はルート・停留所を出さず、4:00～22:59:59は通常色/グレーを問わず
         // 前日データ用の簡易ポップアップを表示する。回送追跡も表示しない。
         if (Number(p.isRetained) === 1) {
           selectedTripId = null;
@@ -8341,6 +8355,57 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       }
     }
 
+    function removePreviousDayRetainedVehicles() {
+      if (!retainedVehicles.length) return;
+
+      retainedVehicles = [];
+
+      const allVehicles = displayedVehicles();
+      updateVehicleSearchSuggestions(allVehicles);
+
+      const source = map.getSource("vehicles");
+      if (source) {
+        source.setData(vehicleGeoJson());
+      }
+
+      updateVehicleNumberMarkers(allVehicles);
+    }
+
+    function schedulePreviousDayRetainedCutoff() {
+      if (retainedCutoffTimer !== null) {
+        clearTimeout(retainedCutoffTimer);
+        retainedCutoffTimer = null;
+      }
+
+      const now = new Date();
+      const nowParts = japanNowParts(now);
+      const daySec = 24 * 60 * 60;
+
+      let secondsUntilCutoff =
+        PREVIOUS_DAY_RETAINED_CUTOFF_SEC - nowParts.seconds;
+
+      // 23:00:00以降に予約した場合は翌日の23:00:00を狙う。
+      if (secondsUntilCutoff <= 0) {
+        secondsUntilCutoff += daySec;
+      }
+
+      // japanNowPartsは秒単位なので、現在のミリ秒分を引いて23:00:00.000に合わせる。
+      const delayMs = Math.max(
+        0,
+        secondsUntilCutoff * 1000 - now.getMilliseconds()
+      );
+
+      retainedCutoffTimer = window.setTimeout(() => {
+        retainedCutoffTimer = null;
+
+        // 23:00:00で前日分だけ即時削除する。
+        removePreviousDayRetainedVehicles();
+
+        // 翌日分も同じ23:00:00に削除できるよう再予約。
+        schedulePreviousDayRetainedCutoff();
+      }, delayMs);
+    }
+
     function startRealtimeTimer() {
       if (realtimeTimer !== null) return;
 
@@ -8388,6 +8453,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         setLoading(true, 72);
         await updateRealtime();
 
+        schedulePreviousDayRetainedCutoff();
         startRealtimeTimer();
       } catch (e) {
         console.error(e);
