@@ -2239,7 +2239,7 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const hour = Math.floor(nowParts.seconds / 3600);
 
       // 前日最終位置を04:00～17:59も取得できるようfallback APIを維持する。
-      if (hour < 18) return true;
+      if (hour < 23) return true;
 
       const window = getTodayServiceWindow();
       if (!window) return true;
