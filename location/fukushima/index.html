@@ -2,22 +2,67 @@
 <html lang="ja">
 <head>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-  <title>福島交通バスロケーション</title>
 
+  <title>福島交通バスロケ ～バスがどこ行くか分かります～</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#1f2d36">
+
+  <!-- iPhone / iPad -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="福島交通バスロケ">
+  <link rel="apple-touch-icon" href="./icons/pwa-192.png">
+
+  <!-- Android等 -->
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- MapLibre -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css">
+
+  <!-- 既存CSS -->
   <link rel="stylesheet" href="./fukushima.css">
+
+  <!-- 起動画面 -->
+  <link rel="stylesheet" href="./splash.css">
 </head>
 
 <body>
+
+  <!-- 起動画面 -->
+  <div id="appSplash" aria-label="アプリを読み込み中">
+    <img class="app-splash-icon" src="./icons/pwa-192.png" alt="">
+    <div class="app-splash-title">福島交通バスロケ</div>
+    <div class="app-splash-subtitle">～バスがどこ行くか分かります～</div>
+    <div class="app-splash-spinner" aria-hidden="true"></div>
+    <div class="app-splash-loading">読み込み中…</div>
+  </div>
+
+  <!-- 既存画面 -->
   <div id="loadingBar"></div>
   <div id="map"></div>
 
   <div id="statusDisplay">読込中...</div>
   <div id="timestampDisplay">最終更新: <span id="readableTimestamp">-</span></div>
 
+  <!-- MapLibre -->
   <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
+
+  <!-- 既存JS -->
   <script src="./fukushima.js"></script>
+
+  <!-- 起動画面 -->
+  <script src="./splash.js"></script>
+
+  <!-- PWA -->
+  <script src="./pwa-register.js"></script>
+
+  <!-- 将来のPush通知準備工事 -->
+  <script src="./push-ready.js"></script>
+
 </body>
 </html>
