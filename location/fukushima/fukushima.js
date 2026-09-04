@@ -5575,16 +5575,30 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
       const eventType =
         cleanId(node?.event_type);
 
+      const placeType =
+        cleanId(node?.place_type);
+
+      const isStandby =
+        placeType === "standby";
+
       const inferred =
         Boolean(node?.inferred);
 
       if (eventType === "arrival") {
+        if (isStandby) {
+          return "待機開始";
+        }
+
         return inferred
           ? "到着（推定）"
           : "到着";
       }
 
       if (eventType === "departure") {
+        if (isStandby) {
+          return "待機終了";
+        }
+
         return inferred
           ? "出庫"
           : "出発";
@@ -5594,7 +5608,9 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
         eventType ===
           "arrival_departure"
       ) {
-        return "到着・出発";
+        return isStandby
+          ? "待機"
+          : "到着・出発";
       }
 
       if (eventType === "entry") {
@@ -5715,7 +5731,10 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           "unyo-flow-place-combined-badge";
 
         arrivalLabel.textContent =
-          "到着";
+          cleanId(node?.place_type) ===
+            "standby"
+            ? "待機開始"
+            : "到着";
 
         const arrivalTime =
           document.createElement("span");
@@ -5753,9 +5772,14 @@ label234.forEach(label => labelIconMap.set(label, 'icon/234-v2.png'));
           "unyo-flow-place-combined-badge";
 
         departureLabel.textContent =
-          node?.departure_inferred
-            ? "出庫"
-            : "出発";
+          cleanId(node?.place_type) ===
+            "standby"
+            ? "待機終了"
+            : (
+                node?.departure_inferred
+                  ? "出庫"
+                  : "出発"
+              );
 
         const departureTime =
           document.createElement("span");
