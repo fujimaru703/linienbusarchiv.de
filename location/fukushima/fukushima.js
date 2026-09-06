@@ -14,7 +14,7 @@
 
     // 非営業・回送車両 + 当日充当履歴 Cloudflare Worker
     const BUSVISION_FALLBACK_BASE =
-      "https://fukushima-busvision-fallback.fujimaru703.workers.dev";
+  "https://busapi.linienbusarchiv.de";
 
     const FALLBACK_URL =
       BUSVISION_FALLBACK_BASE + "/fallback";
@@ -24,14 +24,17 @@
 
     // 運用予測 Worker
     // 通常カードは1段だけ取得し、詳細はクリック時だけ全ツリーを取得する。
+    const BUSVISION_FALLBACK_BASE =
+  "https://busapi.linienbusarchiv.de";
+
     const UNYO_PREDICT_URL =
-      "https://unyo-predict.fujimaru703.workers.dev/predict";
+  "https://busapi.linienbusarchiv.de/predict";
 
     const UNYO_PREDICT_TREE_URL =
-      "https://unyo-predict.fujimaru703.workers.dev/predict-tree";
+  "https://busapi.linienbusarchiv.de/predict-tree";
 
     const RARE_VEHICLES_URL =
-      "https://unyo-predict.fujimaru703.workers.dev/rare-vehicles";
+  "https://busapi.linienbusarchiv.de/rare-vehicles";
 
     const RARE_VEHICLES_REFRESH_MS =
       2 * 60 * 1000;
