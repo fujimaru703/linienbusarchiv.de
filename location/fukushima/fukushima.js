@@ -24,9 +24,6 @@
 
     // 運用予測 Worker
     // 通常カードは1段だけ取得し、詳細はクリック時だけ全ツリーを取得する。
-    const BUSVISION_FALLBACK_BASE =
-  "https://busapi.linienbusarchiv.de";
-
     const UNYO_PREDICT_URL =
   "https://busapi.linienbusarchiv.de/predict";
 
