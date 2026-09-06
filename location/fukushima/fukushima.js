@@ -7,10 +7,10 @@
 
     // Cloudflare Workerは旧版の2本をそのまま使用
     const TRIP_UPDATE_URL =
-      "https://crimson-night-b53e.fujimaru703.workers.dev/";
+  "https://busapi.linienbusarchiv.de/gtfs-rt/trip";
 
-    const VEHICLE_POSITION_URL =
-      "https://morning-sun-eb88.fujimaru703.workers.dev/";
+const VEHICLE_POSITION_URL =
+  "https://busapi.linienbusarchiv.de/gtfs-rt/vehicle";
 
     // 非営業・回送車両 + 当日充当履歴 Cloudflare Worker
     const BUSVISION_FALLBACK_BASE =
