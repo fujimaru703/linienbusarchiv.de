@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="ヨーロッパ生まれのバスを辿って・訪問記">
+
+  <title>訪問記 | ヨーロッパ生まれのバスを辿って</title>
+
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="visits.css">
+
+  <!-- 都市名と現地語表記 -->
+  <style>
+    .city-card__name {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .city-card__name>small.city-card__local {
+      display: inline-block;
+
+      font-size: 4px !important;
+      font-weight: 400 !important;
+      color: #999999 !important;
+      line-height: 1;
+      letter-spacing: 0 !important;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+      .city-card__name {
+        font-size: 15px;
+        gap: 5px;
+      }
+
+      .city-card__name>small.city-card__local {
+        font-size: 8px !important;
+      }
+    }
+  </style>
+
+  <script src="../js/common.js" defer></script>
+  <script src="visits.js" defer></script>
+</head>
+
+<body data-page="visits">
+
+  <div class="site-container">
+
+    <!-- 共通ヘッダー -->
+    <div id="common-header" data-root="../"></div>
+
+    <main class="main-content visits-main">
+
+      <h2 class="visits-title">訪問記</h2>
+
+      <section class="city-grid" aria-label="都市別の訪問記">
+
+        <!-- リペツク -->
+        <article class="city-card">
+          <a class="city-card__link" href="lipetsk.html" aria-label="リペツクの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/lipetsk.jpg" alt="リペツクの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              リペツク<small class="city-card__local" lang="ru">Липецк</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- エカテリンブルク -->
+        <article class="city-card">
+          <a class="city-card__link" href="yekaterinburg.html" aria-label="エカテリンブルクの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/yekaterinburg.jpg" alt="エカテリンブルクの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              エカテリンブルク<small class="city-card__local" lang="ru">Екатеринбург</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- サラトフ -->
+        <article class="city-card">
+          <a class="city-card__link" href="saratov.html" aria-label="サラトフの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/saratov.jpg" alt="サラトフの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              サラトフ<small class="city-card__local" lang="ru">Саратов</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- モスクワ -->
+        <article class="city-card">
+          <a class="city-card__link" href="moscow.html" aria-label="モスクワの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/moscow.jpg" alt="モスクワの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              モスクワ<small class="city-card__local" lang="ru">Москва</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- リュブリャナ -->
+        <article class="city-card">
+          <a class="city-card__link" href="ljubljana.html" aria-label="リュブリャナの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/ljubljana.jpg" alt="リュブリャナの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              リュブリャナ<small class="city-card__local" lang="sl">Ljubljana</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- コスタナイ -->
+        <article class="city-card">
+          <a class="city-card__link" href="kostanay.html" aria-label="コスタナイの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/kostanay.jpg" alt="コスタナイの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              コスタナイ<small class="city-card__local" lang="kk">Қостанай</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- ベルリン -->
+        <article class="city-card">
+          <a class="city-card__link" href="berlin.html" aria-label="ベルリンの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/berlin.jpg" alt="ベルリンの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              ベルリン<small class="city-card__local" lang="de">Berlin</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- セミパラチンスク -->
+        <article class="city-card">
+          <a class="city-card__link" href="semipalatinsk.html" aria-label="セミパラチンスクの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/semipalatinsk.jpg" alt="セミパラチンスクの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              セミパラチンスク<small class="city-card__local" lang="ru">Семипалатинск</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- ハンブルク -->
+        <article class="city-card">
+          <a class="city-card__link" href="hamburg.html" aria-label="ハンブルクの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/hamburg.jpg" alt="ハンブルクの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              ハンブルク<small class="city-card__local" lang="de">Hamburg</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- カリーニングラード -->
+        <article class="city-card">
+          <a class="city-card__link" href="kaliningrad.html" aria-label="カリーニングラードの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/kaliningrad.jpg" alt="カリーニングラードの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              カリーニングラード<small class="city-card__local" lang="ru">Калининград</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- プリシュティナ -->
+        <article class="city-card">
+          <a class="city-card__link" href="pristina.html" aria-label="プリシュティナの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/pristina.jpg" alt="プリシュティナの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              プリシュティナ<small class="city-card__local" lang="sq">Prishtina</small>
+            </h3>
+          </a>
+        </article>
+
+        <!-- アテネ -->
+        <article class="city-card">
+          <a class="city-card__link" href="athens.html" aria-label="アテネの訪問記を読む">
+
+            <div class="city-photo-frame city-card__photo">
+              <span class="city-photo-placeholder" aria-hidden="true">写真準備中</span>
+              <img class="city-photo" src="images/athens.jpg" alt="アテネの風景" loading="lazy">
+            </div>
+
+            <h3 class="city-card__name">
+              アテネ<small class="city-card__local" lang="el">Αθήνα</small>
+            </h3>
+          </a>
+        </article>
+
+      </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="site-footer">
+      <p>&copy; 2026 ヨーロッパ生まれのバスを辿って</p>
+    </footer>
+
+  </div>
+
+</body>
+
+</html>

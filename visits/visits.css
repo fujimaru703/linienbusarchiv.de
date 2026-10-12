@@ -1,0 +1,245 @@
+/* ========================================
+   訪問記ページ共通
+======================================== */
+
+.visits-main,
+.visit-article {
+  padding-top: 32px;
+  padding-bottom: 52px;
+}
+
+/* 訪問記一覧タイトル */
+.visits-title {
+  margin: 0 0 32px;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+
+
+/* ========================================
+   都市一覧グリッド
+======================================== */
+
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px 24px;
+}
+
+/* カード */
+.city-card {
+  min-width: 0;
+}
+
+.city-card__link {
+  display: block;
+  color: #242424;
+  text-decoration: none;
+}
+
+.city-card__link:hover {
+  color: #006b94;
+}
+
+
+/* ========================================
+   サムネイル画像
+======================================== */
+
+.city-photo-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #e5eaf0;
+}
+
+.city-card__photo {
+  aspect-ratio: 16 / 9;
+  border-radius: 11px;
+}
+
+/* 写真未設定時の表示 */
+.city-photo-placeholder {
+  position: absolute;
+  inset: 0;
+
+  display: grid;
+  place-items: center;
+
+  color: #7a8795;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+
+  background: linear-gradient(145deg,
+      #edf1f5,
+      #d6dfe8);
+}
+
+/* 実際の写真 */
+.city-photo {
+  position: relative;
+  z-index: 1;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.city-photo.is-unavailable {
+  display: none;
+}
+
+.city-card__link:hover .city-photo:not(.is-unavailable) {
+  filter: brightness(0.92);
+}
+
+
+/* ========================================
+   都市名
+======================================== */
+
+/* 日本語の都市名 */
+.city-card__name {
+  margin: 9px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* 現地語表記（一覧） */
+.city-card__name .city-card__local {
+  display: inline;
+
+  margin-left: 6px;
+
+  color: #999999;
+  font-size: 10px !important;
+  font-weight: 400 !important;
+
+  white-space: nowrap;
+}
+
+
+/* ========================================
+   各都市の記事ページ
+======================================== */
+
+/* パンくずリスト */
+.visit-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  margin-bottom: 22px;
+
+  font-size: 13px;
+  color: #697788;
+}
+
+.visit-breadcrumb a {
+  color: #006b94;
+  text-decoration: none;
+}
+
+.visit-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* 記事タイトル */
+.visit-article__title {
+  margin: 0 0 22px;
+  font-size: 27px;
+}
+
+/* 記事タイトル横の現地語表記 */
+.visit-article__title .visit-article__local {
+  display: inline;
+
+  margin-left: 8px;
+
+  color: #999999;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+
+  white-space: nowrap;
+}
+
+/* 記事のメイン画像 */
+.visit-article__photo {
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  max-height: 520px;
+}
+
+/* 記事本文 */
+.visit-article__body {
+  margin: 30px 0 44px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+
+/* 準備中の文章 */
+.visit-draft-note {
+  color: #7b8693;
+}
+
+/* 訪問記一覧へ戻る */
+.visit-back-link {
+  color: #006b94;
+  text-decoration: none;
+}
+
+.visit-back-link:hover {
+  text-decoration: underline;
+}
+
+
+/* ========================================
+   タブレット表示
+======================================== */
+
+@media (max-width: 900px) {
+
+  .city-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 20px;
+  }
+
+}
+
+
+/* ========================================
+   スマートフォン表示
+======================================== */
+
+@media (max-width: 600px) {
+
+  .visits-main,
+  .visit-article {
+    padding-top: 22px;
+    padding-bottom: 36px;
+  }
+
+  .visits-title {
+    margin-bottom: 24px;
+    font-size: 20px;
+  }
+
+  .city-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .city-card__name {
+    font-size: 15px;
+  }
+
+  .visit-article__title {
+    font-size: 23px;
+  }
+
+}

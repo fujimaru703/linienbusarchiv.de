@@ -1,0 +1,81 @@
+/* リペツク訪問記専用：既存のstyle.css / visits.cssは変更しません */
+.lp-page { color: #27323c; }
+.lp-page a { text-underline-offset: 3px; }
+.lp-heading { margin: 12px 0 22px; }
+.lp-eyebrow, .lp-kicker { font-size: 11px; letter-spacing: .12em; font-weight: 750; color: #4e7891; }
+.lp-title { margin: 7px 0 9px; font-size: clamp(34px,4vw,48px); line-height: 1.25; letter-spacing: -.03em; }
+.lp-title small { margin-left: 9px; font-size: 14px; letter-spacing: 0; color: #88939d; font-weight: 400; vertical-align: baseline; }
+.lp-deck { font-size: clamp(15px,2.2vw,18px); line-height: 1.8; color: #445665; margin: 0 0 15px; }
+.lp-tags { display:flex; flex-wrap:wrap; gap:7px; }
+.lp-tags span { font-size:11px; font-weight: 550; color:#647684; background:#edf3f6; border-radius:3px; padding:5px 9px; }
+.lp-cover { margin: 0 0 36px; aspect-ratio: 16 / 8.3; border-radius: 8px; }
+.lp-cover .city-photo { object-fit: cover; }
+.lp-cover figcaption { position:absolute; z-index:3; right: 12px; bottom: 9px; padding:4px 8px; font-size: 10px; color:white; background:#0008; border-radius:4px; max-width:calc(100% - 24px); }
+.lp-cover figcaption code {font-family:inherit;}
+.lp-layout { display:grid; grid-template-columns: minmax(0,1fr) 215px; align-items:start; gap:58px; }
+.lp-story { min-width:0; }
+.lp-story p { margin: 0 0 18px; font-size:14px; line-height:2; letter-spacing: .015em; }
+.lp-story .lp-lead { font-size:16px; font-weight:600; line-height:1.9; }
+.lp-section { border-bottom: 1px solid #e3e9ed; margin: 0 0 35px; padding: 0 0 26px; scroll-margin-top: 25px; }
+.lp-section h2 { display:flex; align-items:baseline; gap:14px; margin: 0 0 19px; font-size:22px; line-height:1.4; letter-spacing:-.02em; color:#20333f; }
+.lp-num { font: 700 11px/1.5 Arial,sans-serif; color:#6790a5; flex:0 0 auto; letter-spacing:.1em; }
+.lp-story h3 { margin: 0 0 10px; font-size: 17px; color:#293b48; }
+.lp-facts { display:grid; grid-template-columns:1fr 1fr; gap:1px; margin: 24px 0 0; background:#dfe7ec; border:1px solid #dfe7ec; border-radius:7px; overflow:hidden; }
+.lp-facts div { display:flex; flex-direction:column; padding:16px; gap:5px; background:#f7f9fa; }
+.lp-facts span { font-size:11px; color:#697e8a; }
+.lp-facts strong { font-size:13px; font-weight:650; }
+.lp-transport-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:24px 0 22px; }
+.lp-transport { border:1px solid #dfe7eb; padding:22px 18px; border-radius:8px; background:#fafcfd; }
+.lp-transport h3 { margin-top:5px; }
+.lp-transport p { font-size:13px; line-height:1.85; }
+.lp-transport a { color:#166b91; font-weight:650; font-size:12px; overflow-wrap:anywhere; }
+.lp-memo { background:#f3f6f8; border-left: 3px solid #91aebf; border-radius: 0 6px 6px 0; padding: 16px 18px; margin: 22px 0 18px; }
+.lp-memo strong { font-size:13px; }
+.lp-memo p { margin:7px 0 0; font-size:12px; color:#677683; }
+.lp-story .lp-small-note { font-size:12px; color:#71808b; line-height:1.75; }
+.lp-place { margin:0 0 26px; padding-left:18px; border-left:2px solid #d5e2e9; }
+.lp-place-index { font-size:11px; letter-spacing:.08em; color:#75919f; margin-bottom:7px; }
+.lp-place p { margin-bottom:0; }
+.lp-hotel { border: 1px solid #dfe6eb; border-radius:9px; padding:22px; margin:20px 0 14px; }
+.lp-hotel-top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.lp-pending { font-size:11px; color:#788793; background:#eef2f4; border-radius:4px; padding:4px 7px; }
+.lp-hotel h3 { font-size:18px; margin-bottom:15px; }
+.lp-hotel dl { margin:0; }
+.lp-hotel dl div { display:grid; grid-template-columns:86px minmax(0,1fr); gap:9px; padding:11px 0; border-top:1px solid #e7ecef; }
+.lp-hotel dt { font-size:12px; color:#637583; }
+.lp-hotel dd { margin:0; font-size:13px; color:#586875; }
+.lp-bus-details { background:#f6f8f9; border:1px solid #e1e7e9; padding:14px 18px; border-radius:6px; }
+.lp-bus-details summary { cursor:pointer; color:#3a647e; font-size:13px; font-weight:600; }
+.lp-bus-details p { margin:14px 0 0; font-size:13px; }
+.lp-references { padding:14px 20px 18px; background:#f7f9fa; border-radius:7px; }
+.lp-references h2 { font-size:15px; margin:0 0 12px; }
+.lp-references ul { padding-left:21px; margin:0 0 12px; }
+.lp-references li { margin:6px 0; font-size:12px; }
+.lp-references a { color:#146b8e; }
+.lp-references p { margin:0; font-size:11px; color:#77838c; }
+.lp-return { margin: 24px 0 10px !important; }
+.lp-sidebar { position:relative; }
+.lp-sidebar-inner { position:sticky; top:24px; padding:18px 0 18px 20px; border-left:1px solid #dfe7ec; }
+.lp-sidebar-label { color:#8795a2; letter-spacing:.12em; font-size:10px; font-weight:750; }
+.lp-sidebar nav { margin-top:15px; display:flex; flex-direction:column; gap:3px; }
+.lp-sidebar nav a { display:block; color:#485b69; text-decoration:none; font-size:12px; padding:7px 6px; }
+.lp-sidebar nav a:hover { color:#176a8f; background:#edf4f7; }
+.lp-sidebar-note { border-top:1px solid #e6ecef; padding:15px 6px 0; margin-top:15px; font-size:11px; line-height:1.8; color:#7d8d98; }
+@media (max-width: 900px) { .lp-layout { grid-template-columns:minmax(0,1fr) 160px; gap:30px; } }
+@media (max-width: 700px) {
+  .lp-layout { display:block; }
+  .lp-sidebar { display:none; }
+  .lp-heading { margin-top:4px; }
+  .lp-cover { margin-bottom:25px; aspect-ratio:16/9; }
+  .lp-transport-grid { grid-template-columns:1fr; }
+  .lp-section h2 { font-size:20px; }
+  .lp-facts { grid-template-columns:1fr 1fr; }
+  .lp-story .lp-lead { font-size:15px; }
+}
+@media (max-width: 420px) {
+  .lp-title { font-size:32px; }
+  .lp-facts { grid-template-columns:1fr; }
+  .lp-hotel { padding:16px; }
+  .lp-hotel dl div { grid-template-columns:75px minmax(0,1fr); }
+  .lp-cover figcaption { display:none; }
+}
